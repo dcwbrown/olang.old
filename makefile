@@ -3,7 +3,7 @@ BUILDID=$(shell date +%Y/%m/%d)
 TOS = linux
 TARCH = x86_64
 #TARCH = x86 x86_64 armv6j armv6j_hardfp armv7a_hardfp powerpc
-CCOMP = gcc
+CCOMP = clang
 RELEASE = 1.1
 
 
@@ -27,7 +27,7 @@ PREFIXLN = $(PRF)/voc
 
 CCOPT = -fPIC $(INCLUDEPATH) -g
 SHRLIBEXT = so
-CC = $(CCOMP) $(CCOPT) -c
+CC = $(CCOMP) $(CCOPT) -c -Wno-pointer-sign
 CL = $(CCOMP) $(CCOPT)
 LD = $(CCOMP) -shared -o $(LIBRARY).$(SHRLIBEXT)
 # s is necessary to create index inside a archive

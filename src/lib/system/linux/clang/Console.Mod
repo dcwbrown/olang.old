@@ -8,7 +8,7 @@ MODULE Console;  (* J. Templ, 29-June-96 *)
     pos: INTEGER;
 
   PROCEDURE -Write(adr, n: LONGINT)
-    "write(1/*stdout*/, adr, n)";
+    "write(1/*stdout*/, (void*)(adr), n)";
 
   PROCEDURE -read(VAR ch: CHAR): LONGINT
     "read(0/*stdin*/, ch, 1)";

@@ -13,6 +13,14 @@ uses double # as concatenation operator
 
 #include <alloca.h>
 #include <stdint.h> /* for type sizes -- noch */
+#include <unistd.h>
+#include <sys/time.h>
+#include <signal.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <sys/ioctl.h>
 
 extern void *memcpy(void *dest, const void *src, unsigned long n);
 extern void *malloc(unsigned long size);
@@ -85,6 +93,8 @@ extern void SYSTEM_HALT();
 extern void SYSTEM_INHERIT();
 extern void SYSTEM_ENUMP();
 extern void SYSTEM_ENUMR();
+extern void SYSTEM_GC (BOOLEAN markStack);
+
 
 /* module registry */
 #define __DEFMOD	static void *m; if(m!=0)return m
