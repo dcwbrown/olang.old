@@ -114,8 +114,13 @@ stage5:
 	$(CL) OCatCmd.c -o ocat \
 	SYSTEM.o Args.o Console.o Modules.o Unix.o Strings.o architecture.o prf.o version.o Kernel0.o Files0.o Reals.o Texts0.o
 	
+test1:
+	$(VOCSTATIC) -sPF	Kernel.Mod
+
 # build all library files
-stage6:
+stage6: stage6a stage6b
+
+stage6a:	
 	#v4 libs
 	$(VOCSTATIC) -sPF	Kernel.Mod
 	$(VOCSTATIC) -sPF	Files.Mod
@@ -202,10 +207,13 @@ stage6:
 	$(VOCSTATIC) -sPF ulmSysErrors.Mod
 	$(VOCSTATIC) -sPF ulmSysIO.Mod
 	$(VOCSTATIC) -sPF ulmLoader.Mod
-	$(VOCSTATIC) -sPF ulmNetIO.Mod
+
+stage6b:	
+	# $(VOCSTATIC) -sPF ulmNetIO.Mod
 	$(VOCSTATIC) -sPF ulmPersistentObjects.Mod
 	$(VOCSTATIC) -sPF ulmPersistentDisciplines.Mod
 	$(VOCSTATIC) -sPF ulmOperations.Mod
+	
 	$(VOCSTATIC) -sPF ulmScales.Mod
 	$(VOCSTATIC) -sPF ulmTimes.Mod
 	$(VOCSTATIC) -sPF ulmClocks.Mod
@@ -214,7 +222,9 @@ stage6:
 	$(VOCSTATIC) -sPF ulmStreamConditions.Mod
 	$(VOCSTATIC) -sPF ulmTimeConditions.Mod
 	$(VOCSTATIC) -sPF ulmSysConversions.Mod
+	
 	$(VOCSTATIC) -sPF ulmSysStat.Mod
+	
 	$(VOCSTATIC) -sPF ulmCiphers.Mod
 	$(VOCSTATIC) -sPF ulmCipherOps.Mod
 	$(VOCSTATIC) -sPF ulmBlockCiphers.Mod
@@ -273,12 +283,7 @@ stage7:
 clean:
 #	rm_objects := rm $(wildcard *.o)
 #	objects
-	rm *.h
-	rm *.c
-	rm *.sym
-	rm *.o
-	rm *.a
-	rm *.$(SHRLIBEXT)
+	rm *.h *.c *.sym *.o *.a *.$(SHRLIBEXT) ocat showdef voc voc.par
 
 install:
 	test -d $(PREFIX)/bin | mkdir -p $(PREFIX)/bin

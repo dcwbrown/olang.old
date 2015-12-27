@@ -16,7 +16,7 @@ cc : ARRAY 1023 OF CHAR;
 ext : ARRAY 5 OF CHAR;
 BEGIN
 COPY (ccString, cc);
-Strings.Append (" -c ", cc);
+Strings.Append (" -c -Wno-pointer-sign ", cc);
 COPY(cc, cmd);
 Strings.Append (" ", cmd);
 Strings.Append (ccOpt, cmd);

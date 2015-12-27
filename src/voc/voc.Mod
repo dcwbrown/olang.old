@@ -10,7 +10,7 @@ VAR mname : ARRAY 256 OF CHAR; (* noch *)
 
 
   PROCEDURE -signal(sig: LONGINT; func: Unix.SignalHandler)
-    "signal(sig, func)";
+    "/* signal(sig, func) */";
 
   PROCEDURE -fin()
     "SYSTEM_FINALL()";

@@ -1,5 +1,5 @@
 MODULE Unix;  (* Josef Templ, 5.3.90  Linux system calls *)
-(* ported to gnu x86_64 and added system function, noch *)
+(* ported to gnu x86_64 and added system(), sleep() functions, noch *)
 (* Module Unix provides a system call interface to Linux.
   Naming conventions:
     Procedure and Type-names always start with a capital letter.
@@ -322,19 +322,19 @@ from man gettimeofday
     "wait(status)";
 
   PROCEDURE -Select*(width: INTEGER; VAR readfds, writefds, exceptfds: FdSet; VAR timeout: Timeval): INTEGER
-    "select(width, readfds, writefds, exceptfds, timeout)";
+    "select(width, (fd_set*)(readfds), (fd_set*)(writefds), (fd_set*)(exceptfds), (struct timeval*)(timeout))";
 
   PROCEDURE -Gettimeofday* (VAR tv: Timeval; VAR tz: Timezone) : INTEGER
-    "gettimeofday(tv, tz)";
+    "gettimeofday((struct timeval *)(tv), (struct timezone*)(tz))";
 
   PROCEDURE -Read* (fd: INTEGER; buf, nbyte: LONGINT): LONGINT
-    "read(fd, buf, nbyte)";
+    "read(fd, (void*)buf, nbyte)";
 
   PROCEDURE -ReadBlk* (fd: INTEGER; VAR buf: ARRAY OF SYSTEM.BYTE): LONGINT
     "read(fd, buf, buf__len)";
 
   PROCEDURE -Write* (fd: INTEGER; buf, nbyte: LONGINT): LONGINT
-    "write(fd, buf, nbyte)";
+    "write(fd, (void*)buf, nbyte)";
 
   PROCEDURE -WriteBlk* (fd: INTEGER; VAR buf: ARRAY OF SYSTEM.BYTE): LONGINT
     "write(fd, buf, buf__len)";

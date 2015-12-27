@@ -322,19 +322,19 @@ from man gettimeofday
     "wait(status)";
 
   PROCEDURE -Select*(width: INTEGER; VAR readfds, writefds, exceptfds: FdSet; VAR timeout: Timeval): INTEGER
-    "select(width, readfds, writefds, exceptfds, timeout)";
+    "select(width, (fd_set*)(readfds), (fd_set*)(writefds), (fd_set*)(exceptfds), (struct timeval*)(timeout))";
 
   PROCEDURE -Gettimeofday* (VAR tv: Timeval; VAR tz: Timezone) : INTEGER
-    "gettimeofday(tv, tz)";
+    "gettimeofday((struct timeval *)(tv), (struct timezone*)(tz))";
 
   PROCEDURE -Read* (fd: INTEGER; buf, nbyte: LONGINT): LONGINT
-    "read(fd, buf, nbyte)";
+    "read(fd, (void*)buf, nbyte)";
 
   PROCEDURE -ReadBlk* (fd: INTEGER; VAR buf: ARRAY OF SYSTEM.BYTE): LONGINT
     "read(fd, buf, buf__len)";
 
   PROCEDURE -Write* (fd: INTEGER; buf, nbyte: LONGINT): LONGINT
-    "write(fd, buf, nbyte)";
+    "write(fd, (void*)buf, nbyte)";
 
   PROCEDURE -WriteBlk* (fd: INTEGER; VAR buf: ARRAY OF SYSTEM.BYTE): LONGINT
     "write(fd, buf, buf__len)";
