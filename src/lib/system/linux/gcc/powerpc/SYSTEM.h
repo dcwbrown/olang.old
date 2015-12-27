@@ -79,7 +79,7 @@ extern void SYSTEM_ENUMR();
 #define __INIT(argc, argv)	static void *m; SYSTEM_INIT(argc, (long)&argv);
 #define __REGMAIN(name, enum)	m=SYSTEM_REGMOD(name,enum)
 #define __FINI	SYSTEM_FINI(); return 0
-#define __IMPORT(name)	SYSTEM_INCREF(name##__init())
+#define __MODULE_IMPORT(name)	SYSTEM_INCREF(name##__init())
 #define __REGCMD(name, cmd)	SYSTEM_REGCMD(m, name, cmd)
 
 /* SYSTEM ops */
