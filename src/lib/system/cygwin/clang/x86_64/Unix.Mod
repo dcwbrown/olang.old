@@ -158,70 +158,54 @@ TYPE
   JmpBuf* = RECORD
      jmpbuf: ARRAY 12 OF LONGINT;
   END ;
-(*
-from output of cpp /usr/include/sys/stat.h
 
-struct stat {
- __dev_t st_dev;
- ino_t st_ino;
- mode_t st_mode;
- nlink_t st_nlink;
- uid_t st_uid;
- gid_t st_gid;
- __dev_t st_rdev;
- struct timespec st_atim;
- struct timespec st_mtim;
- struct timespec st_ctim;
- off_t st_size;
- blkcnt_t st_blocks;
- blksize_t st_blksize;
- fflags_t st_flags;
- __uint32_t st_gen;
- __int32_t st_lspare;
- struct timespec st_birthtim;
-# 148 "/usr/include/sys/stat.h"
- unsigned int :(8 / 2) * (16 - (int)sizeof(struct timespec));
- unsigned int :(8 / 2) * (16 - (int)sizeof(struct timespec));
+
+(*  From /usr/include/cygwin/stat.h:
+
+struct stat
+{
+  dev_t         st_dev;
+  ino_t         st_ino;
+  mode_t        st_mode;
+  nlink_t       st_nlink;
+  uid_t         st_uid;
+  gid_t         st_gid;
+  dev_t         st_rdev;
+  off_t         st_size;
+  timestruc_t   st_atim;
+  timestruc_t   st_mtim;
+  timestruc_t   st_ctim;
+  blksize_t     st_blksize;
+  blkcnt_t      st_blocks;
+  timestruc_t   st_birthtim;
 };
 
-sizes on freebsd 64 bit
-short int 2
-int 4
-long 8
-long int 8
-size_t 8
-dev_t 4
-ino_t 4
-mode_t 2
-nlink_t 2
-uid_t 4
-gid_t 4
-off_t 8
-blksize_t 4
-blkcnt_t 8
-time_t 8
-fflags_t  4
-__uint32_t  4
-__int32_t  4
 *)
+
   Status* = RECORD (* struct stat *)
-    dev* : INTEGER; (* dev_t 4 *)
-    ino* : INTEGER; (* ino_t 4 *)
-    mode*: SHORTINT; mode1*: SHORTINT; (* mode_t 2 *)
-    nlink* : SHORTINT; nlink1*: SHORTINT; (* nlink_t 2 *)
-    uid*, gid*: INTEGER; (* uid_t, gid_t 4 *)
-    rdev*: INTEGER; (* dev_t 4 *)
-    atime* : LONGINT; atimences* : LONGINT; (* struct timespec 16 *)
-    mtime* : LONGINT; mtimences* : LONGINT; (* struct timespec 16 *)
-    ctime* : LONGINT; ctimences* : LONGINT; (* struct timespec 16 *)
-    size*: LONGINT; (* off_t 8 *)
-    blocks* : LONGINT;
-    blksize* : INTEGER;
-    flags* : INTEGER;
-    gen* : INTEGER;
-    lspare* : INTEGER;
-    birthtime* : LONGINT; birthtimences* : LONGINT; (* struct timespec 16 *)
-  END ;
+    dev*:           INTEGER;  (*   0  4  dev_t        st_dev;      *)
+    ino*:           LONGINT;  (*   4  8  ino_t        st_ino;      *)
+    mode*:          INTEGER;  (*  12  4  mode_t       st_mode;     *)
+    nlink*:         SHORTINT; (*  16  2  nlink_t      st_nlink;    *)
+    nlink1*:        SHORTINT;
+    pad0,pad1:      SHORTINT; (*  18  2                            *)
+    uid*:           INTEGER;  (*  20  4  uid_t        st_uid;      *)
+    gid*:           INTEGER;  (*  24  4  gid_t        st_gid;      *)
+    rdev*:          INTEGER;  (*  28  4  dev_t        st_rdev;     *)
+    size*:          LONGINT;  (*  32  8  off_t        st_size;     *)
+    pad3:           LONGINT;  (*  40  8                            *)
+    atime*:         LONGINT;  (*  48 16  timestruc_t  st_atim;     *)
+    atimences*:     LONGINT;
+    mtime*:         LONGINT;  (*  64 16  timestruc_t  st_mtim;     *)
+    mtimences*:     LONGINT;
+    ctime*:         LONGINT;  (*  80 16  timestruc_t  st_ctim;     *)
+    ctimences*:     LONGINT;
+    blksize*:       INTEGER;  (*  96  4  blksize_t    st_blksize;  *)
+    pad4:           INTEGER;  (* 100  4                            *)
+    blocks*:        LONGINT;  (* 104  8  blkcnt_t     st_blocks;   *)
+    birthtime*:     LONGINT;  (* 112 16  timestruc_t  st_birthtim; *)
+    birthtimences*: LONGINT;
+  END;                        (* 128 total bytes *)
 
 
 (* from /usr/include/bits/time.h
