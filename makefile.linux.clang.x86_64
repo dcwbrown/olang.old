@@ -27,7 +27,7 @@ PREFIXLN = $(PRF)/voc
 
 CCOPT = -fPIC $(INCLUDEPATH) -g
 SHRLIBEXT = so
-CC = $(CCOMP) $(CCOPT) -c
+CC = $(CCOMP) $(CCOPT) -c -Wno-pointer-sign
 CL = $(CCOMP) $(CCOPT)
 LD = $(CCOMP) -shared -o $(LIBRARY).$(SHRLIBEXT)
 # s is necessary to create index inside a archive
