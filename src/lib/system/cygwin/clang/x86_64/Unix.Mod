@@ -161,16 +161,14 @@ TYPE
 
   Status* = RECORD (* struct stat *)
     dev*:           INTEGER;  (*   0  4  dev_t        st_dev;      *)
-    ino*:           LONGINT;  (*   4  8  ino_t        st_ino;      *)
-    mode*:          INTEGER;  (*  12  4  mode_t       st_mode;     *)
-    nlink*:         SHORTINT; (*  16  2  nlink_t      st_nlink;    *)
+    ino*:           LONGINT;  (*   8  8  ino_t        st_ino;      *)
+    mode*:          INTEGER;  (*  16  4  mode_t       st_mode;     *)
+    nlink*:         SHORTINT; (*  20  2  nlink_t      st_nlink;    *)
     nlink1*:        SHORTINT;
-    pad0*,pad1*:    SHORTINT; (*  18  2                            *)
-    uid*:           INTEGER;  (*  20  4  uid_t        st_uid;      *)
-    gid*:           INTEGER;  (*  24  4  gid_t        st_gid;      *)
-    rdev*:          INTEGER;  (*  28  4  dev_t        st_rdev;     *)
-    size*:          LONGINT;  (*  32  8  off_t        st_size;     *)
-    pad3*:          LONGINT;  (*  40  8                            *)
+    uid*:           INTEGER;  (*  24  4  uid_t        st_uid;      *)
+    gid*:           INTEGER;  (*  28  4  gid_t        st_gid;      *)
+    rdev*:          INTEGER;  (*  32  4  dev_t        st_rdev;     *)
+    size*:          LONGINT;  (*  40  8  off_t        st_size;     *)
     atime*:         LONGINT;  (*  48 16  timestruc_t  st_atim;     *)
     atimences*:     LONGINT;
     mtime*:         LONGINT;  (*  64 16  timestruc_t  st_mtim;     *)
@@ -178,7 +176,6 @@ TYPE
     ctime*:         LONGINT;  (*  80 16  timestruc_t  st_ctim;     *)
     ctimences*:     LONGINT;
     blksize*:       INTEGER;  (*  96  4  blksize_t    st_blksize;  *)
-    pad4*:          INTEGER;  (* 100  4                            *)
     blocks*:        LONGINT;  (* 104  8  blkcnt_t     st_blocks;   *)
     birthtime*:     LONGINT;  (* 112 16  timestruc_t  st_birthtim; *)
     birthtimences*: LONGINT;
