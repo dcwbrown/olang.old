@@ -156,7 +156,7 @@ CONST sigsetarrlength = 1024 / 8 * SIZE(LONGINT);
 TYPE
 
   JmpBuf* = RECORD
-     jmpbuf: ARRAY 12 OF LONGINT;
+     jmpbuf: ARRAY 34 OF LONGINT;
   END ;
 
   Status* = RECORD (* struct stat *)
