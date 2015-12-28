@@ -31,7 +31,7 @@ PREFIXLN = $(PRF)/voc
 CCOPT = -fPIC $(INCLUDEPATH) -g
 SHRLIBEXT = so
 CC = $(CCOMP) $(CCOPT) -c -Wno-pointer-sign
-CL = $(CCOMP) $(CCOPT)
+CL = $(CCOMP) $(CCOPT) -Wno-pointer-sign
 LD = $(CCOMP) -shared -o $(LIBRARY).$(SHRLIBEXT)
 # s is necessary to create index inside a archive
 ARCHIVE = ar rcs $(LIBRARY).a
@@ -75,9 +75,12 @@ stage2:
 	cp src/voc/prf.Mod_default src/voc/prf.Mod
 
 # this prepares modules necessary to build the compiler itself
-stage3:
+stage3: stage3a stage3b
 
-	$(VOCSTATIC0) -siapxPS SYSTEM.Mod
+stage3a:
+	$(VOCSTATIC0) -siapxPSV SYSTEM.Mod
+
+stage3b:
 	$(VOCSTATIC0) -sPFS Args.Mod Console.Mod Unix.Mod
 	sed -i.tmp "s#/opt#$(PRF)#g" src/voc/prf.Mod
 	$(VOCSTATIC0) -sPFS prf.Mod
@@ -118,9 +121,16 @@ stage5:
 	SYSTEM.o Args.o Console.o Modules.o Unix.o Strings.o architecture.o prf.o version.o Kernel0.o Files0.o Reals.o Texts0.o
 
 # build all library files
-stage6:
+stage6: stage6a stage6b
+
+
 	#v4 libs
+stage6a:
+
 	$(VOCSTATIC) -sPF	Kernel.Mod
+
+
+stage6b:
 	$(VOCSTATIC) -sPF	Files.Mod
 	$(VOCSTATIC) -sPF	Texts.Mod
 	$(VOCSTATIC) -sPF	Printer.Mod
