@@ -318,7 +318,7 @@ from man gettimeofday
     "wait(status)";
 
   PROCEDURE -Select*(width: INTEGER; VAR readfds, writefds, exceptfds: FdSet; VAR timeout: Timeval): INTEGER
-    "select(width, readfds, writefds, (void*)exceptfds, (void*)timeout)";
+    "select(width, (void*)readfds, (void*)writefds, (void*)exceptfds, (void*)timeout)";
 
   PROCEDURE -Gettimeofday* (VAR tv: Timeval; VAR tz: Timezone) : INTEGER
     "gettimeofday((struct timeval *)(tv), (struct timezone*)(tz))";
