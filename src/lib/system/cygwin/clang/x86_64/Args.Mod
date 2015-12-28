@@ -9,7 +9,7 @@ MODULE Args;  (* jt, 8.12.94 *)
     ArgPtr = POINTER TO ARRAY 1024 OF CHAR;
     ArgVec = POINTER TO ARRAY 1024 OF ArgPtr;
 
-  VAR argc-:INTEGER; argv-: LONGINT;
+  VAR argc-: INTEGER; argv-: LONGINT;
   (*PROCEDURE -includestdlib() "#include <stdlib.h>";*)
   PROCEDURE -externgetenv() "extern char *getenv(const char *name);"; (* took this from stdlib.h*)
   PROCEDURE -Argc(): INTEGER "SYSTEM_argc";

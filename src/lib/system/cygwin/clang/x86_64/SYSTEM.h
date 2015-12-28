@@ -6,24 +6,17 @@
 voc (jet backend) runtime system interface and macros library
 copyright (c) Josef Templ, 1995, 1996
 
-gcc for Linux version (same as SPARC/Solaris2)
+clang for Darwin version
 uses double # as concatenation operator
 
 */
-
-#include <alloca.h>
-#include <stdint.h> /* for type sizes -- noch */
-#include <unistd.h>
-#include <sys/time.h>
-#include <signal.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <signal.h>
 #include <stdlib.h>
-#include <sys/ioctl.h>
+//#include <alloca.h>
+#include <stdint.h> /* for type sizes -- noch */
+//#include <string.h>
 
 extern void *memcpy(void *dest, const void *src, unsigned long n);
-extern void *malloc(unsigned long size);
+extern void *malloc(size_t size);
 extern void exit(int status);
 
 #define export
@@ -93,8 +86,6 @@ extern void SYSTEM_HALT();
 extern void SYSTEM_INHERIT();
 extern void SYSTEM_ENUMP();
 extern void SYSTEM_ENUMR();
-extern void SYSTEM_GC (BOOLEAN markStack);
-
 
 /* module registry */
 #define __DEFMOD	static void *m; if(m!=0)return m
@@ -160,9 +151,12 @@ static int __STRCMP(x, y)
 #define __ASHL(x, n)	((long)(x)<<(n))
 #define __ASHR(x, n)	((long)(x)>>(n))
 #define __ASHF(x, n)	SYSTEM_ASH((long)(x), (long)(n))
-#define __DUP(x, l, t)	x=(void*)memcpy(alloca(l*sizeof(t)),x,l*sizeof(t))
+// commented out to use malloc -- noch
+//#define __DUP(x, l, t)	x=(void*)memcpy(alloca(l*sizeof(t)),x,l*sizeof(t))
+#define __DUP(x, l, t)  x=(void*)memcpy(malloc(l*sizeof(t)),x,l*sizeof(t))
 #define __DUPARR(v, t)	v=(void*)memcpy(v##__copy,v,sizeof(t))
-#define __DEL(x)	/* DUP with alloca frees storage automatically */
+//#define __DEL(x)	/* DUP with alloca frees storage automatically */
+#define __DEL(x)	free(x)
 #define __IS(tag, typ, level)	(*(tag-(__BASEOFF-level))==(long)typ##__typ)
 #define __TYPEOF(p)	(*(((long**)(p))-1))
 #define __ISP(p, typ, level)	__IS(__TYPEOF(p),typ,level)
