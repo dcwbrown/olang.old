@@ -11,7 +11,7 @@ MODULE Console;  (* J. Templ, 29-June-96 *)
     "#include <unistd.h>";
 
   PROCEDURE -Write(adr, n: LONGINT)
-    "write(1/*stdout*/, adr, n)";
+    "write(1/*stdout*/, (void*)adr, n)";
 
   PROCEDURE -read(VAR ch: CHAR): LONGINT
     "read(0/*stdin*/, ch, 1)";
@@ -80,7 +80,7 @@ MODULE Console;  (* J. Templ, 29-June-96 *)
   PROCEDURE ReadLine*(VAR line: ARRAY OF CHAR);
     VAR i: LONGINT; ch: CHAR;
   BEGIN Flush();
-    i := 0; Read(ch); 
+    i := 0; Read(ch);
     WHILE (i < LEN(line) - 1) & (ch # 0AX) & (ch # 0X) DO line[i] := ch; INC(i); Read(ch) END ;
     line[i] := 0X
   END ReadLine;
