@@ -276,12 +276,7 @@ stage7:
 clean:
 #	rm_objects := rm $(wildcard *.o)
 #	objects
-	rm *.h
-	rm *.c
-	rm *.sym
-	rm *.o
-	rm *.a
-	rm *.$(SHRLIBEXT)
+	rm *.h *.c *.sym *.o *.a *.$(SHRLIBEXT)
 
 install:
 	test -d $(PREFIX)/bin | mkdir -p $(PREFIX)/bin
