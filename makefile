@@ -1,9 +1,9 @@
 #SHELL := /bin/bash
 BUILDID=$(shell date +%Y/%m/%d)
-TOS = cygwin
+TOS = linux
 TARCH = x86_64
 #TARCH = x86 x86_64 armv6j armv6j_hardfp armv7a_hardfp powerpc
-CCOMP = clang
+CCOMP = gcc
 RELEASE = 1.1
 
 
@@ -19,9 +19,6 @@ VOCPARAM = $(shell ./vocparam > voc.par)
 LIBNAME = VishapOberon
 LIBRARY = lib$(LIBNAME)
 
-
-
-
 ifndef PRF
 PRF = "/opt"
 endif
@@ -30,8 +27,8 @@ PREFIXLN = $(PRF)/voc
 
 CCOPT = -fPIC $(INCLUDEPATH) -g
 SHRLIBEXT = so
-CC = $(CCOMP) $(CCOPT) -c -Wno-pointer-sign
-CL = $(CCOMP) $(CCOPT) -Wno-pointer-sign
+CC = $(CCOMP) $(CCOPT) -c
+CL = $(CCOMP) $(CCOPT)
 LD = $(CCOMP) -shared -o $(LIBRARY).$(SHRLIBEXT)
 # s is necessary to create index inside a archive
 ARCHIVE = ar rcs $(LIBRARY).a
@@ -54,11 +51,11 @@ port1: stage5
 
 # this builds binary which generates voc.par
 stage0: src/tools/vocparam/vocparam.c
-	$(CL) -Wno-pointer-sign -I src/lib/system/$(TOS)/$(CCOMP)/$(TARCH) -o vocparam src/tools/vocparam/vocparam.c
+	$(CL) -I src/lib/system/$(TOS)/$(CCOMP)/$(TARCH) -o vocparam src/tools/vocparam/vocparam.c
 
 # this creates voc.par for a host architecture.
 # comment this out if you need to build a compiler for a different architecture.
-stage1:
+stage1: 
 	#rm voc.par
 	#$(shell "./vocparam > voc.par")
 	#./vocparam > voc.par
@@ -75,17 +72,14 @@ stage2:
 	cp src/voc/prf.Mod_default src/voc/prf.Mod
 
 # this prepares modules necessary to build the compiler itself
-stage3: stage3a stage3b
+stage3:
 
-stage3a:
-	$(VOCSTATIC0) -siapxPS SYSTEM.Mod
-
-stage3b:
+	$(VOCSTATIC0) -siapxPS SYSTEM.Mod 
 	$(VOCSTATIC0) -sPFS Args.Mod Console.Mod Unix.Mod
 	sed -i.tmp "s#/opt#$(PRF)#g" src/voc/prf.Mod
 	$(VOCSTATIC0) -sPFS prf.Mod
 	$(VOCSTATIC0) -sPFS Strings.Mod architecture.Mod version.Mod Kernel0.Mod Modules.Mod
-	$(VOCSTATIC0) -sxPFS Files0.Mod
+	$(VOCSTATIC0) -sxPFS Files0.Mod 
 	$(VOCSTATIC0) -sPFS Reals.Mod Texts0.Mod
 	$(VOCSTATIC0) -sPFS vt100.Mod
 
@@ -93,8 +87,8 @@ stage3b:
 stage4:
 	$(VOCSTATIC0) -sPFS errors.Mod
 	$(VOCSTATIC0) -sPFS extTools.Mod
-	$(VOCSTATIC0) -sPFS OPM.cmdln.Mod
-	$(VOCSTATIC0) -sxPFS OPS.Mod
+	$(VOCSTATIC0) -sPFS OPM.cmdln.Mod 
+	$(VOCSTATIC0) -sxPFS OPS.Mod 
 	$(VOCSTATIC0) -sPFS OPT.Mod OPC.Mod OPV.Mod OPB.Mod OPP.Mod
 	$(VOCSTATIC0) -smPS voc.Mod
 	$(VOCSTATIC0) -smPS BrowserCmd.Mod
@@ -119,18 +113,11 @@ stage5:
 
 	$(CL) OCatCmd.c -o ocat \
 	SYSTEM.o Args.o Console.o Modules.o Unix.o Strings.o architecture.o prf.o version.o Kernel0.o Files0.o Reals.o Texts0.o
-
+	
 # build all library files
-stage6: stage6a stage6b
-
-
+stage6:	
 	#v4 libs
-stage6a:
-
 	$(VOCSTATIC) -sPF	Kernel.Mod
-
-
-stage6b:
 	$(VOCSTATIC) -sPF	Files.Mod
 	$(VOCSTATIC) -sPF	Texts.Mod
 	$(VOCSTATIC) -sPF	Printer.Mod
@@ -215,10 +202,12 @@ stage6b:
 	$(VOCSTATIC) -sPF ulmSysErrors.Mod
 	$(VOCSTATIC) -sPF ulmSysIO.Mod
 	$(VOCSTATIC) -sPF ulmLoader.Mod
+
 	$(VOCSTATIC) -sPF ulmNetIO.Mod
 	$(VOCSTATIC) -sPF ulmPersistentObjects.Mod
 	$(VOCSTATIC) -sPF ulmPersistentDisciplines.Mod
 	$(VOCSTATIC) -sPF ulmOperations.Mod
+	
 	$(VOCSTATIC) -sPF ulmScales.Mod
 	$(VOCSTATIC) -sPF ulmTimes.Mod
 	$(VOCSTATIC) -sPF ulmClocks.Mod
@@ -227,7 +216,9 @@ stage6b:
 	$(VOCSTATIC) -sPF ulmStreamConditions.Mod
 	$(VOCSTATIC) -sPF ulmTimeConditions.Mod
 	$(VOCSTATIC) -sPF ulmSysConversions.Mod
+	
 	$(VOCSTATIC) -sPF ulmSysStat.Mod
+	
 	$(VOCSTATIC) -sPF ulmCiphers.Mod
 	$(VOCSTATIC) -sPF ulmCipherOps.Mod
 	$(VOCSTATIC) -sPF ulmBlockCiphers.Mod
@@ -245,7 +236,7 @@ stage6b:
 	$(VOCSTATIC) -sPF MultiArrayRiders.Mod
 	$(VOCSTATIC) -sPF MersenneTwister.Mod
 	$(VOCSTATIC) -sPF Listen.Mod
-
+	
 	#s3 libs
 	$(VOCSTATIC) -sPF ethBTrees.Mod
 	$(VOCSTATIC) -sPF ethMD5.Mod
@@ -278,7 +269,7 @@ stage7:
 	rm -f Kernel0.o Files0.o Texts0.o architecture.o prf.o version.o extTools.o OPM.o OPS.o OPT.o OPC.o OPV.o OPB.o OPP.o errors.o
 	#objects := $(wildcard *.o)
 	#$(LD) objects
-	$(ARCHIVE) *.o
+	$(ARCHIVE) *.o 
 	#$(ARCHIVE) objects
 	$(LD) *.o
 	echo "$(PREFIX)/lib" > 05vishap.conf
@@ -286,7 +277,7 @@ stage7:
 clean:
 #	rm_objects := rm $(wildcard *.o)
 #	objects
-	rm *.h *.c *.sym *.o *.a *.$(SHRLIBEXT)
+	rm *.h *.c *.sym *.o *.a *.$(SHRLIBEXT) ocat showdef voc voc.par
 
 install:
 	test -d $(PREFIX)/bin | mkdir -p $(PREFIX)/bin
