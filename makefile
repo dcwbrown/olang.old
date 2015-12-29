@@ -78,7 +78,7 @@ stage2:
 stage3: stage3a stage3b
 
 stage3a:
-	$(VOCSTATIC0) -siapxPSV SYSTEM.Mod
+	$(VOCSTATIC0) -siapxPS SYSTEM.Mod
 
 stage3b:
 	$(VOCSTATIC0) -sPFS Args.Mod Console.Mod Unix.Mod
