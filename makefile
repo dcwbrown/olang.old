@@ -55,7 +55,7 @@ stage0: src/tools/vocparam/vocparam.c
 
 # this creates voc.par for a host architecture.
 # comment this out if you need to build a compiler for a different architecture.
-stage1: 
+stage1:
 	#rm voc.par
 	#$(shell "./vocparam > voc.par")
 	#./vocparam > voc.par
@@ -74,12 +74,12 @@ stage2:
 # this prepares modules necessary to build the compiler itself
 stage3:
 
-	$(VOCSTATIC0) -siapxPS SYSTEM.Mod 
+	$(VOCSTATIC0) -siapxPS SYSTEM.Mod
 	$(VOCSTATIC0) -sPFS Args.Mod Console.Mod Unix.Mod
 	sed -i.tmp "s#/opt#$(PRF)#g" src/voc/prf.Mod
 	$(VOCSTATIC0) -sPFS prf.Mod
 	$(VOCSTATIC0) -sPFS Strings.Mod architecture.Mod version.Mod Kernel0.Mod Modules.Mod
-	$(VOCSTATIC0) -sxPFS Files0.Mod 
+	$(VOCSTATIC0) -sxPFS Files0.Mod
 	$(VOCSTATIC0) -sPFS Reals.Mod Texts0.Mod
 	$(VOCSTATIC0) -sPFS vt100.Mod
 
@@ -87,8 +87,8 @@ stage3:
 stage4:
 	$(VOCSTATIC0) -sPFS errors.Mod
 	$(VOCSTATIC0) -sPFS extTools.Mod
-	$(VOCSTATIC0) -sPFS OPM.cmdln.Mod 
-	$(VOCSTATIC0) -sxPFS OPS.Mod 
+	$(VOCSTATIC0) -sPFS OPM.cmdln.Mod
+	$(VOCSTATIC0) -sxPFS OPS.Mod
 	$(VOCSTATIC0) -sPFS OPT.Mod OPC.Mod OPV.Mod OPB.Mod OPP.Mod
 	$(VOCSTATIC0) -smPS voc.Mod
 	$(VOCSTATIC0) -smPS BrowserCmd.Mod
@@ -207,7 +207,7 @@ stage6:
 	$(VOCSTATIC) -sPF ulmPersistentObjects.Mod
 	$(VOCSTATIC) -sPF ulmPersistentDisciplines.Mod
 	$(VOCSTATIC) -sPF ulmOperations.Mod
-	
+
 	$(VOCSTATIC) -sPF ulmScales.Mod
 	$(VOCSTATIC) -sPF ulmTimes.Mod
 	$(VOCSTATIC) -sPF ulmClocks.Mod
@@ -216,9 +216,9 @@ stage6:
 	$(VOCSTATIC) -sPF ulmStreamConditions.Mod
 	$(VOCSTATIC) -sPF ulmTimeConditions.Mod
 	$(VOCSTATIC) -sPF ulmSysConversions.Mod
-	
+
 	$(VOCSTATIC) -sPF ulmSysStat.Mod
-	
+
 	$(VOCSTATIC) -sPF ulmCiphers.Mod
 	$(VOCSTATIC) -sPF ulmCipherOps.Mod
 	$(VOCSTATIC) -sPF ulmBlockCiphers.Mod
@@ -236,7 +236,7 @@ stage6:
 	$(VOCSTATIC) -sPF MultiArrayRiders.Mod
 	$(VOCSTATIC) -sPF MersenneTwister.Mod
 	$(VOCSTATIC) -sPF Listen.Mod
-	
+
 	#s3 libs
 	$(VOCSTATIC) -sPF ethBTrees.Mod
 	$(VOCSTATIC) -sPF ethMD5.Mod
@@ -269,7 +269,7 @@ stage7:
 	rm -f Kernel0.o Files0.o Texts0.o architecture.o prf.o version.o extTools.o OPM.o OPS.o OPT.o OPC.o OPV.o OPB.o OPP.o errors.o
 	#objects := $(wildcard *.o)
 	#$(LD) objects
-	$(ARCHIVE) *.o 
+	$(ARCHIVE) *.o
 	#$(ARCHIVE) objects
 	$(LD) *.o
 	echo "$(PREFIX)/lib" > 05vishap.conf
