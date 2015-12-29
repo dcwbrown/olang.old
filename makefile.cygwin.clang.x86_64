@@ -31,7 +31,7 @@ PREFIXLN = $(PRF)/voc
 CCOPT = -fPIC $(INCLUDEPATH) -g
 SHRLIBEXT = so
 CC = $(CCOMP) $(CCOPT) -c -Wno-pointer-sign
-CL = $(CCOMP) $(CCOPT)
+CL = $(CCOMP) $(CCOPT) -Wno-pointer-sign
 LD = $(CCOMP) -shared -o $(LIBRARY).$(SHRLIBEXT)
 # s is necessary to create index inside a archive
 ARCHIVE = ar rcs $(LIBRARY).a
@@ -76,7 +76,6 @@ stage2:
 
 # this prepares modules necessary to build the compiler itself
 stage3:
-
 	$(VOCSTATIC0) -siapxPS SYSTEM.Mod
 	$(VOCSTATIC0) -sPFS Args.Mod Console.Mod Unix.Mod
 	sed -i.tmp "s#/opt#$(PRF)#g" src/voc/prf.Mod
@@ -127,7 +126,7 @@ stage6:
 	$(VOCSTATIC) -sPF	Strings.Mod
 	$(VOCSTATIC) -sPF	Sets.Mod
 	$(VOCSTATIC) -sPF	Sets0.Mod
-	$(VOCSTATIC) -sPF        Oberon.Mod
+	$(VOCSTATIC) -sPF   Oberon.Mod
 
 	#ooc libs
 	$(VOCSTATIC) -sPF	oocAscii.Mod
@@ -276,12 +275,7 @@ stage7:
 clean:
 #	rm_objects := rm $(wildcard *.o)
 #	objects
-	rm *.h
-	rm *.c
-	rm *.sym
-	rm *.o
-	rm *.a
-	rm *.$(SHRLIBEXT)
+	rm *.h *.c *.sym *.o *.a *.$(SHRLIBEXT) ocat.exe showdef.exe voc.exe voc.par
 
 install:
 	test -d $(PREFIX)/bin | mkdir -p $(PREFIX)/bin
