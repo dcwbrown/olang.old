@@ -219,11 +219,7 @@ from man gettimeofday
 
   FdSet* = ARRAY 8 OF SET;
 
-  SigCtxPtr* = POINTER TO SigContext;
-  SigContext* = RECORD
-  END ;
-
-  SignalHandler* = PROCEDURE (sig, code: LONGINT; scp: SigCtxPtr);
+  SignalHandler* = PROCEDURE (sig: INTEGER);
 
   Dirent* = RECORD
     ino, off: LONGINT;

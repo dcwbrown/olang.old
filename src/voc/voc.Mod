@@ -10,7 +10,7 @@ VAR mname : ARRAY 256 OF CHAR; (* noch *)
 
 
   PROCEDURE -signal(sig: LONGINT; func: Unix.SignalHandler)
-    "/* signal(sig, func) */";
+    "signal(sig, func)";
 
   PROCEDURE -fin()
     "SYSTEM_FINALL()";
@@ -23,7 +23,7 @@ VAR mname : ARRAY 256 OF CHAR; (* noch *)
     "SYSTEM_gclock = 1";
 *)
 
-  PROCEDURE Trap(sig, code: LONGINT; scp: Unix.SigCtxPtr);
+  PROCEDURE Trap(sig: INTEGER);
   BEGIN fin();
     IF sig = 3 THEN Unix.Exit(0)
     ELSE
@@ -47,12 +47,12 @@ VAR mname : ARRAY 256 OF CHAR; (* noch *)
         IF OPM.noerr THEN
           (*IF (OPM.mainprog IN OPM.opt) & (OPM.modName # "SYSTEM") THEN*)
           IF (OPM.mainProg OR OPM.mainLinkStat) & (OPM.modName # "SYSTEM") THEN
-            OPM.DeleteNewSym; 
+            OPM.DeleteNewSym;
 	    IF ~OPM.notColorOutput THEN vt100.SetAttr(vt100.Green) END;
 	    OPM.LogWStr("  main program");
 	    IF ~OPM.notColorOutput THEN vt100.SetAttr(vt100.ResetAll) END;
           ELSE
-            IF new THEN 
+            IF new THEN
 	       IF ~OPM.notColorOutput THEN vt100.SetAttr(vt100.Green) END;
 	       OPM.LogWStr("  new symbol file");
 	       IF ~OPM.notColorOutput THEN vt100.SetAttr(vt100.ResetAll) END;
@@ -60,8 +60,8 @@ VAR mname : ARRAY 256 OF CHAR; (* noch *)
             ELSIF ext THEN OPM.LogWStr("  extended symbol file"); OPM.RegisterNewSym
             END
           END;
-        
-	
+
+
 	ELSE OPM.DeleteNewSym
         END
       END
