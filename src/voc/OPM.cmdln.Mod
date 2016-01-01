@@ -1034,7 +1034,7 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
       It works for all known K&R versions of voc and K&R is dying out anyway.
       A cleaner solution would be to cast with type (LONGINT), but this requires a bit more changes.
     *)
-    IF ~(ansi IN opt) THEN Write("L") END
+    (* IF ~(ansi IN opt) THEN *)  Write("L") (* END *)
   END PromoteIntConstToLInt;
 
 BEGIN Texts.OpenWriter(W)

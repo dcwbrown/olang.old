@@ -95,7 +95,7 @@ VAR mname : ARRAY 256 OF CHAR; (* noch *)
     OPT.booltyp.size := OPM.BoolSize;
     LOOP
       OPM.Init(done, mname);
-      IF ~done THEN EXIT END ;
+      IF ~done THEN Unix.Exit(1) END ;
       OPM.InitOptions;
       Kernel.GC(FALSE);
       Module(done);

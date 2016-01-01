@@ -1,0 +1,285 @@
+#SHELL := /bin/bash
+BUILDID=$(shell date +%Y/%m/%d)
+TOS = linux
+TARCH = x86_64
+CCOMP = clang
+RELEASE = 1.1
+
+
+INCLUDEPATH = -Isrc/lib/system/$(TOS)/$(CCOMP)/$(TARCH)
+
+SETENV  = CFLAGS=$(INCLUDEPATH)
+SETENV += PATH=.:/bin:/usr/bin
+SETENV += MODULES=src/voc:src/lib/system/$(TARCH)/$(TOS)/ansi
+
+#SETENV += MODULES=.:src/lib:src/lib/v4:src/lib/v4/$(TARCH):src/lib/v4_compat:src/lib/system/$(TOS)/$(CCOMP):src/lib/system/$(TOS)/$(CCOMP)/$(TARCH):src/lib/ulm:src/lib/ulm/$(TARCH):src/lib/ooc2:src/lib/ooc2/$(TOS)/$(CCOMP):src/lib/ooc:src/lib/ooc/$(TOS)/$(CCOMP)/$(TARCH):src/lib/pow:src/lib/misc:src/lib/s3:src/lib/s3/$(TARCH):src/voc:src/voc/$(TOS)/$(CCOMP):src/voc/$(TOS)/$(CCOMP)/$(TARCH):src/tools/ocat:src/tools/browser:src/tools/vocparam:src/tools/vmake:src/tools/coco:src/test
+
+VERSION = $(TOS).ansi.$(CCOMP).$(TARCH)
+OBERONCOMPILER0 = $(SETENV) ./oc.$(TOS).ansi.$(CCOMP).$(TARCH)
+OBERONCOMPILER  = $(SETENV) ./oc
+LIBNAME = OberonCompiler
+LIBRARY = lib$(LIBNAME)
+
+ifndef PRF
+PRF = "/opt"
+endif
+PREFIX = $(PRF)/voc-$(RELEASE)
+PREFIXLINK = $(PRF)/voc
+
+CCOPT = -fPIC $(INCLUDEPATH) -g
+SHRLIBEXT = so
+CC = $(CCOMP) $(CCOPT) -c -Wno-pointer-sign
+CL = $(CCOMP) $(CCOPT) -Wno-pointer-sign
+LD = $(CCOMP) -shared -o $(LIBRARY).$(SHRLIBEXT)
+# s is necessary to create index inside an archive
+ARCHIVE = ar rcs $(LIBRARY).a
+
+
+all: stage2 stage3 stage4 stage5 stage6 stage7
+
+port0:
+	# Use prexisitng vocstatic to generate C source for compiler
+	stage3 stage4
+
+port1:
+	# Compile C source to generate new static compiler
+	stage5
+
+
+# after you have "voc" compiled for target architecture. replace vocstatic with it and run make on target platform to get everything compiled
+
+
+# this prepares modules necessary to build the compiler itself
+stage3:
+
+	$(OBERONCOMPILER0) -siapxPS SYSTEM.Mod
+	$(OBERONCOMPILER0) -sPFS Args.Mod Console.Mod Unix.Mod
+	echo "MODULE prf\;\nCONST prefix\* = \"$(PRF)\"\;\nEND prf." >src/voc/prf.mod
+
+
+	sed -i.tmp "s#/opt#$(PRF)#g" src/voc/prf.Mod
+	$(OBERONCOMPILER0) -sPFS prf.Mod
+	$(OBERONCOMPILER0) -sPFS Strings.Mod architecture.Mod version.Mod Kernel0.Mod Modules.Mod
+	$(OBERONCOMPILER0) -sxPFS Files0.Mod
+	$(OBERONCOMPILER0) -sPFS Reals.Mod Texts0.Mod
+	$(OBERONCOMPILER0) -sPFS vt100.Mod
+
+# build the compiler
+stage4:
+	$(OBERONCOMPILER0) -sPFS errors.Mod
+	$(OBERONCOMPILER0) -sPFS extTools.Mod
+	$(OBERONCOMPILER0) -sPFS OPM.cmdln.Mod
+	$(OBERONCOMPILER0) -sxPFS OPS.Mod
+	$(OBERONCOMPILER0) -sPFS OPT.Mod OPC.Mod OPV.Mod OPB.Mod OPP.Mod
+	$(OBERONCOMPILER0) -smPS voc.Mod
+	$(OBERONCOMPILER0) -smPS BrowserCmd.Mod
+	$(OBERONCOMPILER0) -smPS OCatCmd.Mod
+
+#this is to build the compiler from C sources.
+#this is a way to create a bootstrap binary.
+stage5:
+	$(CC) SYSTEM.c Args.c Console.c Modules.c Unix.c \
+	Strings.c architecture.c prf.c version.c Kernel0.c Files0.c Reals.c Texts0.c vt100.c \
+	extTools.c \
+	OPM.c OPS.c OPT.c OPC.c OPV.c OPB.c OPP.c errors.c
+
+	$(CL) -static  voc.c -o voc \
+	SYSTEM.o Args.o Console.o Modules.o Unix.o \
+	Strings.o architecture.o prf.o version.o Kernel0.o Files0.o Reals.o Texts0.o vt100.o \
+	extTools.o \
+	OPM.o OPS.o OPT.o OPC.o OPV.o OPB.o OPP.o errors.o
+	$(CL) BrowserCmd.c -o showdef \
+	SYSTEM.o Args.o Console.o Modules.o Unix.o Strings.o architecture.o prf.o version.o Kernel0.o Files0.o Reals.o Texts0.o vt100.o \
+	OPM.o OPS.o OPT.o OPV.o OPC.o errors.o
+
+	$(CL) OCatCmd.c -o ocat \
+	SYSTEM.o Args.o Console.o Modules.o Unix.o Strings.o architecture.o prf.o version.o Kernel0.o Files0.o Reals.o Texts0.o
+
+# build all library files
+stage6:
+	#v4 libs
+	$(OBERONCOMPILER) -sPF	Kernel.Mod
+	$(OBERONCOMPILER) -sPF	Files.Mod
+	$(OBERONCOMPILER) -sPF	Texts.Mod
+	$(OBERONCOMPILER) -sPF	Printer.Mod
+	$(OBERONCOMPILER) -sPF	Strings.Mod
+	$(OBERONCOMPILER) -sPF	Sets.Mod
+	$(OBERONCOMPILER) -sPF	Sets0.Mod
+	$(OBERONCOMPILER) -sPF        Oberon.Mod
+
+	#ooc libs
+	$(OBERONCOMPILER) -sPF	oocAscii.Mod
+	$(OBERONCOMPILER) -sPF	oocStrings.Mod
+	$(OBERONCOMPILER) -sPF	oocStrings2.Mod
+	$(OBERONCOMPILER) -sPF	oocOakStrings.Mod
+	$(OBERONCOMPILER) -sPF	oocCharClass.Mod
+	$(OBERONCOMPILER) -sPF	oocConvTypes.Mod
+	$(OBERONCOMPILER) -sPF	oocIntConv.Mod
+	$(OBERONCOMPILER) -sPF	oocIntStr.Mod
+	$(OBERONCOMPILER) -sPF	oocSysClock.Mod
+	$(OBERONCOMPILER) -sPF	oocTime.Mod
+	$(OBERONCOMPILER) -sPF	oocRandomNumbers.Mod
+#	$(OBERONCOMPILER) -s	oocLongStrings.Mod
+#	$(CC)		oocLongStrings.c
+#	$(OBERONCOMPILER) -s	oocMsg.Mod
+#	$(CC)		oocMsg.c
+
+
+	#ooc2 libs
+	$(OBERONCOMPILER) -sPF ooc2Strings.Mod
+	$(OBERONCOMPILER) -sPF ooc2Ascii.Mod
+	$(OBERONCOMPILER) -sPF ooc2CharClass.Mod
+	$(OBERONCOMPILER) -sPF ooc2ConvTypes.Mod
+	$(OBERONCOMPILER) -sPF ooc2IntConv.Mod
+	$(OBERONCOMPILER) -sPF ooc2IntStr.Mod
+	$(OBERONCOMPILER) -sPF ooc2Real0.Mod
+	#ooc libs
+	$(OBERONCOMPILER) -sPF oocLowReal.Mod oocLowLReal.Mod
+	$(OBERONCOMPILER) -sPF oocRealMath.Mod oocOakMath.Mod
+	$(OBERONCOMPILER) -sPF oocLRealMath.Mod
+	$(OBERONCOMPILER) -sPF oocLongInts.Mod
+	$(OBERONCOMPILER) -sPF oocComplexMath.Mod oocLComplexMath.Mod
+	$(OBERONCOMPILER) -sPF oocLRealConv.Mod oocLRealStr.Mod
+	$(OBERONCOMPILER) -sPF oocRealConv.Mod oocRealStr.Mod
+	$(OBERONCOMPILER) -sPF oocMsg.Mod oocChannel.Mod
+	$(OBERONCOMPILER) -sPF oocStrings2.Mod oocRts.Mod oocFilenames.Mod
+	$(OBERONCOMPILER) -sPF oocTextRider.Mod oocBinaryRider.Mod oocJulianDay.Mod
+	$(OBERONCOMPILER) -sPF oocFilenames.Mod
+	$(OBERONCOMPILER) -sPF oocwrapperlibc.Mod
+	$(OBERONCOMPILER) -sPF oocC.Mod
+
+	#Ulm's Oberon system libs
+	$(OBERONCOMPILER) -sPF ulmSys.Mod
+	$(OBERONCOMPILER) -sPF ulmSYSTEM.Mod
+	$(OBERONCOMPILER) -sPF ulmASCII.Mod
+	$(OBERONCOMPILER) -sPF ulmSets.Mod
+	$(OBERONCOMPILER) -sPF ulmObjects.Mod
+	$(OBERONCOMPILER) -sPF ulmDisciplines.Mod
+	$(OBERONCOMPILER) -sPF ulmPriorities.Mod
+	$(OBERONCOMPILER) -sPF ulmServices.Mod
+	$(OBERONCOMPILER) -sPF ulmEvents.Mod
+	$(OBERONCOMPILER) -sPF ulmResources.Mod
+	$(OBERONCOMPILER) -sPF ulmForwarders.Mod
+	$(OBERONCOMPILER) -sPF ulmRelatedEvents.Mod
+	$(OBERONCOMPILER) -sPF ulmIO.Mod
+	$(OBERONCOMPILER) -sPF ulmProcess.Mod
+	$(OBERONCOMPILER) -sPF ulmTypes.Mod
+	$(OBERONCOMPILER) -sPF ulmStreams.Mod
+	$(OBERONCOMPILER) -sPF ulmAssertions.Mod
+	$(OBERONCOMPILER) -sPF ulmIndirectDisciplines.Mod
+	$(OBERONCOMPILER) -sPF ulmStreamDisciplines.Mod
+	$(OBERONCOMPILER) -sPF ulmIEEE.Mod
+	$(OBERONCOMPILER) -sPF ulmMC68881.Mod
+	$(OBERONCOMPILER) -sPF ulmReals.Mod
+	$(OBERONCOMPILER) -sPF ulmPrint.Mod
+	$(OBERONCOMPILER) -sPF ulmWrite.Mod
+	$(OBERONCOMPILER) -sPF ulmTexts.Mod
+	$(OBERONCOMPILER) -sPF ulmStrings.Mod
+	$(OBERONCOMPILER) -sPF ulmConstStrings.Mod
+	$(OBERONCOMPILER) -sPF ulmPlotters.Mod
+	$(OBERONCOMPILER) -sPF ulmSysTypes.Mod
+	$(OBERONCOMPILER) -sPF ulmSysConversions.Mod
+	$(OBERONCOMPILER) -sPF ulmErrors.Mod
+	$(OBERONCOMPILER) -sPF ulmSysErrors.Mod
+	$(OBERONCOMPILER) -sPF ulmSysIO.Mod
+	$(OBERONCOMPILER) -sPF ulmLoader.Mod
+	$(OBERONCOMPILER) -sPF ulmNetIO.Mod
+	$(OBERONCOMPILER) -sPF ulmPersistentObjects.Mod
+	$(OBERONCOMPILER) -sPF ulmPersistentDisciplines.Mod
+	$(OBERONCOMPILER) -sPF ulmOperations.Mod
+	$(OBERONCOMPILER) -sPF ulmScales.Mod
+	$(OBERONCOMPILER) -sPF ulmTimes.Mod
+	$(OBERONCOMPILER) -sPF ulmClocks.Mod
+	$(OBERONCOMPILER) -sPF ulmTimers.Mod
+	$(OBERONCOMPILER) -sPF ulmConditions.Mod
+	$(OBERONCOMPILER) -sPF ulmStreamConditions.Mod
+	$(OBERONCOMPILER) -sPF ulmTimeConditions.Mod
+	$(OBERONCOMPILER) -sPF ulmSysConversions.Mod
+	$(OBERONCOMPILER) -sPF ulmSysStat.Mod
+	$(OBERONCOMPILER) -sPF ulmCiphers.Mod
+	$(OBERONCOMPILER) -sPF ulmCipherOps.Mod
+	$(OBERONCOMPILER) -sPF ulmBlockCiphers.Mod
+	$(OBERONCOMPILER) -sPF ulmAsymmetricCiphers.Mod
+	$(OBERONCOMPILER) -sPF ulmConclusions.Mod
+	$(OBERONCOMPILER) -sPF ulmRandomGenerators.Mod
+	$(OBERONCOMPILER) -sPF ulmTCrypt.Mod
+	$(OBERONCOMPILER) -sPF ulmIntOperations.Mod
+
+	#pow32 libs
+	$(OBERONCOMPILER) -sPF powStrings.Mod
+
+	#misc libs
+	$(OBERONCOMPILER) -sPF MultiArrays.Mod
+	$(OBERONCOMPILER) -sPF MultiArrayRiders.Mod
+	$(OBERONCOMPILER) -sPF MersenneTwister.Mod
+	$(OBERONCOMPILER) -sPF Listen.Mod
+
+	#s3 libs
+	$(OBERONCOMPILER) -sPF ethBTrees.Mod
+	$(OBERONCOMPILER) -sPF ethMD5.Mod
+	$(OBERONCOMPILER) -sPF ethSets.Mod
+	$(OBERONCOMPILER) -sPF ethZlib.Mod
+	$(OBERONCOMPILER) -sPF ethZlibBuffers.Mod
+	$(OBERONCOMPILER) -sPF ethZlibInflate.Mod
+	$(OBERONCOMPILER) -sPF ethZlibDeflate.Mod
+	$(OBERONCOMPILER) -sPF ethZlibReaders.Mod
+	$(OBERONCOMPILER) -sPF ethZlibWriters.Mod
+	$(OBERONCOMPILER) -sPF ethZip.Mod
+	$(OBERONCOMPILER) -sPF ethRandomNumbers.Mod
+	$(OBERONCOMPILER) -sPF ethGZReaders.Mod
+	$(OBERONCOMPILER) -sPF ethGZWriters.Mod
+	$(OBERONCOMPILER) -sPF ethUnicode.Mod
+	$(OBERONCOMPILER) -sPF ethDates.Mod
+	$(OBERONCOMPILER) -sPF ethReals.Mod
+	$(OBERONCOMPILER) -sPF ethStrings.Mod
+
+# build remaining tools
+#	$(OBERONCOMPILER0) -sPFS compatIn.Mod
+#	$(OBERONCOMPILER0) -smPS vmake.Mod
+#	$(CC) compatIn.c
+#	$(CL) vmake.c -o vmake SYSTEM.o Args.o compatIn.o Texts.o Console.o Files.o Reals.o Modules.o Kernel.o Unix.o Strings.o oocIntStr.o oocConvTypes.o oocIntConv.o
+
+
+
+stage7:
+	#remove non library objects
+	rm -f Kernel0.o Files0.o Texts0.o architecture.o prf.o version.o extTools.o OPM.o OPS.o OPT.o OPC.o OPV.o OPB.o OPP.o errors.o
+	#objects := $(wildcard *.o)
+	#$(LD) objects
+	$(ARCHIVE) *.o
+	#$(ARCHIVE) objects
+	$(LD) *.o
+	echo "$(PREFIX)/lib" > 05vishap.conf
+
+clean:
+#	rm_objects := rm $(wildcard *.o)
+#	objects
+	rm *.h *.c *.sym *.o *.a *.$(SHRLIBEXT) ocat showdef voc voc.par
+
+install:
+	test -d $(PREFIX)/bin | mkdir -p $(PREFIX)/bin
+	cp voc $(PREFIX)/bin/
+	cp showdef $(PREFIX)/bin/
+	cp ocat $(PREFIX)/bin/
+	#cp vmake $(PREFIX)/bin/
+	cp -a src $(PREFIX)/
+
+	test -d $(PREFIX)/lib/voc | mkdir -p $(PREFIX)/lib/voc
+	test -d $(PREFIX)/lib/voc/ | mkdir -p $(PREFIX)/lib/voc
+	test -d $(PREFIX)/lib/voc/obj | mkdir -p $(PREFIX)/lib/voc/obj
+	test -d $(PREFIX)/lib/voc/sym | mkdir -p $(PREFIX)/lib/voc/sym
+
+	cp $(LIBRARY).$(SHRLIBEXT) $(PREFIX)/lib
+	cp $(LIBRARY).a $(PREFIX)/lib
+	cp *.c $(PREFIX)/lib/voc/obj/
+	cp *.h $(PREFIX)/lib/voc/obj/
+	cp *.sym $(PREFIX)/lib/voc/sym/
+
+	cp 05vishap.conf /etc/ld.so.conf.d/
+	ldconfig
+	ln -s $(PREFIX) $(PREFIXLINK)
+
+#        cp *.o $(PREFIX)/lib/voc/$(RELEASE)/obj/
+uninstall:
+	rm -rf $(PREFIX)
+	rm -rf $(PREFIXLINK)

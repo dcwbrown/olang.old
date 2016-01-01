@@ -21,7 +21,6 @@ uses double # as concatenation operator
 #include <signal.h>
 #include <stdlib.h>
 #include <sys/ioctl.h>
-#include <sys/select.h>
 
 extern void *memcpy(void *dest, const void *src, unsigned long n);
 extern void *malloc(unsigned long size);

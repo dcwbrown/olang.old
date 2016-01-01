@@ -277,7 +277,7 @@ stage7:
 clean:
 #	rm_objects := rm $(wildcard *.o)
 #	objects
-	rm *.h *.c *.sym *.o *.a *.$(SHRLIBEXT) ocat showdef voc voc.par
+	rm -f *.h *.c *.sym *.o *.a *.$(SHRLIBEXT) ocat showdef voc voc.par
 
 install:
 	test -d $(PREFIX)/bin | mkdir -p $(PREFIX)/bin
