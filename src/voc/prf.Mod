@@ -1,5 +1,5 @@
 MODULE prf;
 
-CONST prefix* = "";
+CONST prefix* = "/opt";
 
 END prf.

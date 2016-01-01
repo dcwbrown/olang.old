@@ -1,4 +1,4 @@
-MODULE voc;  (* J. Templ 3.2.95 *)
+MODULE oc;  (* J. Templ 3.2.95 *)
 
   IMPORT
     SYSTEM, Unix, Kernel := Kernel0,
@@ -124,4 +124,4 @@ BEGIN
   signal(3, Trap);  (* quit *)
   signal(4, Trap);  (* illegal instruction, HALT *)
   OPB.typSize := OPV.TypSize; OPT.typSize := OPV.TypSize; Translate
-END voc.
+END oc.

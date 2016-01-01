@@ -1,4 +1,4 @@
-BUILDID=$(shell date +%Y/%m/%d)
+BUILDDATE=$(shell date +%Y/%m/%d)
 
 # Get OS architecture, linux or cygwin
 OSARCH = $(shell uname -o | sed "s/GNU\///" | tr A-Z a-z)
@@ -14,7 +14,7 @@ RELEASE = 1.2
 INCLUDEPATH = -Isrc/lib/system/$(OSARCH)/$(CCOMP)/$(CPUARCH)
 
 SETENV  = CFLAGS=$(INCLUDEPATH)
-SETENV += PATH=.:/bin:/usr/bin
+SETENV += PATH=.:bin:/bin:/usr/bin
 SETENV += MODULES=.:src
 
 OBERONCOMPILER0 = $(SETENV) ./bin/oc.$(CCOMP).$(OSARCH).$(CPUARCH)
@@ -41,27 +41,26 @@ ARCHIVE = ar rcs $(LIBRARY).a
 # all: stage2 stage3 stage4 stage5 stage6 stage7
 
 all:
-	@echo $(BUILDID) making Oberon compiler for $(OSARCH) $(CPUARCH) using compiler $(CCOMP).
+	@echo $(BUILDDATE) making Oberon compiler for $(OSARCH) $(CPUARCH) using compiler $(CCOMP).
 
 	# Compile Oberon source code to generate C source files
 
-	echo "MODULE OSConfig;"                 >  OSConfig.Mod
-	echo "CONST"                            >> OSConfig.Mod
-	echo "  dirprefix* = \"$(DIRPREFIX)\";" >> OSConfig.Mod
-	echo "  cpuarch*   = \"$(CPUARCH)\";"   >> OSConfig.Mod
-	echo "END OSConfig."                    >> OSConfig.Mod
+	@echo "MODULE Version;"                    >  Version.Mod
+	@echo "CONST"                              >> Version.Mod
+	@echo "  prefix*    = \"$(PREFIX)\";"      >> Version.Mod
+	@echo "  osarch*    = \"$(OSARCH)\";"      >> Version.Mod
+	@echo "  cpuarch*   = \"$(CPUARCH)\";"     >> Version.Mod
+	@echo "  date*      = \"[$(BUILDDATE)]\";" >> Version.Mod
+	@echo "  version*   = \"$(RELEASE)\";"     >> Version.Mod
+	@echo "  versionLong* = \"Oberon compiler OC for $(OSARCH) $(CPUARCH) [$(BUILDDATE)] $(PREFIX)\";" >> Version.Mod
+	@echo "END Version."                       >> Version.Mod
 
-	$(OBERONCOMPILER0) -PSFs    OSConfig.Mod
-
-	exit
-
+	$(OBERONCOMPILER0) -PSFs    Version.Mod
 	$(OBERONCOMPILER0) -PSsiapx SYSTEM.Mod
 	$(OBERONCOMPILER0) -PSFs    Args.Mod
 	$(OBERONCOMPILER0) -PSFs    Console.Mod
 	$(OBERONCOMPILER0) -PSFs    Unix.Mod
 	$(OBERONCOMPILER0) -PSFs    Strings.Mod
-	$(OBERONCOMPILER0) -PSFs    architecture.Mod
-	$(OBERONCOMPILER0) -PSFs    version.Mod
 	$(OBERONCOMPILER0) -PSFs    Kernel0.Mod
 	$(OBERONCOMPILER0) -PSFs    Modules.Mod
 	$(OBERONCOMPILER0) -PSFsx   Files0.Mod
@@ -80,6 +79,10 @@ all:
 	$(OBERONCOMPILER0) -PSsm    oc.Mod
 
 	exit
+
+clean:
+	rm -f *.c *.h *.Mod *.sym
+
 
 port0:
 	# Use prexisitng vocstatic to generate C source for compiler
@@ -273,7 +276,7 @@ stage7:
 	$(LD) *.o
 	echo "$(PREFIX)/lib" > 05vishap.conf
 
-clean:
+oldclean:
 #	rm_objects := rm $(wildcard *.o)
 #	objects
 	rm *.h *.c *.sym *.o *.a *.$(SHRLIBEXT) ocat showdef voc voc.par
