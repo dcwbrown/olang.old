@@ -16,10 +16,10 @@ MODULE SYSTEM;  (* J. Templ, 31.5.95 *)
   CONST
     ModNameLen = 20;
     CmdNameLen = 24;
-    SZL = SIZE(LONGINT);
-    Unit = 4*SZL;  (* smallest possible heap block *)
-    nofLists = 9;  (* number of free_lists *)
-    heapSize0 = 8000*Unit;  (* startup heap size *)
+    SZL        = SIZE(LONGINT);
+    Unit       = 4*SZL;      (* smallest possible heap block *)
+    nofLists   = 9;          (* number of free_lists *)
+    heapSize0  = 8000*Unit;  (* startup heap size *)
 
   (* all blocks look the same:
     free blocks describe themselves: size = Unit
@@ -70,7 +70,7 @@ MODULE SYSTEM;  (* J. Templ, 31.5.95 *)
     Finalizer = PROCEDURE(obj: SYSTEM.PTR);
 
     FinNode = POINTER TO FinDesc;
-    FinDesc = RECORD 
+    FinDesc = RECORD
       next: FinNode;
       obj: LONGINT;  (* weak pointer *)
       marked: BOOLEAN;
@@ -101,15 +101,17 @@ MODULE SYSTEM;  (* J. Templ, 31.5.95 *)
   PROCEDURE -Lock()  "Lock";
   PROCEDURE -Unlock()  "Unlock";
   PROCEDURE -Mainfrm(): LONGINT  "SYSTEM_mainfrm";
-(*
-  PROCEDURE TAS*(VAR flag:BOOLEAN): BOOLEAN; (* added for compatibility with ulmSYSTEM module; noch *)
-  VAR oldflag : BOOLEAN;
-  BEGIN
-     oldflag := flag;
-     flag := TRUE;
-     RETURN oldflag;
-  END TAS;
-*)
+
+  (*
+    PROCEDURE TAS*(VAR flag:BOOLEAN): BOOLEAN; (* added for compatibility with ulmSYSTEM module; noch *)
+    VAR oldflag : BOOLEAN;
+    BEGIN
+       oldflag := flag;
+       flag := TRUE;
+       RETURN oldflag;
+    END TAS;
+  *)
+
   PROCEDURE REGMOD*(VAR name: ModuleName; enumPtrs: EnumProc): SYSTEM.PTR;
     VAR m: Module;
   BEGIN
@@ -159,7 +161,7 @@ MODULE SYSTEM;  (* J. Templ, 31.5.95 *)
     ELSE size := 10000*Unit  (* additional heuristics *)
     END ;
     chnk := NewChunk(size);
-    IF chnk # 0 THEN 
+    IF chnk # 0 THEN
       (*sorted insertion*)
       IF chnk < heap THEN
         SYSTEM.PUT(chnk, heap); heap := chnk
@@ -179,6 +181,9 @@ MODULE SYSTEM;  (* J. Templ, 31.5.95 *)
   BEGIN
     Lock();
     SYSTEM.GET(tag, blksz);
+
+    ASSERT(Unit = 32);
+
     ASSERT(blksz MOD Unit = 0);
     i0 := blksz DIV Unit; i := i0;
     IF i < nofLists THEN adr := freeList[i];
@@ -449,7 +454,7 @@ MODULE SYSTEM;  (* J. Templ, 31.5.95 *)
     IF n > 0 THEN MarkStack(n-1, cand);  (* flush register windows by means of recursive calls *)
       IF n > 100 THEN RETURN END   (* prevent tail recursion optimization *)
     END ;
-    IF n = 0 THEN 
+    IF n = 0 THEN
       nofcand := 0; sp := SYSTEM.ADR(frame);
       stack0 := Mainfrm();
       (* check for minimum alignment of pointers *)
@@ -476,7 +481,7 @@ MODULE SYSTEM;  (* J. Templ, 31.5.95 *)
     IF (gclock = 0) OR (gclock = 1) & ~markStack THEN
       Lock();
       m := SYSTEM.VAL(Module, modules);
-      WHILE m # NIL DO 
+      WHILE m # NIL DO
         IF m.enumPtrs # NIL THEN m.enumPtrs(MarkP) END ;
         m := m^.next
       END ;
@@ -484,7 +489,7 @@ MODULE SYSTEM;  (* J. Templ, 31.5.95 *)
         (* generate register pressure to force callee saved registers to memory;
           may be simplified by inlining OS calls or processor specific instructions
         *)
-        i0 := -100; i1 := -101; i2 := -102; i3 := -103; i4 := -104; i5 := -105; i6 := -106; i7 := -107; 
+        i0 := -100; i1 := -101; i2 := -102; i3 := -103; i4 := -104; i5 := -105; i6 := -106; i7 := -107;
         i8 := 1; i9 := 2; i10 := 3; i11 := 4; i12 := 5; i13 := 6; i14 := 7; i15 := 8;
         i16 := 9; i17 := 10; i18 := 11; i19 := 12; i20 := 13; i21 := 14; i22 := 15; i23 := 16;
         LOOP INC(i0, 1); INC(i1, 2); INC(i2, 3); INC(i3, 4); INC(i4, 5); INC(i5, 6); INC(i6, 7); INC(i7, 8);

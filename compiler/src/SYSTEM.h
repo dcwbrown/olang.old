@@ -172,7 +172,7 @@ static int __STRCMP(x, y)
 /* runtime checks */
 #define __X(i, ub)	(((unsigned)(long)(i)<(unsigned long)(ub))?i:(__HALT(-2),0))
 #define __XF(i, ub)	 SYSTEM_XCHK((long)(i), (long)(ub))
-#define __RETCHK	__retchk: __HALT(-3)
+#define __RETCHK	__retchk: __HALT(-3); return 0;
 #define __CASECHK	__HALT(-4)
 #define __GUARDP(p, typ, level)	((typ*)(__ISP(p,typ,level)?p:(__HALT(-5),p)))
 #define __GUARDR(r, typ, level)	(*((typ*)(__IS(r##__typ,typ,level)?r:(__HALT(-5),r))))

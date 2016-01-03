@@ -9,25 +9,23 @@ MODULE oc;  (* J. Templ 3.2.95 *)
 VAR mname : ARRAY 256 OF CHAR; (* noch *)
 
 
-  PROCEDURE -signal(sig: LONGINT; func: Unix.SignalHandler)
-    "signal(sig, func)";
-
-  PROCEDURE -fin()
-    "SYSTEM_FINALL()";
-
-  PROCEDURE -halt(): LONGINT
-    "SYSTEM_halt";
-
+  PROCEDURE -signal(sig: LONGINT; func: Unix.SignalHandler) "signal(sig, func)";
+  PROCEDURE -fin()                                          "SYSTEM_FINALL()";
+  PROCEDURE -halt(): LONGINT                                "SYSTEM_halt";
 (*
-  PROCEDURE -gclock()
-    "SYSTEM_gclock = 1";
+  PROCEDURE -gclock()                                       "SYSTEM_gclock = 1";
 *)
 
   PROCEDURE Trap(sig: INTEGER);
-  BEGIN fin();
-    IF sig = 3 THEN Unix.Exit(0)
+  BEGIN
+    fin();
+    IF sig = 3 THEN
+      Unix.Exit(0)
     ELSE
-      IF (sig = 4) & (halt() = -15) THEN OPM.LogWStr(" --- voc: internal error");  OPM.LogWLn END ;
+      IF (sig = 4) & (halt() = -15) THEN
+        OPM.LogWStr(" --- oc: internal error");
+        OPM.LogLn
+      END ;
       Unix.Exit(2)
     END
   END Trap;
@@ -48,74 +46,74 @@ VAR mname : ARRAY 256 OF CHAR; (* noch *)
           (*IF (OPM.mainprog IN OPM.opt) & (OPM.modName # "SYSTEM") THEN*)
           IF (OPM.mainProg OR OPM.mainLinkStat) & (OPM.modName # "SYSTEM") THEN
             OPM.DeleteNewSym;
-	    IF ~OPM.notColorOutput THEN vt100.SetAttr(vt100.Green) END;
-	    OPM.LogWStr("  main program");
-	    IF ~OPM.notColorOutput THEN vt100.SetAttr(vt100.ResetAll) END;
+	          IF ~OPM.notColorOutput THEN vt100.SetAttr(vt100.Green) END;
+	          OPM.LogWStr("  main program");
+	          IF ~OPM.notColorOutput THEN vt100.SetAttr(vt100.ResetAll) END;
           ELSE
             IF new THEN
-	       IF ~OPM.notColorOutput THEN vt100.SetAttr(vt100.Green) END;
-	       OPM.LogWStr("  new symbol file");
-	       IF ~OPM.notColorOutput THEN vt100.SetAttr(vt100.ResetAll) END;
-	       OPM.RegisterNewSym
-            ELSIF ext THEN OPM.LogWStr("  extended symbol file"); OPM.RegisterNewSym
+	            IF ~OPM.notColorOutput THEN vt100.SetAttr(vt100.Green) END;
+	            OPM.LogWStr("  new symbol file");
+	            IF ~OPM.notColorOutput THEN vt100.SetAttr(vt100.ResetAll) END;
+	            OPM.RegisterNewSym
+            ELSIF ext THEN
+              OPM.LogWStr("  extended symbol file"); OPM.RegisterNewSym
             END
           END;
-
-
-	ELSE OPM.DeleteNewSym
+      	ELSE
+          OPM.DeleteNewSym
         END
       END
-    END ;
+    END;
     OPM.CloseFiles; OPT.Close;
-    OPM.LogWLn; done := OPM.noerr;
-
-
-
+    OPM.LogLn; done := OPM.noerr;
   END Module;
+
+
+  PROCEDURE PropagateElementaryTypeSizes;
+  BEGIN
+    OPT.bytetyp.size   := OPM.ByteSize;
+    OPT.sysptrtyp.size := OPM.PointerSize;
+    OPT.chartyp.size   := OPM.CharSize;
+    OPT.settyp.size    := OPM.SetSize;
+    OPT.realtyp.size   := OPM.RealSize;
+    OPT.inttyp.size    := OPM.IntSize;
+    OPT.linttyp.size   := OPM.LIntSize;
+    OPT.lrltyp.size    := OPM.LRealSize;
+    OPT.sinttyp.size   := OPM.SIntSize;
+    OPT.booltyp.size   := OPM.BoolSize;
+  END PropagateElementaryTypeSizes;
+
 
   PROCEDURE Translate*;
     VAR done: BOOLEAN;
     VAR modulesobj: ARRAY 2048 OF CHAR; (* here we hold all modules name given on the command line, to add corresponding .o files to the external compiler options *)
   BEGIN
     modulesobj := "";
-    OPM.OpenPar; (* gclock();   slightly faste rtranslation but may lead to opening "too many files" *)
-    OPT.bytetyp.size := OPM.ByteSize;
-    (*OPT.int8typ.size := 1;
-    OPT.int16typ.size := 2;
-    OPT.int32typ.size := 4;
-    OPT.int64typ.size := 8;*)
-    OPT.sysptrtyp.size := OPM.PointerSize;
-    OPT.chartyp.size := OPM.CharSize;
-    OPT.settyp.size := OPM.SetSize;
-    OPT.realtyp.size := OPM.RealSize;
-    OPT.inttyp.size := OPM.IntSize;
-    OPT.linttyp.size := OPM.LIntSize;
-    OPT.lrltyp.size := OPM.LRealSize;
-    OPT.sinttyp.size := OPM.SIntSize;
-    OPT.booltyp.size := OPM.BoolSize;
+    OPM.OpenPar;      (* gclock();   slightly faste rtranslation but may lead to opening "too many files" *)
+
     LOOP
       OPM.Init(done, mname);
-      IF ~done THEN Unix.Exit(1) END ;
+      IF ~done THEN RETURN END ;
+
       OPM.InitOptions;
+      PropagateElementaryTypeSizes;
+
       Kernel.GC(FALSE);
       Module(done);
-      IF ~done THEN Unix.Exit(1) END;
+      IF ~done THEN OPM.LogWStr("OPM module compilation failed.");  OPM.LogLn; Unix.Exit(1) END ;
 
-      (* noch *)
-        IF done THEN
-	  IF ~OPM.dontAsm THEN
-	        extTools.Assemble(OPM.modName);
-		IF ~(OPM.mainProg OR OPM.mainLinkStat) THEN Strings.Append(" ",modulesobj); Strings.Append(OPM.modName, modulesobj); Strings.Append(".o ", modulesobj) END;
+      IF ~OPM.dontAsm THEN
+	      extTools.Assemble(OPM.modName);
 
-                IF ~OPM.dontLink & (OPM.mainProg OR OPM.mainLinkStat) THEN
-                   extTools.LinkMain (OPM.modName, OPM.mainLinkStat, modulesobj);
-		END;
-	  END;
-	END
-
-
-
-
+        IF ~(OPM.mainProg OR OPM.mainLinkStat) THEN
+          Strings.Append(" ",modulesobj);
+          Strings.Append(OPM.modName, modulesobj);
+          Strings.Append(".o ", modulesobj)
+        END;
+        IF ~OPM.dontLink & (OPM.mainProg OR OPM.mainLinkStat) THEN
+          extTools.LinkMain (OPM.modName, OPM.mainLinkStat, modulesobj);
+	      END
+	    END
     END (* loop *)
   END Translate;
 

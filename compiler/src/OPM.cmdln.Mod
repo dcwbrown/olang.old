@@ -4,149 +4,134 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
   31.1.2007 jt synchronized with BlackBox version, in particular PromoteIntConstToLInt added
 *)
 
-  IMPORT SYSTEM, Texts := Texts0, Files := Files0, Args, Console, errors, version, vt100;
+  IMPORT SYSTEM, Texts := Texts0, Files := Files0, Args, Console, errors, Configuration, vt100;
 
   CONST
     OptionChar* = "-";
 
     (* compiler options; don't change the encoding *)
-    inxchk* = 0;  (* index check on *)
-    vcpp* = 1;  (* VC++ support on; former ovflchk; neither used nor documented *)
-    ranchk* = 2;  (* range check on *)
-    typchk* = 3;  (* type check on *)
-    newsf* = 4;  (* generation of new symbol file allowed *)
-    ptrinit* = 5;  (* pointer initialization *)
-    ansi* = 6;  (* ANSI or K&R style prototypes *)
-    assert* = 7;  (* assert evaluation *)
-    include0* = 8;  (* include M.h0 in header file and M.c0 in body file if such files exist *)
-    extsf* = 9;  (* extension of old symbol file allowed *)
-    mainprog* = 10;  (* translate module body into C main function *)
-    lineno* = 11;  (* emit line numbers rather than text positions in error messages *)
-    useparfile* = 12; (* use .par file *)
-    dontasm* = 13; (* don't call external assembler/C compiler *)
-    dontlink* = 14; (* don't link *)
-    mainlinkstat* = 15; (* generate code for main module and then link object file statically *)
+    inxchk*         = 0;  (* index check on *)
+    vcpp*           = 1;  (* VC++ support on; former ovflchk; neither used nor documented *)
+    ranchk*         = 2;  (* range check on *)
+    typchk*         = 3;  (* type check on *)
+    newsf*          = 4;  (* generation of new symbol file allowed *)
+    ptrinit*        = 5;  (* pointer initialization *)
+    ansi*           = 6;  (* ANSI or K&R style prototypes *)
+    assert*         = 7;  (* assert evaluation *)
+    include0*       = 8;  (* include M.h0 in header file and M.c0 in body file if such files exist *)
+    extsf*          = 9;  (* extension of old symbol file allowed *)
+    mainprog*       = 10; (* translate module body into C main function *)
+    lineno*         = 11; (* emit line numbers rather than text positions in error messages *)
+    useparfile*     = 12; (* use .par file *)
+    dontasm*        = 13; (* don't call external assembler/C compiler *)
+    dontlink*       = 14; (* don't link *)
+    mainlinkstat*   = 15; (* generate code for main module and then link object file statically *)
     notcoloroutput* = 16; (* turn off color output *)
-    forcenewsym* = 17; (* force new symbol file *)
-    verbose* = 18; (* verbose *)
-    defopt* = {inxchk, typchk, ptrinit, ansi, assert};  (* default options *)
+    forcenewsym*    = 17; (* force new symbol file *)
+    verbose*        = 18; (* verbose *)
+    defopt*         = {inxchk, typchk, ptrinit, ansi, assert};  (* default options *)
 
-    nilval* = 0;
-(*
-    MinRealPat = 0FF7FFFFFH;  (* most  negative, 32-bit pattern, -3.40282346E38 *)
-    MinLRealPatL = 0FFFFFFFFH;  (* most  negative, lower 32-bit pattern *)
-    MinLRealPatH = 0FFEFFFFFH;  (* most  negative, higher 32-bit pattern *)
-    MaxRealPat = 7F7FFFFFH; (*3.40282346E38*)
-    MaxLRealPatL = -1;
-    MaxLRealPatH = 7FEFFFFFH;
-*)
+    nilval*         = 0;
 
-    MaxRExp* = 38;  MaxLExp* = 308;  MaxHDig* = 8;
+    MaxRExp*        = 38;
+    MaxLExp*        = 308;
+    MaxHDig*        = 8;
 
-    MinHaltNr* = 0;
-    MaxHaltNr* = 255;
-    MaxSysFlag* = 1;
+    MinHaltNr*      = 0;
+    MaxHaltNr*      = 255;
+    MaxSysFlag*     = 1;
 
-    MaxCC* = -1;  (* SYSTEM.CC, GETREG, PUTREG; not implementable in C backend *)
-    MinRegNr* = 0;
-    MaxRegNr* = -1;
+    MaxCC*          = -1;  (* SYSTEM.CC, GETREG, PUTREG; not implementable in C backend *)
+    MinRegNr*       = 0;
+    MaxRegNr*       = -1;
 
-    LANotAlloc* = -1;  (* XProc link adr initialization *)
-    ConstNotAlloc* = -1;  (* for allocation of string and real constants *)
-    TDAdrUndef* = -1;  (* no type desc allocated *)
+    LANotAlloc*     = -1;  (* XProc link adr initialization *)
+    ConstNotAlloc*  = -1;  (* for allocation of string and real constants *)
+    TDAdrUndef*     = -1;  (* no type desc allocated *)
 
-    MaxCases* = 128;
-    MaxCaseRange* = 512;
+    MaxCases*       = 128;
+    MaxCaseRange*   = 512;
 
-    MaxStruct* = 255;
+    MaxStruct*      = 255;
 
     (* maximal number of pointer fields in a record: *)
-    MaxPtr* = MAX(LONGINT);
+    MaxPtr*         = MAX(LONGINT);
 
     (* maximal number of global pointers per module: *)
-    MaxGPtr* = MAX(LONGINT);
+    MaxGPtr*        = MAX(LONGINT);
 
     (* maximal number of hidden fields in an exported record: *)
-    MaxHdFld* = 2048;
+    MaxHdFld*       = 2048;
 
-    HdPtrName* = "@ptr";
-    HdProcName* = "@proc";
-    HdTProcName* = "@tproc";
+    HdPtrName*      = "@ptr";
+    HdProcName*     = "@proc";
+    HdTProcName*    = "@tproc";
 
-    ExpHdPtrFld* = TRUE;
-    ExpHdProcFld* = FALSE;
-    ExpHdTProc* = FALSE;
+    ExpHdPtrFld*    = TRUE;
+    ExpHdProcFld*   = FALSE;
+    ExpHdTProc*     = FALSE;
 
-    NEWusingAdr* = FALSE;
+    NEWusingAdr*    = FALSE;
 
-    Eot* = 0X;
+    Eot*            = 0X;
 
-    SFext = ".sym";  (* symbol file extension *)
-    BFext = ".c";  (* body file extension *)
-    HFext = ".h";  (* header file extension *)
-    SFtag = 0F7X;  (* symbol file tag *)
+    HeaderFile*     = 0;
+    BodyFile*       = 1;
+    HeaderInclude*  = 2;
 
-    HeaderFile* = 0;
-    BodyFile* = 1;
-    HeaderInclude* = 2;
+    SFext = ".sym"; (* symbol file extension *)
+    BFext = ".c";   (* body file extension *)
+    HFext = ".h";   (* header file extension *)
+    SFtag = 0F7X;   (* symbol file tag *)
 
   TYPE
     FileName = ARRAY 32 OF CHAR;
 
   VAR
     SourceFileName : ARRAY 256 OF CHAR;
+
     ByteSize*, CharSize*, BoolSize*, SIntSize*, IntSize*,
     LIntSize*, SetSize*, RealSize*, LRealSize*, PointerSize*, ProcSize*, RecSize*,
-    (*Int8Size*, Int16Size*, Int32Size*, Int64Size*,*) (* these are constants actually, we need it to pass to GetProperty function; -- noch *)
     CharAlign*, BoolAlign*, SIntAlign*, IntAlign*,
-    (*Int8Align*, Int16Align*, Int32Align*, Int64Align*,*) (* need this for SYSTEM types; -- noch *)
     LIntAlign*, SetAlign*, RealAlign*, LRealAlign*, PointerAlign*, ProcAlign*, RecAlign*,
     ByteOrder*, BitOrder*, MaxSet*: INTEGER;
+
     MinSInt*, MinInt*, MinLInt*, MaxSInt*, MaxInt*, MaxLInt*, MaxIndex*: LONGINT;
-    (*MinInt8*, MaxInt8*, MinInt16*, MaxInt16*, MinInt32*, MaxInt32* : LONGINT;
-    MinInt64*, MaxInt64* : SYSTEM.INT64;*)
+
     MinReal*, MaxReal*, MinLReal*, MaxLReal*: LONGREAL;
 
-    noerr*: BOOLEAN;
+    noerr*:           BOOLEAN;
     curpos*, errpos*: LONGINT;  (* character and error position in source file *)
-    breakpc*: LONGINT;  (* set by OPV.Init *)
-    currFile*: INTEGER;  (* current output file *)
-    level*: INTEGER;  (* procedure nesting level *)
-    pc*, entno*: INTEGER;  (* entry number *)
-    modName*: ARRAY 32 OF CHAR;
-    objname*: ARRAY 64 OF CHAR;
+    breakpc*:         LONGINT;  (* set by OPV.Init *)
+    currFile*:        INTEGER;  (* current output file *)
+    level*:           INTEGER;  (* procedure nesting level *)
+    pc*, entno*:      INTEGER;  (* entry number *)
+    modName*:         ARRAY 32 OF CHAR;
+    objname*:         ARRAY 64 OF CHAR;
+    opt*, glbopt*:    SET;
 
-    opt*, glbopt*: SET;
-
-    lasterrpos: LONGINT;
-    inR: Texts.Reader;
-    Log: Texts.Text;
-    W: Texts.Writer;
+    lasterrpos:   LONGINT;
+    inR:          Texts.Reader;
+    Log:          Texts.Text;
+    W:            Texts.Writer;
     oldSF, newSF: Files.Rider;
-    R: ARRAY 3 OF Files.Rider;
+    R:            ARRAY 3 OF Files.Rider;
+
     oldSFile, newSFile, HFile, BFile, HIFile: Files.File;
 
     S: INTEGER;
-    stop, useLineNo, useParFile, dontAsm-, dontLink-, mainProg-, mainLinkStat-, notColorOutput-, forceNewSym-, Verbose-: BOOLEAN;
+
+    stop, useLineNo, useParFile : BOOLEAN;
+
+    dontAsm-, dontLink-, mainProg-, mainLinkStat-, notColorOutput-, forceNewSym-, Verbose-: BOOLEAN;
 
 
   (* ------------------------- Log Output ------------------------- *)
 
-  PROCEDURE LogW*(ch: CHAR);
-  BEGIN Console.Char(ch)
-  END LogW;
-
-  PROCEDURE LogWStr*(s: ARRAY OF CHAR);
-  BEGIN Console.String(s)
-  END LogWStr;
-
-  PROCEDURE LogWNum*(i, len: LONGINT);
-  BEGIN Console.Int(i, len)
-  END LogWNum;
-
-  PROCEDURE LogWLn*;
-  BEGIN Console.Ln
-  END LogWLn;
+  PROCEDURE LogW*(ch: CHAR);            BEGIN Console.Char(ch)    END LogW;
+  PROCEDURE LogWStr*(s: ARRAY OF CHAR); BEGIN Console.String(s)   END LogWStr;
+  PROCEDURE LogWInt*(i, len: LONGINT);  BEGIN Console.Int(i, len) END LogWInt;
+  PROCEDURE LogLn*;                     BEGIN Console.Ln          END LogLn;
 
 
   (* ------------------------- parameter handling -------------------------*)
@@ -176,29 +161,52 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
       | "f": opt := opt / {notcoloroutput}
       | "F": opt := opt / {forcenewsym}
       | "V": opt := opt / {verbose}
-      ELSE LogWStr("  warning: option "); LogW(OptionChar); LogW(s[i]); LogWStr(" ignored"); LogWLn
-      END ;
+      ELSE
+        LogWStr("  warning: option ");
+        LogW(OptionChar);
+        LogW(s[i]);
+        LogWStr(" ignored");
+        LogLn
+      END;
       INC(i)
     END;
   END ScanOptions;
 
+
   PROCEDURE ^GetProperties;
+
+
+  (*
+    PROCEDURE ShowParameters;
+      VAR i: INTEGER;
+      VAR p: ARRAY 256 OF CHAR;
+    BEGIN
+      Console.String("Parameters: argc="); Console.Int(Args.argc,1); Console.Ln;
+      FOR i:=0 TO Args.argc-1 DO
+        Args.Get(i, p);
+        Console.String("  '"); Console.String(p); Console.String("'"); Console.Ln;
+      END;
+    END ShowParameters;
+  *)
 
   PROCEDURE OpenPar*;  (* prepare for a sequence of translations *)
     VAR s: ARRAY 256 OF CHAR;
   BEGIN
+    (* ShowParameters; *)
     IF Args.argc = 1 THEN stop := TRUE;
       Console.Ln;
-      Console.String("voc - Vishap Oberon-2 compiler ");
-      Console.String(version.version); Console.String (" ");
-      Console.String(version.date); Console.String (" for "); Console.String(version.arch);
+      Console.String("oc: Oberon compiler ");
+      Console.String(Configuration.version); Console.String(" ");
+      Console.String(Configuration.date); Console.String(" for "); Console.String(Configuration.cpuarch);
+      Console.String(" "); Console.String(Configuration.osarch); Console.String(".");
+      Console.Ln; Console.Ln;
+      Console.String("Based on Ofront by Software Templ OEG"); Console.Ln;
+      Console.String("based on Vishap Oberon by Norayr Chilingarian and others"); Console.Ln;
+      Console.String("continued by Dave CW Brown."); Console.Ln;
       Console.Ln;
-      Console.String("based on Ofront by Software Templ OEG"); Console.Ln;
-      Console.String("continued by Norayr Chilingarian and others"); Console.Ln;
-      Console.Ln;
-      Console.String('  command = "voc" options {file options}.'); Console.Ln;
-      Console.String('  options = ["-" {option} ].'); Console.Ln;
-      Console.String('  option  = "m" | "M" | "s" | "e" | "i" | "l" | "k" | "r" | "x" | "a" | "p" | "t" | "P" | "S" | "c" | "f" | "F" | "V" .'); Console.Ln;
+      Console.String('command = "oc" options {files}.'); Console.Ln;
+      Console.String('options = ["-" {option} ].'); Console.Ln;
+      Console.String('option  = "m" | "M" | "s" | "e" | "i" | "l" | "k" | "r" | "x" | "a" | "p" | "t" | "P" | "S" | "c" | "f" | "F" | "V" .'); Console.Ln;
       Console.Ln;
       Console.String(" m      - generate code for main module"); Console.Ln;
       Console.String(" M      - generate code for main module and link object statically"); Console.Ln;
@@ -219,66 +227,95 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
       Console.String(" V      - verbose output"); Console.Ln;
       Console.Ln;
     ELSE
-      glbopt := defopt; S := 1; s := "";
-      Args.Get(1, s); stop := FALSE;
-      WHILE s[0] = OptionChar DO ScanOptions(s, glbopt); INC(S); s := ""; Args.Get(S, s) END;
-      IF lineno IN opt THEN (* this brought here from InitOptions which turned out to be unnecessary *)
-         useLineNo := TRUE; curpos := 256; errpos := curpos;
-	 lasterrpos := curpos - 10
-      ELSE
-         useLineNo := FALSE;
+      stop := FALSE;
+
+      S:=1; s:=""; Args.Get(S, s);
+
+      glbopt := defopt;
+
+      WHILE s[0] = OptionChar DO
+        ScanOptions(s, glbopt);
+        INC(S); s:=""; Args.Get(S, s)
       END;
-      IF useparfile IN glbopt THEN useParFile := TRUE ELSE useParFile := FALSE END; (* this check must be made before calling getproperties,  noch *)
-      IF dontasm IN glbopt THEN dontAsm := TRUE ELSE dontAsm := FALSE END;
-      IF dontlink IN glbopt THEN dontLink := TRUE ELSE dontLink := FALSE END;
-      IF mainprog IN glbopt THEN mainProg := TRUE ELSE mainProg := FALSE END;
-      IF mainlinkstat IN glbopt THEN INCL(glbopt, mainprog); mainLinkStat := TRUE ELSE mainLinkStat := FALSE END;
-      IF notcoloroutput IN glbopt THEN notColorOutput := TRUE ELSE notColorOutput := FALSE END;
-      IF forcenewsym IN glbopt THEN forceNewSym := TRUE ELSE forceNewSym := FALSE END;
-      IF verbose IN glbopt THEN Verbose := TRUE ELSE Verbose := FALSE END;
-      GetProperties; (* GetProperties moved here in order to call it after ScanOptions because we have an option whether to use par file or not, noch *)
+
+      (* The following is redundant as it is reevaluated in InitOptions
+        useLineNo      := lineno         IN glbopt;
+        useParFile     := useparfile     IN glbopt;
+        dontAsm        := dontasm        IN glbopt;
+        dontLink       := dontlink       IN glbopt;
+        mainProg       := mainprog       IN glbopt;
+        mainLinkStat   := mainlinkstat   IN glbopt;
+        notColorOutput := notcoloroutput IN glbopt;
+        forceNewSym    := forcenewsym    IN glbopt;
+        Verbose        := verbose        IN glbopt;
+        IF useLineNo THEN curpos := 256; errpos := curpos; lasterrpos := curpos - 10 END;
+        IF mainLinkStat THEN INCL(glbopt, mainprog); mainProg := TRUE END;
+        GetProperties;
+      *)
 
     END;
   END OpenPar;
 
+
   PROCEDURE InitOptions*;  (* get the options for one translation *)
     VAR s: ARRAY 256 OF CHAR;
   BEGIN
-    opt := glbopt; s := ""; Args.Get(S, s);
-    WHILE s[0] = OptionChar DO ScanOptions(s, opt); INC(S); s := ""; Args.Get(S, s) END ;
-   IF lineno IN opt THEN useLineNo := TRUE; curpos := 256; errpos := curpos; lasterrpos := curpos - 10
-    ELSE useLineNo := FALSE;
+    opt := glbopt;
+    s:=""; Args.Get(S, s);
+    WHILE s[0] = OptionChar DO
+      ScanOptions(s, opt);
+      INC(S); s:=""; Args.Get(S, s)
     END;
 
-      IF useparfile IN opt THEN useParFile := TRUE ELSE useParFile := FALSE END; (* this check must be made before calling getproperties,  noch *)
-      IF dontasm IN opt THEN dontAsm := TRUE ELSE dontAsm := FALSE END;
-      IF dontlink IN opt THEN dontLink := TRUE ELSE dontLink := FALSE END;
-      IF mainprog IN opt THEN mainProg := TRUE ELSE mainProg := FALSE END;
-      IF mainlinkstat IN opt THEN INCL(glbopt, mainprog); mainLinkStat := TRUE ELSE mainLinkStat := FALSE END;
-      IF forcenewsym IN glbopt THEN forceNewSym := TRUE ELSE forceNewSym := FALSE END;
-      IF verbose IN glbopt THEN Verbose := TRUE ELSE Verbose := FALSE END;
+    useLineNo      := lineno         IN opt;
+    useParFile     := useparfile     IN opt;
+    dontAsm        := dontasm        IN opt;
+    dontLink       := dontlink       IN opt;
+    mainProg       := mainprog       IN opt;
+    mainLinkStat   := mainlinkstat   IN opt;
+    notColorOutput := notcoloroutput IN opt;
+    forceNewSym    := forcenewsym    IN opt;
+    Verbose        := verbose        IN opt;
+
+    IF useLineNo THEN curpos := 256; errpos := curpos; lasterrpos := curpos - 10 END;
+    IF mainLinkStat THEN INCL(glbopt, mainprog) END; (* sic *)
+
+    GetProperties;
   END InitOptions;
 
+
   PROCEDURE Init*(VAR done: BOOLEAN; VAR mname : ARRAY OF CHAR);  (* get the source for one translation *)
-    VAR T: Texts.Text; beg, end, time: LONGINT;
-      s: ARRAY 256 OF CHAR;
+  VAR
+    T: Texts.Text;
+    beg, end, time: LONGINT;
+    s: ARRAY 256 OF CHAR;
   BEGIN
-    done := FALSE; curpos := 0;
-    IF stop OR (S >= Args.argc) THEN RETURN END ;
-    s := ""; Args.Get(S, s);
+    (* LogWStr("OPM init, S = "); LogWInt(S,1); LogLn; *)
+    done := FALSE;
+    curpos := 0;
+    IF stop           THEN LogWStr("OPM.Init stop requested."); LogLn;    RETURN END ;
+    IF S >= Args.argc THEN (* LogWStr("OPM.Init no more args"); LogLn; *) RETURN END ;
+
+    s:=""; Args.Get(S, s);
+
     NEW(T); Texts.Open(T, s);
     LogWStr(s);
     COPY(s, mname);
     COPY(s, SourceFileName); (* to keep it also in this module -- noch *)
-    IF T.len = 0 THEN LogWStr(" not found"); LogWLn
+
+    IF T.len = 0 THEN
+      LogWStr(" not found"); LogLn
     ELSE
       Texts.OpenReader(inR, T, 0);
       LogWStr("  translating");
       done := TRUE
-    END ;
+    END;
+
     INC(S);
     level := 0; noerr := TRUE; errpos := curpos; lasterrpos := curpos -10;
   END Init;
+
+
 
   (* ------------------------- read source text -------------------------*)
 
@@ -298,6 +335,7 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
     IF (ch < 09X) & ~inR.eot THEN ch := " " END
   END Get;
 
+
   PROCEDURE MakeFileName(VAR name, FName: ARRAY OF CHAR; ext: ARRAY OF CHAR);
     VAR i, j: INTEGER; ch: CHAR;
   BEGIN i := 0;
@@ -310,8 +348,11 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
     UNTIL ch = 0X
   END MakeFileName;
 
+
   PROCEDURE LogErrMsg(n: INTEGER);
-    VAR S: Texts.Scanner; T: Texts.Text; ch: CHAR; i: INTEGER;
+    VAR
+      S: Texts.Scanner; T: Texts.Text;
+      ch: CHAR; i: INTEGER;
       buf: ARRAY 1024 OF CHAR;
   BEGIN
     IF n >= 0 THEN
@@ -323,7 +364,7 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
        LogWStr("  warning "); n := -n;
        IF ~notColorOutput THEN vt100.SetAttr(vt100.ResetAll) END;
     END ;
-    LogWNum(n, 1);
+    LogWInt(n, 1);
     LogWStr("  ");
     (*NEW(T); Texts.Open(T, "vocErrors.Text"); Texts.OpenScanner(S, T, 0);
     REPEAT S.line := 0;
@@ -337,171 +378,169 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
   END LogErrMsg;
 
   PROCEDURE ShowLine(pos: LONGINT);
-     VAR
-     f : Files.File;
-     r : Files.Rider;
-     newpos, localpos, delta : LONGINT;
-     line : ARRAY 1023 OF CHAR;
-     i : INTEGER;
-     ch : CHAR;
+    VAR
+      f : Files.File;
+      r : Files.Rider;
+      newpos, localpos, delta : LONGINT;
+      line : ARRAY 1023 OF CHAR;
+      i : INTEGER;
+      ch : CHAR;
   BEGIN
-     localpos := pos;
-     f := Files.Old(SourceFileName);
+    localpos := pos;
+    f := Files.Old(SourceFileName);
 
-     (*
-     Console.Ln; Console.String("-- source file is "); Console.String(SourceFileName); Console.Ln;
-     Console.String("-- pos is "); Console.Int(pos, 0); Console.Ln;
-     *)
-     (* make sure previous character is character *)
-     REPEAT
-	DEC(localpos); IF localpos < 0 THEN localpos := 0 END;
-        Files.Set(r, f, localpos);
-        Files.Read(r, ch);
-     UNTIL (localpos < 1) OR(ORD(ch) >= 32) OR (ORD(ch)=9);
-     newpos := localpos;
-     (*
-     Console.String("-- newpos, last character before error "); Console.Int(newpos, 0); Console.Ln;
-     *)
-     (* finding last line end *)
-     REPEAT
-	DEC(localpos); IF localpos < 0 THEN newpos := 0 END;
-        Files.Set(r, f, localpos);
-        Files.Read(r, ch);
-(*
+    (*
+      Console.Ln; Console.String("-- source file is "); Console.String(SourceFileName); Console.Ln;
+      Console.String("-- pos is "); Console.Int(pos, 0); Console.Ln;
+    *)
+    (* make sure previous character is character *)
+    REPEAT
+      DEC(localpos); IF localpos < 0 THEN localpos := 0 END;
+      Files.Set(r, f, localpos);
+      Files.Read(r, ch);
+    UNTIL (localpos < 1) OR(ORD(ch) >= 32) OR (ORD(ch)=9);
+    newpos := localpos;
+    (*
+      Console.String("-- newpos, last character before error "); Console.Int(newpos, 0); Console.Ln;
+    *)
+    (* finding last line end *)
+    REPEAT
+      DEC(localpos); IF localpos < 0 THEN newpos := 0 END;
+      Files.Set(r, f, localpos);
+      Files.Read(r, ch);
+      (*
         Console.String("-- prev num "); Console.Int(localpos, 0);Console.String("  "); Console.Char(ch); Console.Ln;
-*)
-     UNTIL (localpos < 1) OR ((ORD(ch) < 32) & (ORD(ch) # 9));
-(*
-     Console.String("-- previous line at pos "); Console.Int(localpos, 0); Console.Ln;
-*)
-     delta := newpos - localpos - 1;
-     IF delta < 1 THEN delta := 1 END;
-  (*
-     Console.String("-- delta "); Console.Int(delta, 0); Console.Ln;
-*)
-     (* skip enter *)
-     REPEAT
-        INC(localpos);
-	Files.Set(r, f, localpos);
-	Files.Read(r, ch);
-     UNTIL (ORD(ch) >= 32) OR (ORD(ch) = 9);
-     i := 0;
-     REPEAT
-	Files.Set(r, f, localpos);
-        Files.Read(r, ch);
-	IF ORD(ch) = 9 THEN ch := " " END;
-	line[i] := ch;
-(*
-	Console.String("-- localpos "); Console.Int(localpos, 0); Console.Ln;
-	Console.String(" -- ch "); Console.Char(ch); Console.Ln;
-*)
-	INC(localpos);
-	INC(i);
-     UNTIL r.eof OR (i >= 1022) OR ((ORD(ch) < 32) & (ORD(ch) # 9));
-     line[i] := 0X;
-     IF (line[i-1] = 0AX) OR (line[i-1] = 0DX) THEN line[i-1] := 0X END;
-     (*Console.String(" -- length of line "); Console.Int(i, 0); Console.Ln;*)
-     Console.Ln; Console.Ln; Console.String("  "); Console.String(line);
-     Console.Ln;
+      *)
+    UNTIL (localpos < 1) OR ((ORD(ch) < 32) & (ORD(ch) # 9));
+    (*
+      Console.String("-- previous line at pos "); Console.Int(localpos, 0); Console.Ln;
+    *)
+    delta := newpos - localpos - 1;
+    IF delta < 1 THEN delta := 1 END;
+    (*
+      Console.String("-- delta "); Console.Int(delta, 0); Console.Ln;
+    *)
+    (* skip enter *)
+    REPEAT
+      INC(localpos);
+      Files.Set(r, f, localpos);
+      Files.Read(r, ch);
+    UNTIL (ORD(ch) >= 32) OR (ORD(ch) = 9);
+    i := 0;
+    REPEAT
+      Files.Set(r, f, localpos);
+      Files.Read(r, ch);
+      IF ORD(ch) = 9 THEN ch := " " END;
+      line[i] := ch;
+      (*
+        Console.String("-- localpos "); Console.Int(localpos, 0); Console.Ln;
+        Console.String(" -- ch "); Console.Char(ch); Console.Ln;
+      *)
+      INC(localpos);
+      INC(i);
+    UNTIL r.eof OR (i >= 1022) OR ((ORD(ch) < 32) & (ORD(ch) # 9));
+    line[i] := 0X;
+    IF (line[i-1] = 0AX) OR (line[i-1] = 0DX) THEN line[i-1] := 0X END;
+    (*Console.String(" -- length of line "); Console.Int(i, 0); Console.Ln;*)
+    Console.Ln; Console.Ln; Console.String("  "); Console.String(line);
+    Console.Ln;
 
-     i := 0;
-     Console.String("  ");
-     REPEAT
-        Console.Char(" ");
-	INC(i);
-     UNTIL i >= delta;
+    i := 0;
+    Console.String("  ");
+    REPEAT
+      Console.Char(" ");
+      INC(i);
+    UNTIL i >= delta;
     IF ~notColorOutput THEN vt100.SetAttr(vt100.Green) END;
-     Console.Char("^"); (*Console.Ln;*)
+    Console.Char("^"); (*Console.Ln;*)
     IF ~notColorOutput THEN vt100.SetAttr(vt100.ResetAll) END;
-  Files.Close(f);
-
+    Files.Close(f);
   END ShowLine;
 
+
   PROCEDURE ShowLineErr(linenum, posnum : LONGINT);
-     VAR
-        f : Files.File;
-        r : Files.Rider;
-        line : ARRAY 1023 OF CHAR;
-        i,j : LONGINT;
-        ch :      CHAR;
+    VAR
+      f : Files.File;
+      r : Files.Rider;
+      line : ARRAY 1023 OF CHAR;
+      i,j : LONGINT;
+      ch :      CHAR;
   BEGIN
+    f := Files.Old(SourceFileName);
+    Files.Set(r, f, 0);
 
-     f := Files.Old(SourceFileName);
-     Files.Set(r, f, 0);
+    (* skip non character symbols in the beginning *)
+    REPEAT
+      Files.Read(r, ch);
+    UNTIL ORD(ch) > 31;
 
-     (* skip non character symbols in the beginning *)
-     REPEAT
+    i := 0; j := 0;
+    REPEAT
+      IF (ORD(ch) > 31) OR (ORD(ch) = 9) THEN
+        IF ORD(ch)=9 THEN ch := " " END;
+        line[i] := ch; INC(i); line[i+1] := 0X;
         Files.Read(r, ch);
-     UNTIL ORD(ch) > 31;
-
-     i := 0; j := 0;
-     REPEAT
-        IF (ORD(ch) > 31) OR (ORD(ch) = 9) THEN
-	      IF ORD(ch)=9 THEN ch := " " END;
-	      line[i] := ch; INC(i); line[i+1] := 0X;
-		  Files.Read(r, ch);
-	    ELSE
-	      IF (ch = 0AX) OR (ch = 0DX) THEN
-		     Files.Read(r, ch);
-			 IF (ch = 0AX) OR (ch = 0DX) THEN
-			    Files.Read(r, ch);
-			 ELSE
-			    INC(j); i := 0
-			 END
-		  END
-	    END;
-        (*
-        Console.Ln; Console.String("-- line["); Console.Int(i-1, 0); Console.String("] = "); Console.Char(ch); Console.Ln;
-*)
-        (*
+      ELSE
+        IF (ch = 0AX) OR (ch = 0DX) THEN
+          Files.Read(r, ch);
+          IF (ch = 0AX) OR (ch = 0DX) THEN
+            Files.Read(r, ch);
+          ELSE
+            INC(j); i := 0
+          END
+        END
+      END;
+      (*
+        Console.Ln; Console.String("-- line["); Console.Int(i-1, 0);
+        Console.String("] = "); Console.Char(ch); Console.Ln;
+      *)
+      (*
         Console.String("-- i "); Console.Int(i, 0); Console.Ln;
-
         Console.String("--j "); Console.Int(j, 0); Console.Ln;
+        Console.Char(ch); Console.Ln;
+      *)
+    UNTIL (j >= linenum) OR (i >= 1022) OR r.eof;
 
-	Console.Char(ch); Console.Ln;
-*)
-     UNTIL (j >= linenum) OR (i >= 1022) OR r.eof;
+    Console.Ln; Console.String("  "); Console.String(line); Console.Ln;
 
-     Console.Ln; Console.String("  "); Console.String(line); Console.Ln;
+    i := 0;
+    WHILE i < posnum-1 DO
+      Console.Char(" ");
+      INC(i);
+    END;
 
-     i := 0;
-     WHILE i < posnum-1 DO
-        Console.Char(" ");
-	INC(i);
-     END;
+    Console.String("  "); (* compensate shift from Mark() ; -- noch *)
+    IF ~notColorOutput THEN vt100.SetAttr(vt100.Green) END;
+    Console.Char("^"); Console.Ln;
+    IF ~notColorOutput THEN vt100.SetAttr(vt100.ResetAll) END;
 
-     Console.String("  "); (* compensate shift from Mark() ; -- noch *)
-     IF ~notColorOutput THEN vt100.SetAttr(vt100.Green) END;
-     Console.Char("^"); Console.Ln;
-     IF ~notColorOutput THEN vt100.SetAttr(vt100.ResetAll) END;
-
-     Files.Close(f);
-
+    Files.Close(f);
   END ShowLineErr;
+
 
   PROCEDURE Mark*(n: INTEGER; pos: LONGINT);
   VAR
-     linenumber, posnumber : LONGINT;
+    linenumber, posnumber : LONGINT;
   BEGIN
     IF pos = -1 THEN pos := 0 END;
 
     linenumber := pos DIV 256;
     posnumber := pos MOD 256;
-(*
-        Console.Ln; Console.String("-- linenumber "); Console.Int(linenumber, 0); Console.Ln;
-	Console.String("-- posnumber "); Console.Int(posnumber, 0); Console.Ln;
-*)
+    (*
+      Console.Ln; Console.String("-- linenumber "); Console.Int(linenumber, 0); Console.Ln;
+      Console.String("-- posnumber "); Console.Int(posnumber, 0); Console.Ln;
+    *)
     IF useLineNo THEN
       IF n >= 0 THEN
         noerr := FALSE;
-(*
-        Console.String("n = "); Console.Int(n, 0); Console.Ln;
-*)
-        IF (pos < lasterrpos) OR (lasterrpos + 9 < pos) THEN lasterrpos := pos; LogWLn; LogWStr("  ");
-          IF n < 249 THEN ShowLineErr(linenumber, posnumber); LogWStr("  line "); LogWNum(linenumber, 1);
-            LogWStr("  pos "); LogWNum(posnumber, 1); LogErrMsg(n)
-          ELSIF n = 255 THEN ShowLineErr(linenumber, posnumber); LogWStr("  line "); LogWNum(linenumber, 1);
-            LogWStr("  pos "); LogWNum(posnumber, 1); LogWStr("  pc "); LogWNum(breakpc, 1)
+        (*
+          Console.String("n = "); Console.Int(n, 0); Console.Ln;
+        *)
+        IF (pos < lasterrpos) OR (lasterrpos + 9 < pos) THEN lasterrpos := pos; LogLn; LogWStr("  ");
+          IF n < 249 THEN ShowLineErr(linenumber, posnumber); LogWStr("  line "); LogWInt(linenumber, 1);
+            LogWStr("  pos "); LogWInt(posnumber, 1); LogErrMsg(n)
+          ELSIF n = 255 THEN ShowLineErr(linenumber, posnumber); LogWStr("  line "); LogWInt(linenumber, 1);
+            LogWStr("  pos "); LogWInt(posnumber, 1); LogWStr("  pc "); LogWInt(breakpc, 1)
           ELSIF n = 254 THEN LogWStr("pc not found")
           ELSE LogWStr(objname);
             IF n = 253 THEN LogWStr(" is new, compile with option e")
@@ -514,21 +553,21 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
         END
       ELSE
         ShowLineErr(linenumber, posnumber);
-        IF pos >= 0 THEN LogWLn;
-          LogWStr("  line "); LogWNum(pos DIV 256, 1); LogWStr("  pos "); LogWNum(pos MOD 256, 1)
+        IF pos >= 0 THEN LogLn;
+          LogWStr("  line "); LogWInt(pos DIV 256, 1); LogWStr("  pos "); LogWInt(pos MOD 256, 1)
         END ;
         LogErrMsg(n);
-        IF pos < 0 THEN LogWLn END
+        IF pos < 0 THEN LogLn END
       END
     ELSE
       IF n >= 0 THEN
         noerr := FALSE;
-        IF (pos < lasterrpos) OR (lasterrpos + 9 < pos) THEN lasterrpos := pos; ShowLine(pos); LogWLn; LogWStr("  ");
-          IF n < 249 THEN LogWStr("  pos"); LogWNum(pos, 6); LogErrMsg(n)
-          ELSIF n = 255 THEN LogWStr("pos"); LogWNum(pos, 6); LogWStr("  pc "); LogWNum(breakpc, 1)
+        IF (pos < lasterrpos) OR (lasterrpos + 9 < pos) THEN lasterrpos := pos; ShowLine(pos); LogLn; LogWStr("  ");
+          IF n < 249 THEN LogWStr("  pos"); LogWInt(pos, 6); LogErrMsg(n)
+          ELSIF n = 255 THEN LogWStr("pos"); LogWInt(pos, 6); LogWStr("  pc "); LogWInt(breakpc, 1)
           ELSIF n = 254 THEN LogWStr("pc not found")
           ELSE LogWStr(objname);
-            IF n = 253 THEN LogWStr(" is new, compile with option e")
+            IF    n = 253 THEN LogWStr(" is new, compile with option e")
             ELSIF n = 252 THEN LogWStr(" is redefined, compile with option s")
             ELSIF n = 251 THEN LogWStr(" is redefined (private part only), compile with option s")
             ELSIF n = 250 THEN LogWStr(" is no longer visible, compile with option s")
@@ -537,12 +576,13 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
           END
         END
       ELSE
-        IF pos >= 0 THEN ShowLine(pos); LogWLn; LogWStr("  pos"); LogWNum(pos, 6) END ;
+        IF pos >= 0 THEN ShowLine(pos); LogLn; LogWStr("  pos"); LogWInt(pos, 6) END ;
         LogErrMsg(n);
-        IF pos < 0 THEN LogWLn END
+        IF pos < 0 THEN LogLn END
       END
     END
   END Mark;
+
 
   PROCEDURE err*(n: INTEGER);
   BEGIN
@@ -553,18 +593,22 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
     END
   END err;
 
+
   PROCEDURE FPrint*(VAR fp: LONGINT; val: LONGINT);
   BEGIN
     fp := SYSTEM.ROT(SYSTEM.VAL(LONGINT, SYSTEM.VAL(SET, fp) / SYSTEM.VAL(SET, val)), 1)
   END FPrint;
 
+
   PROCEDURE FPrintSet*(VAR fp: LONGINT; set: SET);
   BEGIN FPrint(fp, SYSTEM.VAL(LONGINT, set))
   END FPrintSet;
 
+
   PROCEDURE FPrintReal*(VAR fp: LONGINT; real: REAL);
   BEGIN FPrint(fp, SYSTEM.VAL(LONGINT, real))
   END FPrintReal;
+
 
   PROCEDURE FPrintLReal*(VAR fp: LONGINT; lr: LONGREAL);
     VAR l, h: LONGINT;
@@ -572,6 +616,9 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
     SYSTEM.GET(SYSTEM.ADR(lr), l); SYSTEM.GET(SYSTEM.ADR(lr)+4, h);
     FPrint(fp, l); FPrint(fp, h)
   END FPrintLReal;
+
+
+
 
   (* ------------------------- initialization ------------------------- *)
 
@@ -585,11 +632,11 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
   END GetProperty;
 
 
-
   PROCEDURE minus(i: LONGINT): LONGINT;
   BEGIN
-     RETURN -i;
+    RETURN -i;
   END minus;
+
 
   PROCEDURE power0(i, j : LONGINT) : LONGINT; (* we would like to calculate exact Min Max values in GetProperties, not hardcode em, noch *)
   VAR k : LONGINT;
@@ -604,175 +651,77 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
      RETURN p;
   END power0;
 
+
   PROCEDURE VerboseListSizes;
   BEGIN
-	    Console.String("Type        Size  Alignement"); Console.Ln;
-	    Console.String("CHAR         "); Console.Int(CharSize, 0); Console.Int(CharAlign, 5); Console.Ln;
-	    Console.String("BOOLEAN      "); Console.Int(BoolSize, 0); Console.Int(BoolAlign, 5); Console.Ln;
-	    Console.String("SHORTINT     "); Console.Int(SIntSize, 0); Console.Int(SIntAlign, 5); Console.Ln;
-	    Console.String("INTEGER      "); Console.Int(IntSize, 0); Console.Int(IntAlign, 5); Console.Ln;
-	    Console.String("LONGINT      "); Console.Int(LIntSize, 0); Console.Int(LIntAlign, 5); Console.Ln;
-	    Console.String("SET          "); Console.Int(SetSize, 0); Console.Int(SetAlign, 5); Console.Ln;
-	    Console.String("REAL         "); Console.Int(RealSize, 0); Console.Int(RealAlign, 5); Console.Ln;
-	    Console.String("LONGREAL     "); Console.Int(LRealSize, 0); Console.Int(LRealAlign, 5); Console.Ln;
-	    Console.String("PTR          "); Console.Int(PointerSize, 0); Console.Int(PointerAlign, 5); Console.Ln;
-	    Console.String("PROC         "); Console.Int(ProcSize, 0); Console.Int(ProcAlign, 5); Console.Ln;
-	    Console.String("RECORD       "); Console.Int(RecSize, 0); Console.Int(RecAlign, 5); Console.Ln;
-	    Console.String("ENDIAN       "); Console.Int(ByteOrder, 0); Console.Int(BitOrder, 5); Console.Ln;
-	    (*
-	    Console.String("SYSTEM.INT8  "); Console.Int(Int8Size, 0); Console.Int(Int8Align, 5); Console.Ln;
-	    Console.String("SYSTEM.INT16 "); Console.Int(Int16Size, 0); Console.Int(Int16Align, 5); Console.Ln;
-	    Console.String("SYSTEM.INT32 "); Console.Int(Int32Size, 0); Console.Int(Int32Align, 5); Console.Ln;
-	    Console.String("SYSTEM.INT64 "); Console.Int(Int64Size, 0); Console.Int(Int64Align, 5); Console.Ln;
-	    *)
-	    Console.Ln;
-       Console.String("Min shortint "); Console.Int(MinSInt, 0); Console.Ln;
-       Console.String("Max shortint "); Console.Int(MaxSInt, 0); Console.Ln;
-       Console.String("Min integer "); Console.Int(MinInt, 0); Console.Ln;
-       Console.String("Max integer "); Console.Int(MaxInt, 0); Console.Ln;
-       Console.String("Min longint "); Console.Int(MinLInt, 0); Console.Ln;
-       (*
-       Console.String("Max longint "); Console.Int(MaxLInt, 0); Console.Ln;
-       Console.String("Min int8 "); Console.Int(MinInt8, 0); Console.Ln;
-       Console.String("Max int8 "); Console.Int(MaxInt8, 0); Console.Ln;
-       Console.String("Min int16 "); Console.Int(MinInt16, 0); Console.Ln;
-       Console.String("Max int16 "); Console.Int(MaxInt16, 0); Console.Ln;
-       Console.String("Min int32 "); Console.Int(MinInt32, 0); Console.Ln;
-       Console.String("Max int32 "); Console.Int(MaxInt32, 0); Console.Ln;
- *)
-
+    Console.String("Type        Size  Alignement"); Console.Ln;
+    Console.String("CHAR         "); Console.Int(CharSize,    4); Console.Int(CharAlign,    5); Console.Ln;
+    Console.String("BOOLEAN      "); Console.Int(BoolSize,    4); Console.Int(BoolAlign,    5); Console.Ln;
+    Console.String("SHORTINT     "); Console.Int(SIntSize,    4); Console.Int(SIntAlign,    5); Console.Ln;
+    Console.String("INTEGER      "); Console.Int(IntSize,     4); Console.Int(IntAlign,     5); Console.Ln;
+    Console.String("LONGINT      "); Console.Int(LIntSize,    4); Console.Int(LIntAlign,    5); Console.Ln;
+    Console.String("SET          "); Console.Int(SetSize,     4); Console.Int(SetAlign,     5); Console.Ln;
+    Console.String("REAL         "); Console.Int(RealSize,    4); Console.Int(RealAlign,    5); Console.Ln;
+    Console.String("LONGREAL     "); Console.Int(LRealSize,   4); Console.Int(LRealAlign,   5); Console.Ln;
+    Console.String("PTR          "); Console.Int(PointerSize, 4); Console.Int(PointerAlign, 5); Console.Ln;
+    Console.String("PROC         "); Console.Int(ProcSize,    4); Console.Int(ProcAlign,    5); Console.Ln;
+    Console.String("RECORD       "); Console.Int(RecSize,     4); Console.Int(RecAlign,     5); Console.Ln;
+    Console.String("ENDIAN       "); Console.Int(ByteOrder,   4); Console.Int(BitOrder,     5); Console.Ln;
+    Console.Ln;
+    Console.String("Min shortint "); Console.Int(MinSInt,     4); Console.Ln;
+    Console.String("Max shortint "); Console.Int(MaxSInt,     4); Console.Ln;
+    Console.String("Min integer  "); Console.Int(MinInt,      4); Console.Ln;
+    Console.String("Max integer  "); Console.Int(MaxInt,      4); Console.Ln;
+    Console.String("Min longint  "); Console.Int(MinLInt,     4); Console.Ln;
   END VerboseListSizes;
+
 
   PROCEDURE GetProperties();
     VAR T: Texts.Text; S: Texts.Scanner;
     base : LONGINT;
   BEGIN
-
     (* default characteristics *)
-  IF ~useParFile THEN
-    IF version.defaultTarget = version.gnux8664 THEN
-        Console.String (" GNU "); Console.String(version.arch); Console.String(" target"); Console.Ln;
-        ByteSize := 1; CharSize := 1; BoolSize := 1; SIntSize := 1; IntSize := 4; LIntSize := 8;
-       SetSize := 8; RealSize := 4; LRealSize := 8; ProcSize := 8; PointerSize := 8; RecSize := 1;
-       CharAlign := 1; BoolAlign := 1; SIntAlign := 1; IntAlign := 4; LIntAlign := 8;
-       (*Int8Align := 1; Int16Align := 2; Int32Align := 4; Int64Align := 8;*)
-       SetAlign := 8; RealAlign := 4; LRealAlign := 8; ProcAlign := 8; PointerAlign := 8; RecAlign := 1;
-    (*  not necessary, we will calculate values later
-       MinSInt := -80H; MaxSInt := 7FH;
-       MinInt := 80000000H(*-2147483648*);
-       MaxInt := 7FFFFFFFH (*2147483647*);
-       (*MinLInt := -8000000000000000H*) (*-9223372036854775808*) ; (* -2^63 *)
-       (*MaxLInt := 7FFFFFFFFFFFFFFFH *)(*9223372036854775807*) ;(* 2^63-1 *)
-       (*MaxSet := 31;*)
-       MaxSet := SetSize * 8 - 1; (*noch*)
-     *)
-    ELSIF (version.defaultTarget >= version.gnuarmv6j) & (version.defaultTarget <= version.gnuarmv7ahardfp) THEN
-      Console.String (" GNU ");
-      Console.String (version.arch); Console.String (" target"); Console.Ln;
-       ByteSize := 1; CharSize := 1; BoolSize := 1; SIntSize := 1; IntSize := 2; LIntSize := 4;
-       SetSize := 4; RealSize := 4; LRealSize := 8; ProcSize := 4; PointerSize := 4; RecSize := 1;
-       CharAlign := 1; BoolAlign := 1; SIntAlign := 1; IntAlign := 2; LIntAlign := 4;
-       (*Int8Align := 1; Int16Align := 2; Int32Align := 4; Int64Align := 4;*)
-       SetAlign := 4; RealAlign := 4; LRealAlign := 8; ProcAlign := 4; PointerAlign := 4; RecAlign := 1;
-
-     (* not necessary, we will calculate values later
-       MinSInt := -80H; MinInt := -8000H; MinLInt :=  80000000H;  (*-2147483648*)
-       MaxSInt := 7FH; MaxInt := 7FFFH; MaxLInt := 7FFFFFFFH;  (*2147483647*)
-       MaxSet := SetSize * 8 -1; (* noch *)
-      *)
-    ELSIF (version.defaultTarget = version.gnupowerpc) THEN
-      Console.String (" GNU ");
-      Console.String (version.arch); Console.String (" target"); Console.Ln;
-       ByteSize := 1; CharSize := 1; BoolSize := 1; SIntSize := 1; IntSize := 2; LIntSize := 4;
-       SetSize := 4; RealSize := 4; LRealSize := 8; ProcSize := 4; PointerSize := 4; RecSize := 1;
-       CharAlign := 1; BoolAlign := 1; SIntAlign := 1; IntAlign := 2; LIntAlign := 4;
-
-       (*Int8Align := 1; Int16Align := 2; Int32Align := 4; Int64Align := 4;*)
-       SetAlign := 4; RealAlign := 4; LRealAlign := 8; ProcAlign := 4; PointerAlign := 4; RecAlign := 1;
-
-
-    ELSIF version.defaultTarget = version.gnux86 THEN
-        Console.String("GNU "); Console.String(version.arch); Console.String(" target"); Console.Ln;
-       ByteSize := 1; CharSize := 1; BoolSize := 1; SIntSize := 1; IntSize := 2; LIntSize := 4;
-       SetSize := 4; RealSize := 4; LRealSize := 8; ProcSize := 4; PointerSize := 4; RecSize := 1;
-       CharAlign := 1; BoolAlign := 1; SIntAlign := 1; IntAlign := 2; LIntAlign := 4;
-
-       (*Int8Align := 1; Int16Align := 2; Int32Align := 4; Int64Align := 4;*)
-       SetAlign := 4; RealAlign := 4; LRealAlign := 4; ProcAlign := 4; PointerAlign := 4; RecAlign := 1;
-
-    ELSE (* this should suite any gnu x86 system *)
-       Console.String (" generic target, like GNU x86 system"); Console.Ln;
-       ByteSize := 1; CharSize := 1; BoolSize := 1; SIntSize := 1; IntSize := 2; LIntSize := 4;
-       SetSize := 4; RealSize := 4; LRealSize := 8; ProcSize := 4; PointerSize := 4; RecSize := 1;
-       CharAlign := 1; BoolAlign := 1; SIntAlign := 1; IntAlign := 2; LIntAlign := 4;
-
-       (*Int8Align := 1; Int16Align := 2; Int32Align := 4; Int64Align := 4;*)
-       SetAlign := 4; RealAlign := 4; LRealAlign := 4; ProcAlign := 4; PointerAlign := 4; RecAlign := 1;
-(* LRealAlign should be checked and confirmed *)
-    (* not necessary, will be calculated later
-       MinSInt := -80H; MinInt := -8000H; MinLInt :=  80000000H;  (*-2147483648*)
-       MaxSInt := 7FH; MaxInt := 7FFFH; MaxLInt := 7FFFFFFFH;  (*2147483647*)
-       MaxSet := SetSize * 8 - 1;
-   *)
-
-    END; (* if defaultTarget *)
-  END; (* if ~useParFile *)
-    (* read voc.par *)
-
-    IF useParFile THEN (* noch *)
-       IF Verbose THEN Console.String ("loading type sizes from voc.par"); Console.Ln; END;
-       NEW(T); Texts.Open(T, "voc.par");
-       IF T.len # 0 THEN
-         Texts.OpenScanner(S, T, 0); Texts.Scan(S);
-         GetProperty(S, "CHAR", CharSize, CharAlign);
-         GetProperty(S, "BOOLEAN", BoolSize, BoolAlign);
-         GetProperty(S, "SHORTINT", SIntSize, SIntAlign);
-         GetProperty(S, "INTEGER", IntSize, IntAlign);
-         GetProperty(S, "LONGINT", LIntSize, LIntAlign);
-         GetProperty(S, "SET", SetSize, SetAlign);
-         GetProperty(S, "REAL", RealSize, RealAlign);
-         GetProperty(S, "LONGREAL", LRealSize, LRealAlign);
-         GetProperty(S, "PTR", PointerSize, PointerAlign);
-         GetProperty(S, "PROC", ProcSize, ProcAlign);
-         GetProperty(S, "RECORD", RecSize, RecAlign);
-         (* Size = 0: natural size aligned to next power of 2 up to RecAlign; e.g. i960
-           Size = 1; size and alignment follows from field types but at least RecAlign; e.g, SPARC, MIPS, PowerPC
-         *)
-         GetProperty(S, "ENDIAN", ByteOrder, BitOrder);  (*currently not used*)
-
-         (*
-	 GetProperty(S, "SYSTEM.INT8", Int8Size, Int8Align);
-         GetProperty(S, "SYSTEM.INT16", Int16Size, Int16Align);
-         GetProperty(S, "SYSTEM.INT32", Int32Size, Int32Align);
-         GetProperty(S, "SYSTEM.INT64", Int64Size, Int64Align);*)
-	 (* add here Max and Min sizes, noch *)
-	 ByteSize := CharSize;
-
-       ELSE Mark(-156, -1)
-       END ;
+    IF ~useParFile THEN
+      ByteSize    := 1;
+      CharSize    := 1;    CharAlign    := 1;
+      BoolSize    := 1;    BoolAlign    := 1;
+      SIntSize    := 1;    SIntAlign    := 1;
+      IntSize     := 4;    IntAlign     := 4;
+      LIntSize    := 8;    LIntAlign    := 8;
+      SetSize     := 8;    SetAlign     := 8;
+      RealSize    := 4;    RealAlign    := 4;
+      LRealSize   := 8;    LRealAlign   := 8;
+      ProcSize    := 8;    ProcAlign    := 8;
+      PointerSize := 8;    PointerAlign := 8;
+      RecSize     := 1;    RecAlign     := 1;
     ELSE
-       IF Verbose THEN
-          Console.String ("not using voc.par file"); Console.Ln
-       END
-     END; (* if useParFile , noch *)
+      IF Verbose THEN Console.String ("Loading type sizes from voc.par"); Console.Ln; END;
+      NEW(T); Texts.Open(T, "voc.par");
+      IF T.len # 0 THEN
+        Texts.OpenScanner(S, T, 0); Texts.Scan(S);
+        GetProperty(S, "CHAR", CharSize, CharAlign);
+        GetProperty(S, "BOOLEAN", BoolSize, BoolAlign);
+        GetProperty(S, "SHORTINT", SIntSize, SIntAlign);
+        GetProperty(S, "INTEGER", IntSize, IntAlign);
+        GetProperty(S, "LONGINT", LIntSize, LIntAlign);
+        GetProperty(S, "SET", SetSize, SetAlign);
+        GetProperty(S, "REAL", RealSize, RealAlign);
+        GetProperty(S, "LONGREAL", LRealSize, LRealAlign);
+        GetProperty(S, "PTR", PointerSize, PointerAlign);
+        GetProperty(S, "PROC", ProcSize, ProcAlign);
+        GetProperty(S, "RECORD", RecSize, RecAlign);
+        (* Size = 0: natural size aligned to next power of 2 up to RecAlign; e.g. i960
+          Size = 1; size and alignment follows from field types but at least RecAlign; e.g, SPARC, MIPS, PowerPC
+        *)
+        GetProperty(S, "ENDIAN", ByteOrder, BitOrder);  (*currently not used*)
+        ByteSize := CharSize;
+      ELSE
+        Mark(-156, -1)
+      END
+    END;
 
-    (*Int8Size := 1; Int16Size := 2; Int32Size := 4; Int64Size := 8;*)
-
-(* commenting this by replacing with faster way; -- noch *
-    MinSInt := power0(-2, (SIntSize*8-1)); (* -2^(SIntSize*8-1)*)
-    (*MaxSInt := -(MinSint + 1);; may be optimized?*)
-    MaxSInt := minus(MinSInt + 1);
-    MinInt := power0(-2, (IntSize*8-1));
-    MaxInt := minus(MinInt + 1);
-
-    MinLInt := power0(-2, (LIntSize*8-1));
-    MaxLInt := minus(MinLInt +1);
-*)
     (* and I'd like to calculate it, not hardcode constants *)
     base := -2;
-    (* we can do
-    MinLInt := ASH(-2, LIntSize*8-2);
-    but some compilers may treat -2 as SHORTINT, not LONGINT; -- noch *)
     MinSInt := ASH(base, SIntSize*8-2);
     MaxSInt := minus(MinSInt + 1);
 
@@ -781,34 +730,27 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
 
     MinLInt := ASH(base, LIntSize*8-2);
     MaxLInt := minus(MinLInt +1);
-    (*
-    MinInt8 := -80H; MinInt16 := -8000H; MinInt32 :=  80000000H;  (*-2147483648*)
-    MaxInt8 := 7FH; MaxInt16 := 7FFFH; MaxInt32 := 7FFFFFFFH;  (*2147483647*)
 
-    MinInt64 := ASH(base, Int64Size*8-2);
-    MaxInt64 := minus(ASH(base, Int64Size*8-2) + 1);
-*)
     IF RealSize = 4 THEN MaxReal := 3.40282346D38
     ELSIF RealSize = 8 THEN MaxReal := 1.7976931348623157D307 * 9.999999
       (*should be 1.7976931348623157D308 *)
     END ;
+
     IF LRealSize = 4 THEN MaxLReal := 3.40282346D38
     ELSIF LRealSize = 8 THEN MaxLReal := 1.7976931348623157D307 * 9.999999
       (*should be 1.7976931348623157D308 *)
     END ;
+
     MinReal := -MaxReal;
     MinLReal := -MaxLReal;
-    (* commented this out,  *)
-    (*IF IntSize = 4 THEN MinInt := MinLInt; MaxInt := MaxLInt END ;*)
-    (*IF IntSize = 4 THEN MinLInt := MinInt; MaxLInt := MaxInt END ;*)
+
     MaxSet := SetSize * 8 - 1;
     MaxIndex := MaxLInt; (* shouldn't it be like max(int)? so that for loop will be safe, noch *)
-    IF Verbose THEN
-       VerboseListSizes
-   END;
-
-
+    IF Verbose THEN VerboseListSizes END;
   END GetProperties;
+
+
+
 
   (* ------------------------- Read Symbol File ------------------------- *)
 
@@ -852,6 +794,9 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
   BEGIN RETURN oldSF.eof
   END eofSF;
 
+
+
+
   (* ------------------------- Write Symbol File ------------------------- *)
 
   PROCEDURE SymWCh*(ch: CHAR);
@@ -890,6 +835,9 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
     ELSE err(153)
     END
   END NewSym;
+
+
+
 
   (* ------------------------- Write Header & Body Files ------------------------- *)
 
@@ -995,7 +943,7 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
   PROCEDURE CloseFiles*;
     VAR FName: ARRAY 32 OF CHAR; res: INTEGER;
   BEGIN
-    IF noerr THEN LogWStr("    "); LogWNum(Files.Pos(R[BodyFile]), 0) END ;
+    IF noerr THEN LogWStr("    "); LogWInt(Files.Pos(R[BodyFile]), 0) END ;
     IF noerr THEN
       IF modName = "SYSTEM" THEN
         IF ~(mainprog IN opt) THEN Files.Register(BFile) END
@@ -1013,29 +961,13 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
   END CloseFiles;
 
   PROCEDURE PromoteIntConstToLInt*();
-  (* NOTE: DCWB 29/Dec/2015. The assumption below that ansi C will automatically
-     pass parameters in the right size (e.g. int vs long) is incorrect for
-     parameters passed to the '...' part of a varags function. (As the type is
-     not known at compile time.)
-     DO NOT call PromoteIntConstToLInt() for such parameters. Instead just
-     call OPM.WriteString("L").
-     For example, the size of each dimension passed to __NEWARR is picked up
-     by the va_arg function as 'long' in all the implementations of SYSTEM.c0,
-     so constant values MUST have a postpended 'L' even under ansi C.
-     It is a mystery to me why the code below bothers to omit the 'L' on ANSI C
-     as it should do only good - it may be redundant for the compiler, but it is
-     good for a human reader.
-  *)
   BEGIN
-    (* ANSI C does not need explicit promotion.
-      K&R C implicitly promotes integer constants to type int in parameter lists.
-      if the formal parameter, however, is of type long, appending "L" is required in ordere to promote
-      the parameter explicitly to type long (if LONGINT corresponds to long, which we do not really know).
-      It works for all known K&R versions of voc and K&R is dying out anyway.
-      A cleaner solution would be to cast with type (LONGINT), but this requires a bit more changes.
-    *)
-    (* IF ~(ansi IN opt) THEN *)  Write("L") (* END *)
+    Write("L")
   END PromoteIntConstToLInt;
 
-BEGIN Texts.OpenWriter(W)
+
+
+
+BEGIN
+  Texts.OpenWriter(W)
 END OPM.

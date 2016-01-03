@@ -1,88 +1,73 @@
 MODULE extTools;
-   IMPORT Args, Unix, Strings, Console, version;
+
+IMPORT Args, Unix, Strings, Console, Configuration;
+
 (*
 INCLUDEPATH = -Isrc/lib/system/gnuc/x86_64
 CCOPT = -fPIC $(INCLUDEPATH) -g
 CLOBERONOPTS = -fPIC $(INCLUDEPATH) -L. -L/usr/lib -lOberon -static -g
 CC = cc $(CCOPT) -c
 *)
-CONST compiler="clang";
 
-VAR incPath0, incPath1, ccOpt, ccString, CFLAGS, tmp0, tmp1 : ARRAY 1023 OF CHAR;
 
-PROCEDURE Assemble*(m : ARRAY OF CHAR);
-VAR cmd : ARRAY 1023 OF CHAR;
-cc : ARRAY 1023 OF CHAR;
-ext : ARRAY 5 OF CHAR;
+VAR compilationOptions, CFLAGS: ARRAY 1023 OF CHAR;
+
+
+PROCEDURE execute(title: ARRAY OF CHAR; cmd: ARRAY OF CHAR);
 BEGIN
-COPY (ccString, cc);
-Strings.Append (" -c -Wno-pointer-sign ", cc);
-COPY(cc, cmd);
-Strings.Append (" ", cmd);
-Strings.Append (ccOpt, cmd);
-ext := ".c";
-Strings.Append (ext, m);
-Strings.Append(m, cmd);
-(*Console.Ln; Console.String (cmd); Console.Ln;*)
-Unix.system(cmd);
-END Assemble;
+  Console.Ln; Console.String(title); Console.String(" command: "); Console.String(cmd); Console.Ln;
+  Unix.system(cmd);
+END execute;
 
 
-PROCEDURE LinkMain*(VAR m : ARRAY OF CHAR; statically : BOOLEAN; additionalopts : ARRAY OF CHAR);
-VAR lpath : ARRAY 1023 OF CHAR;
-cc : ARRAY 1023 OF CHAR;
-ccopt : ARRAY 1023 OF CHAR;
-cmd : ARRAY 1023 OF CHAR;
-ext : ARRAY 5 OF CHAR;
-BEGIN
-(*
-gcc -g -o hello hello.c -I $RPATH/src/lib/system/gnuc/x86_64 -I. -I$RPATH -lOberon -L. -L$RPATH -static
-*)
-cmd := "";
-cc := "";
-ext := ".c";
-COPY(ccString, cc);
-COPY (cc, cmd);
-Strings.Append(" ", cmd);
-Strings.Append(m, cmd);
-Strings.Append(ext, cmd);
-Strings.Append(additionalopts, cmd);
-IF statically THEN Strings.Append(" -static ", cmd) END;
-Strings.Append(" -o ", cmd);
-Strings.Append(m, cmd);
-Strings.Append(" ", cmd);
+PROCEDURE Assemble*(moduleName: ARRAY OF CHAR);
+  VAR
+    cmd: ARRAY 1023 OF CHAR;
+  BEGIN
+    cmd := Configuration.compiler;
+    Strings.Append(compilationOptions, cmd);
+    Strings.Append(moduleName,         cmd);
+    Strings.Append(".c",               cmd);
+    execute("Assembly", cmd);
+  END Assemble;
 
-Strings.Append (" -lVishapOberon -L. -L", ccOpt);
-Strings.Append (version.prefix, ccOpt);
-Strings.Append ("/lib ", ccOpt);
 
-Strings.Append(ccOpt, cmd);
-Console.Ln; Console.String(cmd); Console.Ln; (* may be it's feasible to add debug mode later *)
-Unix.system(cmd);
-END LinkMain;
+PROCEDURE LinkMain*(VAR moduleName: ARRAY OF CHAR; statically : BOOLEAN; additionalopts : ARRAY OF CHAR);
+  VAR
+    cmd: ARRAY 1023 OF CHAR;
+  BEGIN
+    cmd := Configuration.compiler;
+    Strings.Append(" ",                  cmd);
+    Strings.Append(moduleName,           cmd);
+    Strings.Append(".c ",                cmd);
+    Strings.Append(additionalopts,       cmd);
+    IF statically THEN
+      Strings.Append(" -static ",        cmd)
+    END;
+    Strings.Append(" -o ",               cmd);
+    Strings.Append(moduleName,           cmd);
+    Strings.Append(" -lOberon -L. -L",   cmd);
+    Strings.Append(Configuration.prefix, cmd);
+    Strings.Append("/lib ",              cmd);
+    execute("Link", cmd);
+  END LinkMain;
 
 BEGIN
-
-incPath0 := "src/lib/system/linux/";
-Strings.Append (compiler, incPath0);
-incPath1 := "lib/voc/obj ";
-ccOpt := " -fPIC -g ";
-
-COPY ("-I ", tmp1);
-Strings.Append (version.prefix, tmp1);
-Strings.Append("/", tmp1);
-Strings.Append(incPath0, tmp1);
-Strings.Append("/", tmp1);
-Strings.Append(version.arch, tmp1);
-Strings.Append(" -I ", tmp1);
-Strings.Append(version.prefix, tmp1);
-Strings.Append("/", tmp1);
-Strings.Append(incPath1, tmp1);
-Strings.Append(tmp1, ccOpt);
-Args.GetEnv("CFLAGS", CFLAGS);
-Strings.Append (CFLAGS, ccOpt);
-Strings.Append (" ", ccOpt);
-ccString := compiler;
-Strings.Append (" ", ccString);
-
+  compilationOptions := " -c -Wno-pointer-sign -g -I ";
+  Strings.Append(Configuration.prefix,    compilationOptions);
+  Strings.Append("/",                     compilationOptions);
+  Strings.Append("src/lib/system/linux/", compilationOptions);
+  Strings.Append(Configuration.compiler,  compilationOptions);
+(*Strings.Append("/",                     compilationOptions); *)
+(*Strings.Append(Configuration.cpuarch,   compilationOptions); *)
+  IF Configuration.compiler # "gcc" THEN
+    Strings.Append(" -fPIC",              compilationOptions)
+  END;
+  Strings.Append(" -I ",                  compilationOptions);
+  Strings.Append(Configuration.prefix,    compilationOptions);
+  Strings.Append("/",                     compilationOptions);
+  Strings.Append("lib/voc/obj ",          compilationOptions);
+  Args.GetEnv("CFLAGS", CFLAGS);
+  Strings.Append (CFLAGS,                 compilationOptions);
+  Strings.Append (" ",                    compilationOptions);
 END extTools.

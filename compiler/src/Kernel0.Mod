@@ -1,11 +1,11 @@
-MODULE Kernel0; 
+MODULE Kernel0;
 (*
-  J. Templ, 16.4.95 
+  J. Templ, 16.4.95
   communication with C-runtime and storage management
 *)
 (* version for bootstrapping voc *)
 
-  IMPORT SYSTEM, Unix, Args, Strings, version;
+  IMPORT SYSTEM, Unix, Args, Strings, Configuration;
 
   TYPE
     RealTime = POINTER TO TimeDesc;
@@ -22,7 +22,7 @@ MODULE Kernel0;
   VAR
     (* trap handling *)
     trapEnv*: Unix.JmpBuf;  (* saved stack environment for trap handling *)
-    
+
     (* oberon heap management *)
     nofiles*: LONGINT;
 
@@ -90,7 +90,7 @@ MODULE Kernel0;
     l := Unix.Gettimeofday(tv, tz);
     time := localtime(tv.sec);
     t := time.sec + ASH(time.min, 6) + ASH(time.hour, 12);
-    d := time.mday + ASH(time.mon+1, 5) + ASH(time.year MOD 100, 9); 
+    d := time.mday + ASH(time.mon+1, 5) + ASH(time.year MOD 100, 9);
   END GetClock;
 
   PROCEDURE SetClock* (t, d: LONGINT);
@@ -186,13 +186,13 @@ BEGIN
   CWD := ""; OBERON := "."; LIB := "";
   MODULES := ""; (* additional modules path which can be specified on commandline and will be added to the OBERON variable; noch *)
   getcwd(CWD);
-  Args.GetEnv ("MODULES", MODULES);
+  Args.GetEnv("MODULES", MODULES);
   Args.GetEnv("OBERON", OBERON);
   (* always have current directory in module search path, noch *)
   Strings.Append(":.:", OBERON);
   Strings.Append(MODULES, OBERON);
   Strings.Append(":", OBERON);
-  Strings.Append(version.prefix, OBERON);
+  Strings.Append(Configuration.prefix, OBERON);
   Strings.Append("/lib/voc/sym:", OBERON);
   Args.GetEnv("OBERON_LIB", LIB);
   TimeUnit := 1000; timeStart := 0; timeStart := Time();
