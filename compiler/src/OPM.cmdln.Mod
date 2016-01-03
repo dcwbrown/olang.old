@@ -197,8 +197,8 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
       Console.Ln;
       Console.String("oc: Oberon compiler ");
       Console.String(Configuration.version); Console.String(" ");
-      Console.String(Configuration.date); Console.String(" for "); Console.String(Configuration.cpuarch);
-      Console.String(" "); Console.String(Configuration.osarch); Console.String(".");
+      Console.String(Configuration.date); Console.String(" for "); Console.String(Configuration.osarch);
+      Console.String(" "); Console.String(Configuration.cpuarch); Console.String(".");
       Console.Ln; Console.Ln;
       Console.String("Based on Ofront by Software Templ OEG"); Console.Ln;
       Console.String("based on Vishap Oberon by Norayr Chilingarian and others"); Console.Ln;
