@@ -1,17 +1,6 @@
-(*
-*  voc (jet backend)  runtime system, Version 1.1
-*
-*  Copyright (c) Software Templ, 1994, 1995, 1996
-*
-*  Module SYSTEM is subject to change any time without prior notification.
-*  Software Templ disclaims all warranties with regard to module SYSTEM,
-*  in particular shall Software Templ not be liable for any damage resulting
-*  from inappropriate use or modification of module SYSTEM.
-*)
+MODULE Heap;
 
-MODULE SYSTEM;  (* J. Templ, 31.5.95 *)
-
-  IMPORT SYSTEM;  (*must not import other modules*)
+  IMPORT SYSTEM, Platform;
 
   CONST
     ModNameLen = 20;
@@ -97,11 +86,6 @@ MODULE SYSTEM;  (* J. Templ, 31.5.95 *)
     gclock*: SHORTINT;
 
 
-  PROCEDURE -malloc(size: LONGINT): LONGINT  "(LONGINT)malloc(size)";
-  PROCEDURE -Lock()  "Lock";
-  PROCEDURE -Unlock()  "Unlock";
-  PROCEDURE -Mainfrm(): LONGINT  "SYSTEM_mainfrm";
-
   (*
     PROCEDURE TAS*(VAR flag:BOOLEAN): BOOLEAN; (* added for compatibility with ulmSYSTEM module; noch *)
     VAR oldflag : BOOLEAN;
@@ -141,7 +125,7 @@ MODULE SYSTEM;  (* J. Templ, 31.5.95 *)
   PROCEDURE NewChunk(blksz: LONGINT): LONGINT;
     VAR chnk: LONGINT;
   BEGIN
-    chnk := malloc(blksz + blkOff);
+    chnk := Platform.Allocate(blksz + blkOff);
     IF chnk # 0 THEN
       SYSTEM.PUT(chnk + endOff, chnk + (blkOff + blksz));
       SYSTEM.PUT(chnk + blkOff, chnk + (blkOff + sizeOff));
@@ -179,7 +163,7 @@ MODULE SYSTEM;  (* J. Templ, 31.5.95 *)
   PROCEDURE NEWREC*(tag: LONGINT): SYSTEM.PTR;
     VAR i, i0, di, blksz, restsize, t, adr, end, next, prev: LONGINT; new: SYSTEM.PTR;
   BEGIN
-    Lock();
+    Platform.Lock();
     SYSTEM.GET(tag, blksz);
 
     ASSERT(Unit = 32);
@@ -219,9 +203,9 @@ MODULE SYSTEM;  (* J. Templ, 31.5.95 *)
               ExtendHeap((allocated + blksz) DIV (3*Unit) * (4*Unit) - heapsize);
               new := NEWREC(tag);  (* will find a free block if heap has been expanded properly *)
             END ;
-            Unlock(); RETURN new
+            Platform.Unlock(); RETURN new
           ELSE
-            Unlock(); RETURN NIL
+            Platform.Unlock(); RETURN NIL
           END
         END ;
         SYSTEM.GET(adr+sizeOff, t);
@@ -261,14 +245,14 @@ MODULE SYSTEM;  (* J. Templ, 31.5.95 *)
     SYSTEM.PUT(adr + sizeOff, LONG(LONG(0)));
     SYSTEM.PUT(adr + sntlOff, LONG(LONG(0)));
     INC(allocated, blksz);
-    Unlock();
+    Platform.Unlock();
     RETURN SYSTEM.VAL(SYSTEM.PTR, adr + SZL)
   END NEWREC;
 
   PROCEDURE NEWBLK*(size: LONGINT): SYSTEM.PTR;
      VAR blksz, tag: LONGINT; new: SYSTEM.PTR;
   BEGIN
-    Lock();
+    Platform.Lock();
     blksz := (size + (4*SZL + Unit - 1)) DIV Unit * Unit;  (*size + tag + meta + blksz + sntnl + UnitAlignment*)
     new := NEWREC(SYSTEM.ADR(blksz));
     tag := SYSTEM.VAL(LONGINT, new) + blksz - 3*SZL;
@@ -276,7 +260,7 @@ MODULE SYSTEM;  (* J. Templ, 31.5.95 *)
     SYSTEM.PUT(tag, blksz);
     SYSTEM.PUT(tag + SZL, NoPtrSntl);
     SYSTEM.PUT(SYSTEM.VAL(LONGINT, new) - SZL, tag);
-    Unlock();
+    Platform.Unlock();
     RETURN new
   END NEWBLK;
 
@@ -456,7 +440,7 @@ MODULE SYSTEM;  (* J. Templ, 31.5.95 *)
     END ;
     IF n = 0 THEN
       nofcand := 0; sp := SYSTEM.ADR(frame);
-      stack0 := Mainfrm();
+      stack0 := Platform.MainStackFrame;
       (* check for minimum alignment of pointers *)
       inc := SYSTEM.ADR(align.p) - SYSTEM.ADR(align);
       IF sp > stack0 THEN inc := -inc END ;
@@ -479,7 +463,7 @@ MODULE SYSTEM;  (* J. Templ, 31.5.95 *)
       cand: ARRAY 10000 OF LONGINT;
   BEGIN
     IF (gclock = 0) OR (gclock = 1) & ~markStack THEN
-      Lock();
+      Platform.Lock();
       m := SYSTEM.VAL(Module, modules);
       WHILE m # NIL DO
         IF m.enumPtrs # NIL THEN m.enumPtrs(MarkP) END ;
@@ -504,7 +488,7 @@ MODULE SYSTEM;  (* J. Templ, 31.5.95 *)
       CheckFin;
       Scan;
       Finalize;
-      Unlock()
+      Platform.Unlock()
     END
   END GC;
 
@@ -522,4 +506,4 @@ MODULE SYSTEM;  (* J. Templ, 31.5.95 *)
     allocated := 0; firstTry := TRUE; freeList[nofLists] := 1; gclock := 0
   END InitHeap;
 
-END SYSTEM.
+END Heap.

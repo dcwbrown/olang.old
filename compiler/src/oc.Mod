@@ -1,7 +1,7 @@
 MODULE oc;  (* J. Templ 3.2.95 *)
 
   IMPORT
-    SYSTEM, Unix, Kernel := Kernel0,
+    SYSTEM, Unix, Kernel := Kernel0, Heap,
     OPP, OPB, OPT,
     OPV, OPC, OPM,
     extTools, Strings, vt100;
@@ -98,7 +98,7 @@ VAR mname : ARRAY 256 OF CHAR; (* noch *)
       OPM.InitOptions;
       PropagateElementaryTypeSizes;
 
-      Kernel.GC(FALSE);
+      Heap.GC(FALSE);
       Module(done);
       IF ~done THEN OPM.LogWStr("OPM module compilation failed.");  OPM.LogLn; Unix.Exit(1) END ;
 

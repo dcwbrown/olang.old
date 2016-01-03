@@ -3,9 +3,9 @@ MODULE Files0;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files
 (* this module is not for use by developers and inteded to bootstrap voc *)
 (* for general use import Files module *)
 
-  IMPORT SYSTEM, Unix, Kernel := Kernel0, Args, Console;
+  IMPORT SYSTEM, Unix, Kernel := Kernel0, Heap, Args, Console;
 
-  (* standard data type I/O 
+  (* standard data type I/O
 
     little endian,
     Sint:1, Int:2, Lint:4
@@ -49,7 +49,7 @@ MODULE Files0;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files
       data: ARRAY bufsize OF SYSTEM.BYTE
     END ;
 
-    Rider* = RECORD 
+    Rider* = RECORD
       res*: LONGINT;
       eof*: BOOLEAN;
       buf: Buffer;
@@ -82,7 +82,7 @@ MODULE Files0;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files
 
   PROCEDURE Err(s: ARRAY OF CHAR; f: File; errno: LONGINT);
   BEGIN
-    Console.Ln; Console.String("-- "); Console.String(s); Console.String(": "); 
+    Console.Ln; Console.String("-- "); Console.String(s); Console.String(": ");
     IF f # NIL THEN
       IF f.registerName # "" THEN Console.String(f.registerName) ELSE Console.String(f.workName) END
     END ;
@@ -133,7 +133,7 @@ f.fd := Unix.Open(f.workName, SHORT(SYSTEM.VAL(LONGINT, (Unix.rdwr + Unix.creat 
       done := f.fd >= 0; errno := Unix.errno();
       IF (~done & ((errno = Unix.ENFILE) OR (errno = Unix.EMFILE))) OR (done & (f.fd >= fileTabSize)) THEN
         IF done & (f.fd >= fileTabSize) THEN errno := Unix.Close(f.fd) END ;
-        Kernel.GC(TRUE);
+        Heap.GC(TRUE);
         f.fd := Unix.Open(f.workName, SHORT(SYSTEM.VAL(LONGINT, (Unix.rdwr + Unix.creat + Unix.trunc))), SHORT(SYSTEM.VAL(LONGINT, {2, 4,5, 7,8})));
         done := f.fd >= 0
       END ;
@@ -220,7 +220,7 @@ f.fd := Unix.Open(f.workName, SHORT(SYSTEM.VAL(LONGINT, (Unix.rdwr + Unix.creat 
   BEGIN i := 0;
     WHILE i < fileTabSize DO
       f := SYSTEM.VAL(File, fileTab[i]);
-      IF (f # NIL) & (ino = f.ino) & (dev = f.dev) THEN 
+      IF (f # NIL) & (ino = f.ino) & (dev = f.dev) THEN
         IF mtime # f.mtime THEN i := 0;
           WHILE i < nofbufs DO
             IF f.bufs[i] # NIL THEN f.bufs[i].org := -1; f.bufs[i] := NIL END ;
@@ -249,7 +249,7 @@ f.fd := Unix.Open(f.workName, SHORT(SYSTEM.VAL(LONGINT, (Unix.rdwr + Unix.creat 
         fd := Unix.Open(path, SHORT(SYSTEM.VAL(LONGINT, Unix.rdwr)), SHORT(SYSTEM.VAL(LONGINT, {}))); done := fd >= 0; errno := Unix.errno();
         IF (~done & ((errno = Unix.ENFILE) OR (errno = Unix.EMFILE))) OR (done & (fd >= fileTabSize)) THEN
           IF done & (fd >= fileTabSize) THEN res := Unix.Close(fd) END ;
-          Kernel.GC(TRUE);
+          Heap.GC(TRUE);
           fd := Unix.Open(path, SHORT(SYSTEM.VAL(LONGINT, Unix.rdwr)), SHORT(SYSTEM.VAL(LONGINT, {})));
           done := fd >= 0; errno := Unix.errno();
           IF ~done & ((errno = Unix.ENFILE) OR (errno = Unix.EMFILE)) THEN Err("too many files open", f, errno) END
@@ -258,8 +258,8 @@ f.fd := Unix.Open(f.workName, SHORT(SYSTEM.VAL(LONGINT, (Unix.rdwr + Unix.creat 
           (* errno EAGAIN observed on Solaris 2.4 *)
           fd := Unix.Open(path, SHORT(SYSTEM.VAL(LONGINT, Unix.rdonly)), SHORT(SYSTEM.VAL(LONGINT, {}))); done :=  fd >= 0; errno := Unix.errno()
         END ;
-IF (~done) & (errno # Unix.ENOENT) THEN 
-  Console.String("warning Files0.Old "); Console.String(name); 
+IF (~done) & (errno # Unix.ENOENT) THEN
+  Console.String("warning Files0.Old "); Console.String(name);
   Console.String(" errno = "); Console.Int(errno, 0); Console.Ln;
 END ;
         IF done THEN
@@ -349,7 +349,7 @@ END ;
       Set(r, r.buf.f, r.org + offset);
       x := r.buf.data[0]; r.offset := 1
     ELSE
-      x := 0X; r.eof := TRUE 
+      x := 0X; r.eof := TRUE
     END
   END Read;
 
@@ -363,7 +363,7 @@ END ;
         Set(r, buf.f, r.org + offset);
         buf := r.buf; offset := r.offset
       END ;
-      restInBuf := buf.size - offset; 
+      restInBuf := buf.size - offset;
       IF restInBuf = 0 THEN r.res := n; r.eof := TRUE; RETURN
       ELSIF n > restInBuf THEN min := restInBuf ELSE min := n END ;
       SYSTEM.MOVE(SYSTEM.ADR(buf.data) + offset, SYSTEM.ADR(x) + xpos, min);
@@ -426,7 +426,7 @@ PROCEDURE Write* (VAR r: Rider; x: SYSTEM.BYTE);
   VAR buf: Buffer; offset: LONGINT;
 BEGIN
   buf := r.buf; offset := r.offset;
-  IF (offset >= bufsize) OR (r.org # buf.org) THEN 
+  IF (offset >= bufsize) OR (r.org # buf.org) THEN
     Set(r, buf.f, r.org + offset); buf := r.buf; offset := r.offset;
   END ;
   buf.data[offset] := x; r.offset := offset + 1; buf.chg := TRUE
@@ -531,35 +531,35 @@ Especially Length would become fairly complex.
   BEGIN ReadBytes(R, b, 2);
     x := ORD(b[0]) + ORD(b[1])*256
   END ReadInt;
-  
+
   PROCEDURE ReadLInt* (VAR R: Rider; VAR x: LONGINT);
     VAR b: ARRAY 4 OF CHAR;
   BEGIN ReadBytes(R, b, 4);
     x := ORD(b[0]) + ORD(b[1])*100H + ORD(b[2])*10000H + ORD(b[3])*1000000H
   END ReadLInt;
-  
+
   PROCEDURE ReadSet* (VAR R: Rider; VAR x: SET);
     VAR b: ARRAY 4 OF CHAR;
   BEGIN ReadBytes(R, b, 4);
     x := SYSTEM.VAL(SET, ORD(b[0]) + ORD(b[1])*100H + ORD(b[2])*10000H + ORD(b[3])*1000000H)
   END ReadSet;
-  
+
   PROCEDURE ReadReal* (VAR R: Rider; VAR x: REAL);
     VAR b: ARRAY 4 OF CHAR;
   BEGIN ReadBytes(R, b, 4); FlipBytes(b, x)
   END ReadReal;
-  
+
   PROCEDURE ReadLReal* (VAR R: Rider; VAR x: LONGREAL);
     VAR b: ARRAY 8 OF CHAR;
   BEGIN ReadBytes(R, b, 8); FlipBytes(b, x)
   END ReadLReal;
-  
+
   PROCEDURE ReadString* (VAR R: Rider; VAR x: ARRAY OF CHAR);
     VAR i: INTEGER; ch: CHAR;
   BEGIN i := 0;
     REPEAT Read(R, ch); x[i] := ch; INC(i) UNTIL ch = 0X
   END ReadString;
-  
+
   PROCEDURE ReadNum* (VAR R: Rider; VAR x: LONGINT);
     VAR s: SHORTINT; ch: CHAR; n: LONGINT;
   BEGIN s := 0; n := 0; Read(R, ch);
@@ -567,48 +567,48 @@ Especially Length would become fairly complex.
     INC(n, ASH(ORD(ch) MOD 64 - ORD(ch) DIV 64 * 64, s) );
     x := n
   END ReadNum;
-  
+
   PROCEDURE WriteBool* (VAR R: Rider; x: BOOLEAN);
   BEGIN Write(R, SYSTEM.VAL(CHAR, x))
   END WriteBool;
-  
+
   PROCEDURE WriteInt* (VAR R: Rider; x: INTEGER);
     VAR b: ARRAY 2 OF CHAR;
   BEGIN b[0] := CHR(x); b[1] := CHR(x DIV 256);
     WriteBytes(R, b, 2);
   END WriteInt;
-  
+
   PROCEDURE WriteLInt* (VAR R: Rider; x: LONGINT);
     VAR b: ARRAY 4 OF CHAR;
   BEGIN
     b[0] := CHR(x); b[1] := CHR(x DIV 100H); b[2] := CHR(x DIV 10000H); b[3] := CHR(x DIV 1000000H);
     WriteBytes(R, b, 4);
   END WriteLInt;
-  
+
   PROCEDURE WriteSet* (VAR R: Rider; x: SET);
     VAR b: ARRAY 4 OF CHAR; i: LONGINT;
   BEGIN i := SYSTEM.VAL(LONGINT, x);
     b[0] := CHR(i); b[1] := CHR(i DIV 100H); b[2] := CHR(i DIV 10000H); b[3] := CHR(i DIV 1000000H);
     WriteBytes(R, b, 4);
   END WriteSet;
-  
+
   PROCEDURE WriteReal* (VAR R: Rider; x: REAL);
     VAR b: ARRAY 4 OF CHAR;
   BEGIN FlipBytes(x, b); WriteBytes(R, b, 4)
   END WriteReal;
-  
+
   PROCEDURE WriteLReal* (VAR R: Rider; x: LONGREAL);
     VAR b: ARRAY 8 OF CHAR;
   BEGIN FlipBytes(x, b); WriteBytes(R, b, 8)
   END WriteLReal;
-  
+
   PROCEDURE WriteString* (VAR R: Rider; x: ARRAY [1] OF CHAR);
     VAR i: INTEGER;
   BEGIN i := 0;
     WHILE x[i] # 0X DO INC(i) END ;
     WriteBytes(R, x, i+1)
   END WriteString;
-  
+
   PROCEDURE WriteNum* (VAR R: Rider; x: LONGINT);
   BEGIN
     WHILE (x < - 64) OR (x > 63) DO Write(R, CHR(x MOD 128 + 128)); x := x DIV 128 END;

@@ -87,7 +87,6 @@ extern void SYSTEM_REGCMD();
 extern void SYSTEM_REGTYP();
 extern void SYSTEM_REGFIN();
 extern void SYSTEM_FINALL();
-extern void SYSTEM_INIT();
 extern void SYSTEM_FINI();
 extern void SYSTEM_HALT();
 extern void SYSTEM_INHERIT();
@@ -99,8 +98,13 @@ extern void SYSTEM_GC (BOOLEAN markStack);
 #define __DEFMOD	static void *m; if(m!=0)return m
 #define __REGMOD(name, enum)	if(m==0)m=SYSTEM_REGMOD((CHAR*)name,enum); else return m
 #define __ENDMOD	return m
-#define __INIT(argc, argv)	static void *m; SYSTEM_INIT(argc, (long)&argv);
-#define __REGMAIN(name, enum)	m=SYSTEM_REGMOD(name,enum)
+
+static void Platform_Init(INTEGER argc, LONGINT argv);
+//#define __INIT(argc, argv)	static void *m; Platform_Init((INTEGER)argc, (LONGINT)&argv);
+#define __INIT(argc, argv)	Platform_Init((INTEGER)argc, (LONGINT)&argv);
+
+static void *Platform_MainModule;
+#define __REGMAIN(name, enum)	Platform_MainModule = SYSTEM_REGMOD(name,enum)
 #define __FINI	SYSTEM_FINI(); return 0
 #define __MODULE_IMPORT(name)	SYSTEM_INCREF(name##__init())
 #define __REGCMD(name, cmd)	SYSTEM_REGCMD(m, name, cmd)

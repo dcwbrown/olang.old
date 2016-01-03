@@ -128,7 +128,7 @@ MODULE Kernel0;
   END Select;
 
   PROCEDURE -GC*(markStack: BOOLEAN)
-    "SYSTEM_GC(markStack)";
+    "Heap_GC(markStack)";
 
   PROCEDURE -RegisterObject*(obj: SYSTEM.PTR; finalize: ObjFinalizer)
     "SYSTEM_REGFIN(obj, finalize)";
