@@ -498,7 +498,7 @@ MODULE Heap;
     f.obj := SYSTEM.VAL(LONGINT, obj); f.finalize := finalize; f.marked := TRUE; f.next := fin; fin := f
   END REGFIN;
 
-  PROCEDURE InitHeap;  (* initialized before body to enable NEW, SYSTEM.NEW *)
+  PROCEDURE InitHeap*;  (* initialized before body to enable NEW, SYSTEM.NEW *)
   BEGIN
     heap := NewChunk(heapSize0);
     SYSTEM.GET(heap + endOff, heapend);

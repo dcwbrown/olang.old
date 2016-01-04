@@ -3,17 +3,16 @@ MODULE Args;  (* jt, 8.12.94 *)
   (* command line argument handling for voc (jet backend) *)
 
 
-  IMPORT SYSTEM;
-  
+  IMPORT SYSTEM, Platform;
+
   TYPE
     ArgPtr = POINTER TO ARRAY 1024 OF CHAR;
     ArgVec = POINTER TO ARRAY 1024 OF ArgPtr;
 
-  VAR argc-: INTEGER; argv-: LONGINT;
-  (*PROCEDURE -includestdlib() "#include <stdlib.h>";*)
-  PROCEDURE -externgetenv() "extern char *getenv(const char *name);"; (* took this from stdlib.h*)
-  PROCEDURE -Argc(): INTEGER "SYSTEM_argc";
-  PROCEDURE -Argv(): LONGINT "(long)SYSTEM_argv";
+  VAR
+    argc-: INTEGER;
+    argv-: LONGINT;
+
   PROCEDURE -getenv(var: ARRAY OF CHAR): ArgPtr
     "(Args_ArgPtr)getenv(var)";
 
@@ -61,5 +60,7 @@ MODULE Args;  (* jt, 8.12.94 *)
     END
   END getEnv;
 
-BEGIN argc := Argc(); argv := Argv()
+BEGIN
+  argc := Platform.ArgCount;
+  argv := Platform.ArgVector;
 END Args.

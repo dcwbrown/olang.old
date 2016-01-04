@@ -16,7 +16,7 @@ MODULE Console;  (* J. Templ, 29-June-96 *)
   PROCEDURE -read(VAR ch: CHAR): LONGINT
     "read(0/*stdin*/, ch, 1)";
 
-  PROCEDURE Flush*();
+  PROCEDURE Flush*;
   BEGIN
     Write(SYSTEM.ADR(line), pos); pos := 0;
   END Flush;
