@@ -316,8 +316,10 @@ from man gettimeofday
   PROCEDURE -Select*(width: INTEGER; VAR readfds, writefds, exceptfds: FdSet; VAR timeout: Timeval): INTEGER
     "select(width, (void*)readfds, (void*)writefds, (void*)exceptfds, (void*)timeout)";
 
+(*
   PROCEDURE -Gettimeofday* (VAR tv: Timeval; VAR tz: Timezone) : INTEGER
-    "gettimeofday((struct timeval *)(tv), (struct timezone*)(tz))";
+    "gettimeofday((struct timeval* )(tv), (struct timezone* )(tz))";
+*)
 
   PROCEDURE -Read* (fd: INTEGER; buf, nbyte: LONGINT): LONGINT
     "read(fd, (void*)buf, nbyte)";

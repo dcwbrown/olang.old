@@ -4,148 +4,154 @@ MODULE OPT;  (* NW, RC 6.3.89 / 23.1.92 *)  (* object model 24.2.94 *)
 2002-08-20 jt: NewStr: txtpos remains 0 for structs read from symbol file
 *)
 
-IMPORT
-OPS, OPM;
+IMPORT OPS, OPM;
 
 CONST
-MaxConstLen* = OPS.MaxStrLen;
+  MaxConstLen* = OPS.MaxStrLen;
 
 TYPE
-Const* = POINTER TO ConstDesc;
-Object* = POINTER TO ObjDesc;
-Struct* = POINTER TO StrDesc;
-Node* = POINTER TO NodeDesc;
-ConstExt* = POINTER TO OPS.String;
+  Const*    = POINTER TO ConstDesc;
+  Object*   = POINTER TO ObjDesc;
+  Struct*   = POINTER TO StrDesc;
+  Node*     = POINTER TO NodeDesc;
+  ConstExt* = POINTER TO OPS.String;
 
-ConstDesc* = RECORD
-ext*: ConstExt;  (* string or code for code proc *)
-intval*: LONGINT;  (* constant value or adr, proc par size, text position or least case label *)
-intval2*: LONGINT;  (* string length, proc var size or larger case label *)
-setval*: SET;  (* constant value, procedure body present or "ELSE" present in case *)
-realval*: LONGREAL  (* real or longreal constant value *)
-END ;
+  ConstDesc* = RECORD
+    ext*:      ConstExt; (* string or code for code proc *)
+    intval*:   LONGINT;  (* constant value or adr, proc par size, text position or least case label *)
+    intval2*:  LONGINT;  (* string length, proc var size or larger case label *)
+    setval*:   SET;      (* constant value, procedure body present or "ELSE" present in case *)
+    realval*:  LONGREAL  (* real or longreal constant value *)
+  END ;
 
-ObjDesc* = RECORD
-left*, right*, link*, scope*: Object;
-name*: OPS.Name;
-leaf*: BOOLEAN;
-mode*, mnolev*: SHORTINT;  (* mnolev < 0 -> mno = -mnolev *)
-vis*: SHORTINT;  (* internal, external, externalR *)
-history*: SHORTINT;  (* relevant if name # "" *)
-used*, fpdone*: BOOLEAN;
-fprint*: LONGINT;
-typ*: Struct;
-conval*: Const;
-adr*, linkadr*: LONGINT;
-x*: INTEGER  (* linkadr and x can be freely used by the backend *)
-END ;
+  ObjDesc* = RECORD
+    left*, right*:  Object;
+    link*, scope*:  Object;
+    name*:          OPS.Name;
+    leaf*:          BOOLEAN;
+    mode*, mnolev*: SHORTINT;  (* mnolev < 0 -> mno = -mnolev *)
+    vis*:           SHORTINT;  (* internal, external, externalR *)
+    history*:       SHORTINT;  (* relevant if name # "" *)
+    used*, fpdone*: BOOLEAN;
+    fprint*:        LONGINT;
+    typ*:           Struct;
+    conval*:        Const;
+    adr*, linkadr*: LONGINT;
+    x*:             INTEGER    (* linkadr and x can be freely used by the backend *)
+  END ;
 
-StrDesc* = RECORD
-form*, comp*, mno*, extlev*: SHORTINT;
-ref*, sysflag*: INTEGER;
-n*, size*, align*, txtpos*: LONGINT;  (* align is alignment for records and len offset for dynarrs *)
-allocated*, pbused*, pvused*, fpdone, idfpdone: BOOLEAN;
-idfp, pbfp*, pvfp*:LONGINT;
-BaseTyp*: Struct;
-link*, strobj*: Object
-END ;
+  StrDesc* = RECORD
+    form*, comp*:       SHORTINT;
+    mno*, extlev*:      SHORTINT;
+    ref*, sysflag*:     INTEGER;
+    n*, size*:          LONGINT;
+    align*, txtpos*:    LONGINT;  (* align is alignment for records and len offset for dynarrs *)
+    allocated*:         BOOLEAN;
+    pbused*, pvused*:   BOOLEAN;
+    fpdone, idfpdone:   BOOLEAN;
+    idfp, pbfp*, pvfp*: LONGINT;
+    BaseTyp*:           Struct;
+    link*, strobj*:     Object
+  END ;
 
-NodeDesc* = RECORD
-left*, right*, link*: Node;
-class*, subcl*: SHORTINT;
-readonly*: BOOLEAN;
-typ*: Struct;
-obj*: Object;
-conval*: Const
-END ;
+  NodeDesc* = RECORD
+    left*, right*, link*: Node;
+    class*, subcl*:       SHORTINT;
+    readonly*:            BOOLEAN;
+    typ*:                 Struct;
+    obj*:                 Object;
+    conval*:              Const
+  END ;
 
 CONST
-maxImps = 64;  (* must be <= MAX(SHORTINT) *)
-maxStruct = OPM.MaxStruct;  (* must be < MAX(INTEGER) DIV 2 *)
-FirstRef = (*20*)16; (* comp + 1 *)
+  maxImps = 64;  (* must be <= MAX(SHORTINT) *)
+  maxStruct = OPM.MaxStruct;  (* must be < MAX(INTEGER) DIV 2 *)
+  FirstRef = (*20*)16; (* comp + 1 *)
 
 VAR
-typSize*: PROCEDURE(typ: Struct);
-topScope*: Object;
-undftyp*, bytetyp*, booltyp*, chartyp*, sinttyp*, inttyp*, linttyp*,
-realtyp*, lrltyp*, settyp*, stringtyp*, niltyp*, notyp*, sysptrtyp*(*,
-int8typ*, int16typ*, int32typ*, int64typ* *): Struct;
-nofGmod*: SHORTINT;  (*nof imports*)
-GlbMod*: ARRAY maxImps OF Object;  (* ^.right = first object, ^.name = module import name (not alias) *)
-SelfName*: OPS.Name;  (* name of module being compiled *)
-SYSimported*: BOOLEAN;
+  typSize*: PROCEDURE(typ: Struct);
+  topScope*: Object;
+  undftyp*, bytetyp*, booltyp*, chartyp*, sinttyp*, inttyp*, linttyp*,
+  realtyp*, lrltyp*, settyp*, stringtyp*, niltyp*, notyp*, sysptrtyp*(*,
+  int8typ*, int16typ*, int32typ*, int64typ* *): Struct;
+  nofGmod*: SHORTINT;  (*nof imports*)
+  GlbMod*: ARRAY maxImps OF Object;  (* ^.right = first object, ^.name = module import name (not alias) *)
+  SelfName*: OPS.Name;  (* name of module being compiled *)
+  SYSimported*: BOOLEAN;
 
 CONST
-(* object modes *)
-Var = 1; VarPar = 2; Con = 3; Fld = 4; Typ = 5; LProc = 6; XProc = 7;
-SProc = 8; CProc = 9; IProc = 10; Mod = 11; Head = 12; TProc = 13;
+  (* object modes *)
+  Var = 1; VarPar = 2; Con = 3; Fld = 4; Typ = 5; LProc = 6; XProc = 7;
+  SProc = 8; CProc = 9; IProc = 10; Mod = 11; Head = 12; TProc = 13;
 
-(* structure forms *)
-Undef = 0; Byte = 1; Bool = 2; Char = 3;
-SInt = 4; Int = 5; LInt = 6;
-Real = 7; LReal = 8; Set = 9; String = 10; NilTyp = 11; NoTyp = 12;
-Pointer = 13; ProcTyp = 14;
-Comp = 15;
+  (* structure forms *)
+  Undef = 0; Byte = 1; Bool = 2; Char = 3;
+  SInt = 4; Int = 5; LInt = 6;
+  Real = 7; LReal = 8; Set = 9; String = 10; NilTyp = 11; NoTyp = 12;
+  Pointer = 13; ProcTyp = 14;
+  Comp = 15;
 
-(*Int8 = 7; Int16 = 8; Int32 = 9; Int64 = 10;
-Real = 11; LReal = 12; Set = 13; String = 14; NilTyp = 15; NoTyp = 16;
-Pointer = 17; ProcTyp = 18;
-Comp = 19;*)
-(*Real = 7; LReal = 8; Set = 9; String = 10; NilTyp = 11; NoTyp = 12;
-Pointer = 13; ProcTyp = 14;
-Int8 = 15; Int16 = 16; Int32 = 17; Int64 = 18;
-Comp = 19;*)
+  (*Int8 = 7; Int16 = 8; Int32 = 9; Int64 = 10;
+  Real = 11; LReal = 12; Set = 13; String = 14; NilTyp = 15; NoTyp = 16;
+  Pointer = 17; ProcTyp = 18;
+  Comp = 19;*)
+  (*Real = 7; LReal = 8; Set = 9; String = 10; NilTyp = 11; NoTyp = 12;
+  Pointer = 13; ProcTyp = 14;
+  Int8 = 15; Int16 = 16; Int32 = 17; Int64 = 18;
+  Comp = 19;*)
 
-(* composite structure forms *)
-Basic = 1; Array = 2; DynArr = 3; Record = 4;
+  (* composite structure forms *)
+  Basic = 1; Array = 2; DynArr = 3; Record = 4;
 
-(*function number*)
-assign = 0;
-haltfn = 0; newfn = 1; absfn = 2; capfn = 3; ordfn = 4;
-entierfn = 5; oddfn = 6; minfn = 7; maxfn = 8; chrfn = 9;
-shortfn = 10; longfn = 11; sizefn = 12; incfn = 13; decfn = 14;
-inclfn = 15; exclfn = 16; lenfn = 17; copyfn = 18; ashfn = 19; assertfn = 32;
+  (*function number*)
+  assign = 0;
+  haltfn = 0; newfn = 1; absfn = 2; capfn = 3; ordfn = 4;
+  entierfn = 5; oddfn = 6; minfn = 7; maxfn = 8; chrfn = 9;
+  shortfn = 10; longfn = 11; sizefn = 12; incfn = 13; decfn = 14;
+  inclfn = 15; exclfn = 16; lenfn = 17; copyfn = 18; ashfn = 19; assertfn = 32;
 
-(*SYSTEM function number*)
-adrfn = 20; ccfn = 21; lshfn = 22; rotfn = 23;
-getfn = 24; putfn = 25; getrfn = 26; putrfn = 27;
-bitfn = 28; valfn = 29; sysnewfn = 30; movefn = 31;
+  (*SYSTEM function number*)
+  adrfn = 20; ccfn = 21; lshfn = 22; rotfn = 23;
+  getfn = 24; putfn = 25; getrfn = 26; putrfn = 27;
+  bitfn = 28; valfn = 29; sysnewfn = 30; movefn = 31;
 
-(* module visibility of objects *)
-internal = 0; external = 1; externalR = 2;
+  (* module visibility of objects *)
+  internal = 0; external = 1; externalR = 2;
 
-(* history of imported objects *)
-inserted = 0; same = 1; pbmodified = 2; pvmodified = 3; removed = 4; inconsistent = 5;
+  (* history of imported objects *)
+  inserted = 0; same = 1; pbmodified = 2; pvmodified = 3; removed = 4; inconsistent = 5;
 
-(* symbol file items *)
-Smname = 16; Send = 18; Stype = 19; Salias = 20; Svar = 21; Srvar = 22;
-Svalpar = 23; Svarpar = 24; Sfld = 25; Srfld = 26; Shdptr = 27; Shdpro = 28; Stpro = 29; Shdtpro = 30;
-Sxpro = 31; Sipro = 32; Scpro = 33; Sstruct = 34; Ssys = 35; Sptr = 36; Sarr = 37; Sdarr = 38; Srec = 39; Spro = 40;
+  (* symbol file items *)
+  Smname = 16; Send = 18; Stype = 19; Salias = 20; Svar = 21; Srvar = 22;
+  Svalpar = 23; Svarpar = 24; Sfld = 25; Srfld = 26; Shdptr = 27; Shdpro = 28; Stpro = 29; Shdtpro = 30;
+  Sxpro = 31; Sipro = 32; Scpro = 33; Sstruct = 34; Ssys = 35; Sptr = 36; Sarr = 37; Sdarr = 38; Srec = 39; Spro = 40;
 
 TYPE
-ImpCtxt = RECORD
-nextTag, reffp: LONGINT;
-nofr, minr, nofm: INTEGER;
-self: BOOLEAN;
-ref: ARRAY maxStruct OF Struct;
-old: ARRAY maxStruct OF Object;
-pvfp: ARRAY maxStruct OF LONGINT;  (* set only if old # NIL *)
-glbmno: ARRAY maxImps OF SHORTINT  (* index is local mno *)
-END ;
+  ImpCtxt = RECORD
+    nextTag, reffp:   LONGINT;
+    nofr, minr, nofm: INTEGER;
+    self:             BOOLEAN;
+    ref:              ARRAY maxStruct OF Struct;
+    old:              ARRAY maxStruct OF Object;
+    pvfp:             ARRAY maxStruct OF LONGINT;  (* set only if old # NIL *)
+    glbmno:           ARRAY maxImps OF SHORTINT  (* index is local mno *)
+  END ;
 
-ExpCtxt = RECORD
-reffp: LONGINT;
-ref: INTEGER;
-nofm: SHORTINT;
-locmno: ARRAY maxImps OF SHORTINT  (* index is global mno *)
-END ;
+  ExpCtxt = RECORD
+    reffp:  LONGINT;
+    ref:    INTEGER;
+    nofm:   SHORTINT;
+    locmno: ARRAY maxImps OF SHORTINT  (* index is global mno *)
+  END ;
 
 VAR
-universe, syslink: Object;
-impCtxt: ImpCtxt;
-expCtxt: ExpCtxt;
-nofhdfld: LONGINT;
-newsf, findpc, extsf, sfpresent, symExtended, symNew: BOOLEAN;
+  universe, syslink:   Object;
+  impCtxt:             ImpCtxt;
+  expCtxt:             ExpCtxt;
+  nofhdfld:            LONGINT;
+  newsf, findpc:       BOOLEAN;
+  extsf, sfpresent:    BOOLEAN;
+  symExtended, symNew: BOOLEAN;
 
 PROCEDURE err(n: INTEGER);
 BEGIN OPM.err(n)

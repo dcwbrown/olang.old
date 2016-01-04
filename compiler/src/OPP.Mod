@@ -595,7 +595,11 @@ MODULE OPP;  (* NW, RC 6.3.89 / 10.2.94 *)  (* object model 4.12.93 *)
       ext := OPT.NewExt(); proc^.conval^.ext := ext; n := 0;
       IF sym = string THEN
         WHILE OPS.str[n] # 0X DO ext[n+1] := OPS.str[n]; INC(n) END ;
-        ext^[0] := CHR(n); OPS.Get(sym)
+        ext^[0] := CHR(n); OPS.Get(sym);
+        (*
+          Console.String("Code procedure, length "); Console.Int(n,1); Console.Ln;
+          Console.String('  "'); Console.String(ext^); Console.String('"'); Console.Ln;
+        *)
       ELSE
         LOOP
           IF sym = number THEN c := OPS.intval; INC(n);

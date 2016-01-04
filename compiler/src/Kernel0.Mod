@@ -8,11 +8,6 @@ MODULE Kernel0;
   IMPORT SYSTEM, Unix, Args, Strings, Configuration;
 
   TYPE
-    RealTime = POINTER TO TimeDesc;
-    TimeDesc = RECORD
-      sec, min, hour, mday, mon, year, wday, isdst, zone, gmtoff: LONGINT
-(*      sec, min, hour, mday, mon, year, wday, isdst, zone, gmtoff: INTEGER*)
-    END ;
 
     KeyCmd* = PROCEDURE;
 
@@ -43,11 +38,11 @@ MODULE Kernel0;
     timeStart: LONGINT; (* milliseconds *)
 
 
-  PROCEDURE -includesetjmp()
-    '#include "setjmp.h"';
-(* for localtime *)
-  PROCEDURE -includetime()
-    '#include "time.h"';
+
+
+
+
+  PROCEDURE -includesetjmp()  '#include <setjmp.h>';
 
   PROCEDURE -Lock*()
     "SYSTEM_lock++";
@@ -70,28 +65,10 @@ MODULE Kernel0;
   PROCEDURE -allocated*(): LONGINT
       "SYSTEM_allocated";
 
+(*
   PROCEDURE -localtime(VAR clock: LONGINT): RealTime
       "(Kernel0_RealTime)localtime(clock)";
-
-  PROCEDURE -malloc*(size: LONGINT): LONGINT
-      "(LONGINT)malloc(size)";
-
-  PROCEDURE -free*(adr: LONGINT)
-      "(void)free(adr)";
-
-  PROCEDURE -getcwd(VAR cwd: Unix.Name)
-    "getcwd(cwd, cwd__len)";
-
-
-  PROCEDURE GetClock* (VAR t, d: LONGINT);
-    VAR tv: Unix.Timeval; tz: Unix.Timezone; time: RealTime;
-    l : LONGINT;
-  BEGIN
-    l := Unix.Gettimeofday(tv, tz);
-    time := localtime(tv.sec);
-    t := time.sec + ASH(time.min, 6) + ASH(time.hour, 12);
-    d := time.mday + ASH(time.mon+1, 5) + ASH(time.year MOD 100, 9);
-  END GetClock;
+*)
 
   PROCEDURE SetClock* (t, d: LONGINT);
     VAR err: ARRAY 25 OF CHAR;
@@ -179,6 +156,8 @@ MODULE Kernel0;
       Exit(1);
     END
   END JmpBufCheck;
+
+PROCEDURE -getcwd (VAR cwd: ARRAY OF CHAR) "getcwd(cwd, cwd__len)";
 
 BEGIN
   EndianTest();
