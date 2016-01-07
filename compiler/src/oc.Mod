@@ -1,34 +1,13 @@
 MODULE oc;  (* J. Templ 3.2.95 *)
 
   IMPORT
-    SYSTEM, Unix, Kernel := Kernel0, Heap,
+    SYSTEM, Heap, Platform,
     OPP, OPB, OPT,
     OPV, OPC, OPM,
     extTools, Strings, vt100;
 
-VAR mname : ARRAY 256 OF CHAR; (* noch *)
+  VAR mname : ARRAY 256 OF CHAR; (* noch *)
 
-
-  PROCEDURE -signal(sig: LONGINT; func: Unix.SignalHandler) "signal(sig, func)";
-  PROCEDURE -fin()                                          "SYSTEM_FINALL()";
-  PROCEDURE -halt(): LONGINT                                "SYSTEM_halt";
-(*
-  PROCEDURE -gclock()                                       "SYSTEM_gclock = 1";
-*)
-
-  PROCEDURE Trap(sig: INTEGER);
-  BEGIN
-    fin();
-    IF sig = 3 THEN
-      Unix.Exit(0)
-    ELSE
-      IF (sig = 4) & (halt() = -15) THEN
-        OPM.LogWStr(" --- oc: internal error");
-        OPM.LogLn
-      END ;
-      Unix.Exit(2)
-    END
-  END Trap;
 
   PROCEDURE Module*(VAR done: BOOLEAN);
     VAR ext, new: BOOLEAN; p: OPT.Node;
@@ -100,7 +79,10 @@ VAR mname : ARRAY 256 OF CHAR; (* noch *)
 
       Heap.GC(FALSE);
       Module(done);
-      IF ~done THEN OPM.LogWStr("OPM module compilation failed.");  OPM.LogLn; Unix.Exit(1) END ;
+      IF ~done THEN
+        OPM.LogWStr("OPM module compilation failed."); OPM.LogLn;
+        Platform.Exit(1)
+      END;
 
       IF ~OPM.dontAsm THEN
 	      extTools.Assemble(OPM.modName);
@@ -117,9 +99,23 @@ VAR mname : ARRAY 256 OF CHAR; (* noch *)
     END (* loop *)
   END Translate;
 
+  PROCEDURE Trap(sig: INTEGER);
+  BEGIN
+    Heap.FINALL();
+    IF sig = 3 THEN
+      Platform.Exit(0)
+    ELSE
+      IF (sig = 4) & (Platform.HaltCode = -15) THEN
+        OPM.LogWStr(" --- oc: internal error");
+        OPM.LogLn
+      END ;
+      Platform.Exit(2)
+    END
+  END Trap;
+
 BEGIN
-  signal(2, Trap);  (* interrupt *)
-  signal(3, Trap);  (* quit *)
-  signal(4, Trap);  (* illegal instruction, HALT *)
+  Platform.SetInterruptHandler(Trap);
+  Platform.SetQuitHandler(Trap);
+  Platform.SetBadInstructionHandler(Trap);
   OPB.typSize := OPV.TypSize; OPT.typSize := OPV.TypSize; Translate
 END oc.

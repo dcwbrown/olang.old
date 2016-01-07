@@ -1,22 +1,20 @@
 MODULE extTools;
 
-IMPORT Args, Unix, Strings, Console, Configuration;
-
-(*
-INCLUDEPATH = -Isrc/lib/system/gnuc/x86_64
-CCOPT = -fPIC $(INCLUDEPATH) -g
-CLOBERONOPTS = -fPIC $(INCLUDEPATH) -L. -L/usr/lib -lOberon -static -g
-CC = cc $(CCOPT) -c
-*)
-
+IMPORT Args, Strings, Console, Configuration, Platform;
 
 VAR compilationOptions, CFLAGS: ARRAY 1023 OF CHAR;
 
 
 PROCEDURE execute(title: ARRAY OF CHAR; cmd: ARRAY OF CHAR);
+  VAR r: INTEGER;
 BEGIN
   Console.Ln; Console.String(title); Console.String(" command: "); Console.String(cmd); Console.Ln;
-  Unix.system(cmd);
+  r := Platform.System(cmd);
+  IF (r < 0) OR (r = 127) THEN
+    Console.String("Command failed with termination status ");
+    Console.Int(r,1); Console.Ln;
+    Platform.Exit(r);
+  END;
 END execute;
 
 

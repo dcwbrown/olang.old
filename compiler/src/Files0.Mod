@@ -3,7 +3,7 @@ MODULE Files0;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files
 (* this module is not for use by developers and inteded to bootstrap voc *)
 (* for general use import Files module *)
 
-  IMPORT SYSTEM, Platform, Heap, Args, Console, Kernel := Kernel0;
+  IMPORT SYSTEM, Platform, Heap, Args, Console;
 
   (* standard data type I/O
 
@@ -120,21 +120,21 @@ MODULE Files0;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files
       END;
       error := Platform.Unlink(f.workName);  (*unlink first to avoid stale NFS handles and to avoid reuse of inodes*)
 
-      error := Platform.Newfile(f.workName, f.fd);
+      error := Platform.New(f.workName, f.fd);
       done := error = 0;
       (* In case of too many files, try just once more. *)
       IF (~done & Platform.TooManyFiles(error)) OR (done & (f.fd >= fileTabSize)) THEN
         IF done & (f.fd >= fileTabSize) THEN error := Platform.Close(f.fd) END;
         Heap.GC(TRUE);
-        error := Platform.Newfile(f.workName, f.fd);
+        error := Platform.New(f.workName, f.fd);
         done  := f.fd = 0
       END;
       IF done THEN
         IF f.fd >= fileTabSize THEN error := Platform.Close(f.fd); Err("too many files open", f, 0)
         ELSE
           fileTab[f.fd] := SYSTEM.VAL(LONGINT, f);
-          INC(Kernel.nofiles);
-          Kernel.RegisterObject(f, Finalize);
+          INC(Heap.FileCount);
+          Heap.RegisterFinalizer(f, Finalize);
           f.state    := open;
           f.pos      := 0;
           error      := Platform.Identify(f.fd, f.identity);
@@ -268,7 +268,7 @@ MODULE Files0;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files
           f := CacheEntry(identity);
           IF f # NIL THEN error := Platform.Close(fd); RETURN f
           ELSIF fd >= fileTabSize THEN error := Platform.Close(fd); Err("too many files open", f, 0)
-          ELSE NEW(f); fileTab[fd] := SYSTEM.VAL(LONGINT, f); INC(Kernel.nofiles); Kernel.RegisterObject(f, Finalize);
+          ELSE NEW(f); fileTab[fd] := SYSTEM.VAL(LONGINT, f); INC(Heap.FileCount); Heap.RegisterFinalizer(f, Finalize);
             f.fd := fd; f.state := open; f.pos := 0; f.swapper := -1; (*all f.buf[i] = NIL*)
             error := Platform.Size(fd, f.len);
             COPY(name, f.workName); f.registerName := ""; f.tempFile := FALSE;
@@ -298,12 +298,9 @@ MODULE Files0;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files
   PROCEDURE GetDate* (f: File; VAR t, d: LONGINT);
     VAR
       identity: Platform.FileIdentity;  error: Platform.ErrorCode;
-      clock: LONGINT;  time: Time;
   BEGIN
     Create(f); error := Platform.Identify(f.fd, identity);
-    time := localtime(stat.mtime);
-    t := time.sec + ASH(time.min, 6) + ASH(time.hour, 12);
-    d := time.mday + ASH(time.mon+1, 5) + ASH(time.year MOD 100, 9)
+    Platform.SecondsToClock(identity.mtime, t, d)
   END GetDate;
 
   PROCEDURE Pos* (VAR r: Rider): LONGINT;
@@ -311,7 +308,7 @@ MODULE Files0;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files
   END Pos;
 
   PROCEDURE Set* (VAR r: Rider; f: File; pos: LONGINT);
-    VAR org, offset, i, n, res: LONGINT; buf: Buffer;
+    VAR org, offset, i, n: LONGINT;  buf: Buffer;  error: Platform.ErrorCode;
   BEGIN
     IF f # NIL THEN
       IF pos > f.len THEN pos := f.len ELSIF pos < 0 THEN pos := 0 END;
@@ -329,9 +326,9 @@ MODULE Files0;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files
       IF buf.org # org THEN
         IF org = f.len THEN buf.size := 0
         ELSE Create(f);
-          IF f.pos # org THEN res := Platform.Seek(f.fd, org) END;
-          n := Unix.ReadBlk(f.fd, buf.data);
-          IF n < 0 THEN Err("read from file not done", f, Unix.errno()) END;
+          IF f.pos # org THEN error := Platform.Seek(f.fd, org) END;
+          error := Platform.Read(f.fd, SYSTEM.ADR(buf.data), LEN(buf.data), n);
+          IF error # 0 THEN Err("read from file not done", f, error) END;
           f.pos := org + n;
           buf.size := n
         END;
@@ -454,48 +451,53 @@ but this would also affect Set, Length, and Flush.
 Especially Length would become fairly complex.
 *)
 
-  PROCEDURE Delete* (name: ARRAY OF CHAR; VAR res: INTEGER);
-  BEGIN
-    res := SHORT(Unix.Unlink(name));
-    res := SHORT(Unix.errno())
-  END Delete;
+  PROCEDURE Delete*(name: ARRAY OF CHAR; VAR res: INTEGER);
+  BEGIN res := Platform.Unlink(name) END Delete;
 
   PROCEDURE Rename* (old, new: ARRAY OF CHAR; VAR res: INTEGER);
-    VAR fdold, fdnew: INTEGER;
+    VAR
+      fdold, fdnew: Platform.FileHandle;
       n: LONGINT;
-      error: Platform.Errorcode;
-      ostat, nstat: Unix.Status;
+      error, ignore: Platform.ErrorCode;
+      oldidentity, newidentity: Platform.FileIdentity;
       buf: ARRAY 4096 OF CHAR;
   BEGIN
-    error := Platform.Stat(old, ostat);
+    error := Platform.IdentifyByName(old, oldidentity);
     IF error = 0 THEN
-      error := Platform.Stat(new, nstat);
-      IF (error # 0) & ((ostat.volume # nstat.volume) OR (ostat.index # nstat.index)) THEN
-        Delete(new, res);  (* work around stale nfs handles *)
+      error := Platform.IdentifyByName(new, newidentity);
+      IF (error # 0) & (   (oldidentity.volume # newidentity.volume)
+                        OR (oldidentity.index  # newidentity.index)) THEN
+        Delete(new, error);  (* work around stale nfs handles *)
       END;
-      error := Unix.Rename(old, new);
-      IF DifferentFilesystems(error) THEN (* cross device link, move the file *)
-          error := Platform.Oldfile(old, fdold);
-          IF error # 0 THEN res := 2; RETURN END;
-          error := Platform.Newfile(new, fdnew);
-          IF error # 0 THEN error := Platform.Close(fdold); res := 3; RETURN END;
-          error := Platform.Readfile(fdold, SYSTEM.ADR(buf), bufsize, n);
-          WHILE n > 0 DO
-            error := Platform.Write(fdnew, SYSTEM.ADR(buf), n);
-            IF errno # 0 THEN Platform.Close(fdold); Platform.Close(fdnew);
-              Err("cannot move file", NIL, errno)
-            END;
-            error := Platform.Readfile(fdold, SYSTEM.ADR(buf), bufsize, n);
+      error := Platform.Rename(old, new);
+      IF ~Platform.DifferentFilesystems(error) THEN
+        res := error; RETURN
+      ELSE
+        (* cross device link, move the file *)
+        error := Platform.OldRO(old, fdold);
+        IF error # 0 THEN res := 2; RETURN END;
+        error := Platform.New(new, fdnew);
+        IF error # 0 THEN error := Platform.Close(fdold); res := 3; RETURN END;
+        error := Platform.Read(fdold, SYSTEM.ADR(buf), bufsize, n);
+        WHILE n > 0 DO
+          error := Platform.Write(fdnew, SYSTEM.ADR(buf), n);
+          IF error # 0 THEN
+            ignore := Platform.Close(fdold);
+            ignore := Platform.Close(fdnew);
+            Err("cannot move file", NIL, error)
           END;
-          Platform.Close(fdold); Platform.Close(fdnew);
-          IF n = 0 THEN error := Platform.Unlink(old); res := 0
-          ELSE Err("cannot move file", NIL, errno)
-          END;
-        ELSE RETURN (* res is Unix.Rename return code *)
-        END
-      END;
-      res := 0
-    ELSE res := 2 (* old file not found *)
+          error := Platform.Read(fdold, SYSTEM.ADR(buf), bufsize, n);
+        END;
+        ignore := Platform.Close(fdold);
+        ignore := Platform.Close(fdnew);
+        IF n = 0 THEN
+          error := Platform.Unlink(old); res := 0
+        ELSE
+          Err("cannot move file", NIL, error)
+        END;
+      END
+    ELSE
+      res := 2 (* old file not found *)
     END
   END Rename;
 
@@ -513,14 +515,13 @@ Especially Length would become fairly complex.
 
   PROCEDURE ChangeDirectory*(path: ARRAY OF CHAR; VAR res: INTEGER);
   BEGIN
-    res := SHORT(Unix.Chdir(path));
-    getcwd(Platform.CWD)
+    res := Platform.Chdir(path);
   END ChangeDirectory;
 
   PROCEDURE FlipBytes(VAR src, dest: ARRAY OF SYSTEM.BYTE);
     VAR i, j: LONGINT;
   BEGIN
-    IF ~Platform.littleEndian THEN i := LEN(src); j := 0;
+    IF ~Platform.LittleEndian THEN i := LEN(src); j := 0;
       WHILE i > 0 DO DEC(i); dest[j] := src[i]; INC(j) END
     ELSE SYSTEM.MOVE(SYSTEM.ADR(src), SYSTEM.ADR(dest), LEN(src))
     END
@@ -624,8 +625,8 @@ Especially Length would become fairly complex.
   BEGIN
     f := SYSTEM.VAL(File, o);
     IF f.fd >= 0 THEN
-      fileTab[f.fd] := 0; res := Platform.Close(f.fd); f.fd := -1; DEC(Kernel.nofiles);
-      IF f.tempFile THEN res := Unix.Unlink(f.workName) END
+      fileTab[f.fd] := 0; res := Platform.Close(f.fd); f.fd := -1; DEC(Heap.FileCount);
+      IF f.tempFile THEN res := Platform.Unlink(f.workName) END
     END
   END Finalize;
 
@@ -633,7 +634,7 @@ Especially Length would become fairly complex.
     VAR i: LONGINT;
   BEGIN
     i := 0; WHILE i < fileTabSize DO fileTab[i] := 0; INC(i) END;
-    tempno := -1; Kernel.nofiles := 0
+    tempno := -1; Heap.FileCount := 0
   END Init;
 
 BEGIN Init

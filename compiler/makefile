@@ -69,9 +69,9 @@ translateToC:
 	$(OBERONCOMPILER0) -PSsiapx Heap.Mod
 	$(OBERONCOMPILER0) -PSFs    Args.Mod
 	$(OBERONCOMPILER0) -PSFs    Console.Mod
-	$(OBERONCOMPILER0) -PSFs    Unix.Mod
+	# $(OBERONCOMPILER0) -PSFs    Unix.Mod
 	$(OBERONCOMPILER0) -PSFs    Strings.Mod
-	$(OBERONCOMPILER0) -PSFs    Kernel0.Mod
+	# $(OBERONCOMPILER0) -PSFs    Kernel0.Mod
 	$(OBERONCOMPILER0) -PSFs    Modules.Mod
 	$(OBERONCOMPILER0) -PSFsx   Files0.Mod
 	$(OBERONCOMPILER0) -PSFs    Reals.Mod
@@ -91,13 +91,13 @@ translateToC:
 
 compileC:
 	#
-	$(CC) Platform.c Heap.c Args.c Console.c Modules.c Unix.c Strings.c Configuration.c \
-	Kernel0.c Files0.c Reals.c Texts0.c vt100.c extTools.c \
+	$(CC) Platform.c Heap.c Args.c Console.c Modules.c Strings.c Configuration.c \
+	src/SYSTEM.c Files0.c Reals.c Texts0.c vt100.c extTools.c \
 	OPM.c OPS.c OPT.c OPC.c OPV.c OPB.c OPP.c errors.c
 	#
-	$(CL) -static  oc.c -o oc  Platform.o Heap.o Args.o Console.o Modules.o Unix.o \
-	Strings.o Configuration.o Kernel0.o Files0.o Reals.o Texts0.o vt100.o extTools.o \
-	OPM.o OPS.o OPT.o OPC.o OPV.o OPB.o OPP.o errors.o
+	$(CL) -static  oc.c -o oc  Platform.o Heap.o Args.o Console.o Modules.o \
+	Strings.o Configuration.o Files0.o Reals.o Texts0.o vt100.o extTools.o \
+	SYSTEM.o OPM.o OPS.o OPT.o OPC.o OPV.o OPB.o OPP.o errors.o
 
 
 clean:

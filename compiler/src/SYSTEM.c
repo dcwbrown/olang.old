@@ -14,46 +14,38 @@
 */
 
 #include "SYSTEM.h"
-#ifdef __STDC__
 #include "stdarg.h"
-#else
-#include "varargs.h"
-#endif
-
-extern void *malloc(size_t size);
-extern void exit(int status);
-
-void (*SYSTEM_Halt)();
-LONGINT SYSTEM_halt;	/* x in HALT(x) */
-LONGINT SYSTEM_assert;	/* x in ASSERT(cond, x) */
-LONGINT SYSTEM_argc;
-LONGINT SYSTEM_argv;
-LONGINT SYSTEM_lock;
-BOOLEAN SYSTEM_interrupted;
-static LONGINT SYSTEM_mainfrm;	/* adr of main proc stack frame, used for stack collection */
-
-#define Lock	SYSTEM_lock++
-#define Unlock	SYSTEM_lock--; if (SYSTEM_interrupted && (SYSTEM_lock == 0)) __HALT(-9)
 
 
-static void SYSTEM_InitHeap();
-void *SYSTEM__init();
+// void (*SYSTEM_Halt)();
+// LONGINT SYSTEM_halt;	/* x in HALT(x) */
+// LONGINT SYSTEM_assert;	/* x in ASSERT(cond, x) */
+// LONGINT SYSTEM_argc;
+// LONGINT SYSTEM_argv;
+// LONGINT SYSTEM_lock;
+// BOOLEAN SYSTEM_interrupted;
+// static LONGINT SYSTEM_mainfrm;	/* adr of main proc stack frame, used for stack collection */
 
-void SYSTEM_INIT(argc, argvadr)
-	int argc; long argvadr;
-{
-	SYSTEM_mainfrm = argvadr;
-	SYSTEM_argc = argc;
-	SYSTEM_argv = *(long*)argvadr;
-	SYSTEM_InitHeap();
-	SYSTEM_halt = -128;
-	SYSTEM__init();
-}
 
-void SYSTEM_FINI()
-{
-	SYSTEM_FINALL();
-}
+
+//  static void SYSTEM_InitHeap();
+//  void *SYSTEM__init();
+//
+//  void SYSTEM_INIT(argc, argvadr)
+//  	int argc; long argvadr;
+//  {
+//  	SYSTEM_mainfrm = argvadr;
+//  	SYSTEM_argc = argc;
+//  	SYSTEM_argv = *(long*)argvadr;
+//  	SYSTEM_InitHeap();
+//  	SYSTEM_halt = -128;
+//  	SYSTEM__init();
+//  }
+//
+//  void SYSTEM_FINI()
+//  {
+//  	SYSTEM_FINALL();
+//  }
 
 long SYSTEM_XCHK(i, ub) long i, ub; {return __X(i, ub);}
 long SYSTEM_RCHK(i, ub) long i, ub; {return __R(i, ub);}
@@ -119,30 +111,16 @@ long SYSTEM_ENTIER(x)
 	}
 }
 
-void SYSTEM_HALT(n)
-	int n;
-{
-	SYSTEM_halt = n;
-	if (SYSTEM_Halt!=0) SYSTEM_Halt(n);
-	exit(n);
-}
+extern void Heap_Lock();
+extern void Heap_Unlock();
+#define Lock   Heap_Lock()
+#define Unlock Heap_Unlock();
 
-#ifdef __STDC__
 SYSTEM_PTR SYSTEM_NEWARR(long *typ, long elemsz, int elemalgn, int nofdim, int nofdyn, ...)
-#else
-SYSTEM_PTR SYSTEM_NEWARR(typ, elemsz, elemalgn, nofdim, nofdyn, va_alist)
-	long *typ, elemsz;
-	int elemalgn, nofdim, nofdyn;
-	va_dcl
-#endif
 {
 	long nofelems, size, dataoff, n, nptr, *x, *p, nofptrs, i, *ptab, off;
 	va_list ap;
-#ifdef __STDC__
 	va_start(ap, nofdyn);
-#else
-	va_start(ap);
-#endif
 	nofelems = 1;
 	while (nofdim > 0) {
 		nofelems = nofelems * va_arg(ap, long); nofdim--;
@@ -158,11 +136,11 @@ SYSTEM_PTR SYSTEM_NEWARR(typ, elemsz, elemalgn, nofdim, nofdyn, va_alist)
 	Lock;
 	if (typ == NIL) {
 		/* element typ does not contain pointers */
-		x = SYSTEM_NEWBLK(size);
+		x = Heap_NEWBLK(size);
 	}
 	else if (typ == POINTER__typ) {
 		/* element type is a pointer */
-		x = SYSTEM_NEWBLK(size + nofelems * sizeof(long));
+		x = Heap_NEWBLK(size + nofelems * sizeof(long));
 		p = (long*)x[-1];
 		p[-nofelems] = *p;	/* build new type desc in situ: 1. copy block size; 2. setup ptr tab; 3. set sentinel; 4. patch tag */
 		p -= nofelems - 1; n = 1;	/* n =1 for skipping the size field */
@@ -175,7 +153,7 @@ SYSTEM_PTR SYSTEM_NEWARR(typ, elemsz, elemalgn, nofdim, nofdyn, va_alist)
 		ptab = typ + 1; nofptrs = 0;
 		while (ptab[nofptrs] >= 0) {nofptrs++;}	/* number of pointers per element */
 		nptr = nofelems * nofptrs;	/* total number of pointers */
-		x = SYSTEM_NEWBLK(size + nptr * sizeof(long));
+		x = Heap_NEWBLK(size + nptr * sizeof(long));
 		p = (long*)x[- 1];
 		p[-nptr] = *p;	/* build new type desc in situ; 1. copy block size; 2. setup ptr tab; 3. set sentinel; 4. patch tag */
 		p -= nptr - 1; n = 0; off = dataoff;
@@ -188,11 +166,7 @@ SYSTEM_PTR SYSTEM_NEWARR(typ, elemsz, elemalgn, nofdim, nofdyn, va_alist)
 	}
 	if (nofdyn != 0) {
 		/* setup len vector for index checks */
-#ifdef __STDC__
 		va_start(ap, nofdyn);
-#else
-		va_start(ap);
-#endif
 		p = x;
 		while (nofdyn > 0) {*p = va_arg(ap, long); p++, nofdyn--;}
 		va_end(ap);

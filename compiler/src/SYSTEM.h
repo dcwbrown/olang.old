@@ -63,15 +63,14 @@ extern double SYSTEM_ABSD();
 extern long   SYSTEM_DIV(unsigned long x, unsigned long y);
 extern long   SYSTEM_MOD(unsigned long x, unsigned long y);
 
-extern SYSTEM_PTR SYSTEM_NEWARR(long*, long, int, int, int, ...);
 
-extern void SYSTEM_INCREF();
-extern void SYSTEM_REGTYP();
-extern void SYSTEM_REGFIN();
-extern void SYSTEM_FINALL();
-extern void SYSTEM_FINI();
-extern void SYSTEM_HALT();
-extern void SYSTEM_INHERIT();
+// extern void SYSTEM_INCREF();
+// extern void SYSTEM_REGTYP();
+// extern void SYSTEM_REGFIN();
+// extern void SYSTEM_FINI();
+// extern void SYSTEM_HALT();
+
+
 extern void SYSTEM_ENUMP();
 extern void SYSTEM_ENUMR();
 
@@ -95,6 +94,7 @@ static int __STRCMP(CHAR *x, CHAR *y){
 #define __COPY(s, d, n)	{char*_a=(void*)s,*_b=(void*)d;long _i=0,_t=n-1;while(_i<_t&&((_b[_i]=_a[_i])!=0)){_i++;};_b[_i]=0;}
 #define __DUP(x, l, t)  x=(void*)memcpy(malloc(l*sizeof(t)),x,l*sizeof(t))
 #define __DUPARR(v, t)	v=(void*)memcpy(v##__copy,v,sizeof(t))
+#define __DEL(x)        free(x)
 
 
 
@@ -162,39 +162,52 @@ static int __STRCMP(CHAR *x, CHAR *y){
 
 extern void       Heap_REGCMD();
 extern SYSTEM_PTR Heap_REGMOD();
+extern void       Heap_INCREF();
 
 #define __DEFMOD	          static void *m; if (m!=0) {return m;}
 #define __REGCMD(name, cmd)	  Heap_REGCMD(m, name, cmd)
 #define __REGMOD(name, enum)  if (m==0) {m = Heap_REGMOD((CHAR*)name,enum);}
 #define __ENDMOD	          return m
-#define __MODULE_IMPORT(name) SYSTEM_INCREF(name##__init())
+#define __MODULE_IMPORT(name) Heap_INCREF(name##__init())
+
+
+
+// Main module initialisation, registration and finalisation
+
+extern void Platform_Init(INTEGER argc, LONGINT argv);
+extern void *Platform_MainModule;
+extern void Heap_FINALL();
+
+#define __INIT(argc, argv)    static void *m; Platform_Init((INTEGER)argc, (LONGINT)&argv);
+#define __REGMAIN(name, enum) m = Heap_REGMOD((CHAR*)name,enum)
+#define __FINI	              Heap_FINALL(); return 0
 
 
 // Assertions and Halts
 
-extern void Platform_Halt(INTEGER x);
+extern void Platform_Halt(LONGINT x);
 extern void Platform_AssertFail(LONGINT x);
 
 #define __HALT(x)	      Platform_Halt(x)
 #define __ASSERT(cond, x) if (!(cond)) Platform_AssertFail((LONGINT)(x))
 
 
-
 // Memory allocation
 
-extern SYSTEM_PTR SYSTEM_NEWBLK();
+extern SYSTEM_PTR Heap_NEWBLK();
+extern SYSTEM_PTR Heap_NEWREC();
+extern SYSTEM_PTR SYSTEM_NEWARR(long*, long, int, int, int, ...);
+
 #define __SYSNEW(p, len) p = Heap_NEWBLK((LONGINT)(len))
-
-extern SYSTEM_PTR SYSTEM_NEWREC();
-#define __NEW(p, t)	p = SYSTEM_NEWREC((LONGINT)t##__typ)
-
-//  #define __NEWARR	SYSTEM_NEWARR
-
-#define __DEL(x) free(x)
+#define __NEW(p, t)	     p = Heap_NEWREC((LONGINT)t##__typ)
+#define __NEWARR	     SYSTEM_NEWARR
 
 
 
 /* Type handling */
+
+extern void Heap_REGTYP();
+extern void SYSTEM_INHERIT();
 
 #define __TDESC(t, m, n) \
 	static struct t##__desc {\
@@ -220,7 +233,7 @@ extern SYSTEM_PTR SYSTEM_NEWREC();
 	t##__desc.module=(long)m; \
 	if(t##__desc.blksz!=sizeof(struct t)) __HALT(-15); \
 	t##__desc.blksz=(t##__desc.blksz+5*sizeof(long)-1)/(4*sizeof(long))*(4*sizeof(long)); \
-	SYSTEM_REGTYP(m, (long)&t##__desc.next); \
+	Heap_REGTYP(m, (long)&t##__desc.next); \
 	SYSTEM_INHERIT(t##__typ, t0##__typ)
 
 #define __IS(tag, typ, level)	(*(tag-(__BASEOFF-level))==(long)typ##__typ)
@@ -264,13 +277,7 @@ extern SYSTEM_PTR SYSTEM_NEWREC();
 //  //extern void SYSTEM_GC (BOOLEAN markStack);
 //
 //
-//  extern void Platform_Init(INTEGER argc, LONGINT argv);
-//  #define __INIT(argc, argv) static void *m; Platform_Init((INTEGER)argc, (LONGINT)&argv);
 //
-//  extern void *Platform_MainModule;
-//  #define __REGMAIN(name, enum) Platform_MainModule = SYSTEM_REGMOD(name,enum)
-//
-//  #define __FINI	SYSTEM_FINI(); return 0
 //
 //
 //

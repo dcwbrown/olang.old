@@ -13,7 +13,7 @@ MODULE Heap;
   (* all blocks look the same:
     free blocks describe themselves: size = Unit
     tag = &tag++
-  ->blksize
+  ->lksize
     sentinel = -SZL
     next
   *)
@@ -83,7 +83,11 @@ MODULE Heap;
     fin: FinNode;
 
     (* garbage collector locking *)
-    gclock*: SHORTINT;
+    lockdepth:   INTEGER;
+    interrupted: BOOLEAN;
+
+    (* File system file count monitor *)
+    FileCount*: INTEGER;
 
 
   (*
@@ -96,13 +100,31 @@ MODULE Heap;
     END TAS;
   *)
 
+  PROCEDURE Lock*;
+  BEGIN
+    INC(lockdepth);
+  END Lock;
+
+  PROCEDURE Unlock*;
+  BEGIN
+    DEC(lockdepth);
+    IF interrupted & (lockdepth = 0) THEN
+      Platform.Halt(-9);
+    END
+  END Unlock;
+
+
   PROCEDURE REGMOD*(VAR name: ModuleName; enumPtrs: EnumProc): SYSTEM.PTR;
     VAR m: Module;
   BEGIN
-    IF name = "SYSTEM" THEN (* cannot use NEW *)
-      SYSTEM.NEW(m, SIZE(ModuleDesc)); m.cmds := NIL
-    ELSE NEW(m)
-    END ;
+    (*
+      IF name = "Configuration" THEN
+    *)
+      SYSTEM.NEW(m, SIZE(ModuleDesc)); m.cmds := NIL;
+    (*
+      ELSE NEW(m)
+      END;
+    *)
     COPY(name, m.name); m.refcnt := 0; m.enumPtrs := enumPtrs; m.next := SYSTEM.VAL(Module, modules);
     modules := m;
     RETURN m
@@ -110,7 +132,9 @@ MODULE Heap;
 
   PROCEDURE REGCMD*(m: Module; VAR name: CmdName; cmd: Command);
     VAR c: Cmd;
-  BEGIN NEW(c);
+  BEGIN
+    (* NEW(c); *)
+    SYSTEM.NEW(c, SIZE(Cmd));
     COPY(name, c.name); c.cmd := cmd; c.next := m.cmds; m.cmds := c
   END REGCMD;
 
@@ -122,10 +146,14 @@ MODULE Heap;
   BEGIN INC(m.refcnt)
   END INCREF;
 
+
+  PROCEDURE -Allocate(size: LONGINT): LONGINT "(LONGINT)malloc(size)";
+  (* PROCEDURE -Free    (adr: LONGINT)           "(void)free(adr)"; *)
+
   PROCEDURE NewChunk(blksz: LONGINT): LONGINT;
     VAR chnk: LONGINT;
   BEGIN
-    chnk := Platform.Allocate(blksz + blkOff);
+    chnk := Allocate(blksz + blkOff);
     IF chnk # 0 THEN
       SYSTEM.PUT(chnk + endOff, chnk + (blkOff + blksz));
       SYSTEM.PUT(chnk + blkOff, chnk + (blkOff + sizeOff));
@@ -163,7 +191,7 @@ MODULE Heap;
   PROCEDURE NEWREC*(tag: LONGINT): SYSTEM.PTR;
     VAR i, i0, di, blksz, restsize, t, adr, end, next, prev: LONGINT; new: SYSTEM.PTR;
   BEGIN
-    Platform.Lock();
+    Lock();
     SYSTEM.GET(tag, blksz);
 
     ASSERT(Unit = 32);
@@ -203,9 +231,9 @@ MODULE Heap;
               ExtendHeap((allocated + blksz) DIV (3*Unit) * (4*Unit) - heapsize);
               new := NEWREC(tag);  (* will find a free block if heap has been expanded properly *)
             END ;
-            Platform.Unlock(); RETURN new
+            Unlock(); RETURN new
           ELSE
-            Platform.Unlock(); RETURN NIL
+            Unlock(); RETURN NIL
           END
         END ;
         SYSTEM.GET(adr+sizeOff, t);
@@ -245,14 +273,14 @@ MODULE Heap;
     SYSTEM.PUT(adr + sizeOff, LONG(LONG(0)));
     SYSTEM.PUT(adr + sntlOff, LONG(LONG(0)));
     INC(allocated, blksz);
-    Platform.Unlock();
+    Unlock();
     RETURN SYSTEM.VAL(SYSTEM.PTR, adr + SZL)
   END NEWREC;
 
   PROCEDURE NEWBLK*(size: LONGINT): SYSTEM.PTR;
      VAR blksz, tag: LONGINT; new: SYSTEM.PTR;
   BEGIN
-    Platform.Lock();
+    Lock();
     blksz := (size + (4*SZL + Unit - 1)) DIV Unit * Unit;  (*size + tag + meta + blksz + sntnl + UnitAlignment*)
     new := NEWREC(SYSTEM.ADR(blksz));
     tag := SYSTEM.VAL(LONGINT, new) + blksz - 3*SZL;
@@ -260,7 +288,7 @@ MODULE Heap;
     SYSTEM.PUT(tag, blksz);
     SYSTEM.PUT(tag + SZL, NoPtrSntl);
     SYSTEM.PUT(SYSTEM.VAL(LONGINT, new) - SZL, tag);
-    Platform.Unlock();
+    Unlock();
     RETURN new
   END NEWBLK;
 
@@ -462,8 +490,8 @@ MODULE Heap;
       i0, i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15, i16, i17, i18, i19, i20, i21, i22, i23: LONGINT;
       cand: ARRAY 10000 OF LONGINT;
   BEGIN
-    IF (gclock = 0) OR (gclock = 1) & ~markStack THEN
-      Platform.Lock();
+    IF (lockdepth = 0) OR (lockdepth = 1) & ~markStack THEN
+      Lock();
       m := SYSTEM.VAL(Module, modules);
       WHILE m # NIL DO
         IF m.enumPtrs # NIL THEN m.enumPtrs(MarkP) END ;
@@ -488,22 +516,28 @@ MODULE Heap;
       CheckFin;
       Scan;
       Finalize;
-      Platform.Unlock()
+      Unlock()
     END
   END GC;
 
-  PROCEDURE REGFIN*(obj: SYSTEM.PTR; finalize: Finalizer);
+  PROCEDURE RegisterFinalizer*(obj: SYSTEM.PTR; finalize: Finalizer);
     VAR f: FinNode;
   BEGIN NEW(f);
     f.obj := SYSTEM.VAL(LONGINT, obj); f.finalize := finalize; f.marked := TRUE; f.next := fin; fin := f
-  END REGFIN;
+  END RegisterFinalizer;
 
-  PROCEDURE InitHeap*;  (* initialized before body to enable NEW, SYSTEM.NEW *)
+  PROCEDURE InitHeap*;
+  (* InitHeap is called by Platform.init before any module bodies have been
+     initialised, to enable NEW, SYSTEM.NEW *)
   BEGIN
+    lockdepth   := 0;
+    interrupted := FALSE;
     heap := NewChunk(heapSize0);
     SYSTEM.GET(heap + endOff, heapend);
     SYSTEM.PUT(heap, LONG(LONG(0)));
-    allocated := 0; firstTry := TRUE; freeList[nofLists] := 1; gclock := 0
+    allocated := 0; firstTry := TRUE; freeList[nofLists] := 1;
+    lockdepth := 0; FileCount := 0;
+    modules := NIL;
   END InitHeap;
 
 END Heap.

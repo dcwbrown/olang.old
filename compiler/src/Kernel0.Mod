@@ -5,7 +5,7 @@ MODULE Kernel0;
 *)
 (* version for bootstrapping voc *)
 
-  IMPORT SYSTEM, Unix, Args, Strings, Configuration;
+  IMPORT SYSTEM, Args, Strings, Configuration;
 
   TYPE
 
@@ -27,8 +27,9 @@ MODULE Kernel0;
 
     FKey*: ARRAY 16 OF KeyCmd;
 
+(*
     littleEndian*: BOOLEAN;
-
+*)
     (* TimeUnit*: LONGINT; *) (* 1 sec *)
 
 (*
@@ -110,12 +111,10 @@ MODULE Kernel0;
 (*
   PROCEDURE -GC*(markStack: BOOLEAN)
     "Heap_GC(markStack)";
-*)
 
   PROCEDURE -RegisterObject*(obj: SYSTEM.PTR; finalize: ObjFinalizer)
     "SYSTEM_REGFIN(obj, finalize)";
 
-(*
   PROCEDURE -SetHalt*(p: PROCEDURE(n: LONGINT))
       "SYSTEM_Halt = p";
 *)
@@ -138,7 +137,7 @@ MODULE Kernel0;
   END Halt;
 *)
 
-
+(*
   PROCEDURE EndianTest;
     VAR i: LONGINT; dmy: INTEGER;
   BEGIN
@@ -146,7 +145,7 @@ MODULE Kernel0;
     SYSTEM.GET(i, littleEndian);  (* indirection via i avoids warning on SUN cc -O *)
   END EndianTest;
 
-(*
+
   PROCEDURE -SizeofUnixJmpBuf(): INTEGER
     "sizeof(Unix_JmpBuf)";
 
@@ -173,7 +172,7 @@ MODULE Kernel0;
 *)
 
 BEGIN
-  EndianTest();
+  (* EndianTest(); *)
   (* SetHalt(Halt); *)
   (* CWD := ""; OBERON := "."; LIB := ""; *)
   (* MODULES := ""; *) (* additional modules path which can be specified on commandline and will be added to the OBERON variable; noch *)
