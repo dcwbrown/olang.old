@@ -13,9 +13,6 @@ MODULE Args;  (* jt, 8.12.94 *)
     argc-: INTEGER;
     argv-: LONGINT;
 
-  PROCEDURE -getenv(var: ARRAY OF CHAR): ArgPtr
-    "(Args_ArgPtr)getenv(var)";
-
   PROCEDURE Get*(n: INTEGER; VAR val: ARRAY OF CHAR);
     VAR av: ArgVec;
   BEGIN
@@ -42,23 +39,7 @@ MODULE Args;  (* jt, 8.12.94 *)
   END Pos;
 
   PROCEDURE GetEnv*(var: ARRAY OF CHAR; VAR val: ARRAY OF CHAR);
-    VAR p: ArgPtr;
-  BEGIN
-    p := getenv(var);
-    IF p # NIL THEN COPY(p^, val) END
-  END GetEnv;
-
-  PROCEDURE getEnv*(var: ARRAY OF CHAR; VAR val: ARRAY OF CHAR): BOOLEAN;
-    VAR p: ArgPtr;
-  BEGIN
-    p := getenv(var);
-    IF p # NIL THEN
-       COPY(p^, val);
-       RETURN TRUE
-    ELSE
-       RETURN FALSE
-    END
-  END getEnv;
+  BEGIN Platform.GetEnv(var, val) END GetEnv;
 
 BEGIN
   argc := Platform.ArgCount;

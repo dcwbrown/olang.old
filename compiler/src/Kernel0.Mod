@@ -21,6 +21,7 @@ MODULE Kernel0;
     (* oberon heap management *)
     nofiles*: LONGINT;
 
+
     (* input event handling *)
     readSet*, readySet*: Unix.FdSet;
 
@@ -28,14 +29,14 @@ MODULE Kernel0;
 
     littleEndian*: BOOLEAN;
 
-    TimeUnit*: LONGINT;  (* 1 sec *)
+    (* TimeUnit*: LONGINT; *) (* 1 sec *)
 
+(*
     LIB*, CWD*: ARRAY 256 OF CHAR;
-    OBERON*: ARRAY 1024 OF CHAR;
     MODULES-: ARRAY 1024 OF CHAR;
-
+*)
     prefix*, fullprefix* : ARRAY 256 OF CHAR;
-    timeStart: LONGINT; (* milliseconds *)
+    (* timeStart: LONGINT; *) (* milliseconds *)
 
 
 
@@ -44,6 +45,7 @@ MODULE Kernel0;
 
   PROCEDURE -includesetjmp()  '#include <setjmp.h>';
 
+(*
   PROCEDURE -Lock*()
     "SYSTEM_lock++";
 
@@ -64,6 +66,7 @@ MODULE Kernel0;
 
   PROCEDURE -allocated*(): LONGINT
       "SYSTEM_allocated";
+*)
 
 (*
   PROCEDURE -localtime(VAR clock: LONGINT): RealTime
@@ -75,13 +78,6 @@ MODULE Kernel0;
   BEGIN err := "not yet implemented"; HALT(99)
   END SetClock;
 
-  PROCEDURE Time*(): LONGINT;
-    VAR timeval: Unix.Timeval; timezone: Unix.Timezone;
-    l : LONGINT;
-  BEGIN
-    l := Unix.Gettimeofday(timeval, timezone);
-    RETURN (timeval.usec DIV 1000 + timeval.sec * 1000 - timeStart) MOD 7FFFFFFFH
-  END  Time;
 
 (*
   PROCEDURE UserTime*(): LONGINT;
@@ -93,26 +89,37 @@ MODULE Kernel0;
   END  UserTime;
 *)
 
+
+(*
   PROCEDURE Select*(delay: LONGINT);
-    VAR rs, ws, xs: Unix.FdSet; n: LONGINT; tv: Unix.Timeval;
+    VAR
+      rs, ws, xs: Unix.FdSet;
+      n:          LONGINT;
+      tv:         Unix.Timeval;
   BEGIN
     rs := readSet;
     FOR n := 0 TO 7 DO ws[n] := {}; xs[n] := {}; readySet[n] := {} END;
     IF delay < 0 THEN delay := 0 END ;
-    tv.sec := delay DIV 1000; tv.usec := delay MOD 1000 * 1000;
+    tv.sec  := delay DIV 1000;
+    tv.usec := delay MOD 1000 * 1000;
     n := Unix.Select(256, rs, ws, xs, tv);
     IF n >= 0 THEN readySet := rs END
   END Select;
+*)
 
+(*
   PROCEDURE -GC*(markStack: BOOLEAN)
     "Heap_GC(markStack)";
+*)
 
   PROCEDURE -RegisterObject*(obj: SYSTEM.PTR; finalize: ObjFinalizer)
     "SYSTEM_REGFIN(obj, finalize)";
 
+(*
   PROCEDURE -SetHalt*(p: PROCEDURE(n: LONGINT))
       "SYSTEM_Halt = p";
-
+*)
+(*
   PROCEDURE InstallTermHandler*(p: PROCEDURE);
     (* not yet supported; no Modules.Free *)
   END InstallTermHandler;
@@ -129,6 +136,8 @@ MODULE Kernel0;
     VAR res: LONGINT;
   BEGIN res := Unix.Kill(Unix.Getpid(), 4);
   END Halt;
+*)
+
 
   PROCEDURE EndianTest;
     VAR i: LONGINT; dmy: INTEGER;
@@ -137,6 +146,7 @@ MODULE Kernel0;
     SYSTEM.GET(i, littleEndian);  (* indirection via i avoids warning on SUN cc -O *)
   END EndianTest;
 
+(*
   PROCEDURE -SizeofUnixJmpBuf(): INTEGER
     "sizeof(Unix_JmpBuf)";
 
@@ -156,24 +166,26 @@ MODULE Kernel0;
       Exit(1);
     END
   END JmpBufCheck;
+*)
 
-PROCEDURE -getcwd (VAR cwd: ARRAY OF CHAR) "getcwd(cwd, cwd__len)";
+(*
+  PROCEDURE -getcwd (VAR cwd: ARRAY OF CHAR) "getcwd(cwd, cwd__len)";
+*)
 
 BEGIN
   EndianTest();
-  SetHalt(Halt);
-  CWD := ""; OBERON := "."; LIB := "";
-  MODULES := ""; (* additional modules path which can be specified on commandline and will be added to the OBERON variable; noch *)
-  getcwd(CWD);
-  Args.GetEnv("MODULES", MODULES);
-  Args.GetEnv("OBERON", OBERON);
+  (* SetHalt(Halt); *)
+  (* CWD := ""; OBERON := "."; LIB := ""; *)
+  (* MODULES := ""; *) (* additional modules path which can be specified on commandline and will be added to the OBERON variable; noch *)
+  (* getcwd(CWD); *)
+  (* Args.GetEnv("OBERON", OBERON);   *)
   (* always have current directory in module search path, noch *)
-  Strings.Append(":.:", OBERON);
-  Strings.Append(MODULES, OBERON);
-  Strings.Append(":", OBERON);
-  Strings.Append(Configuration.prefix, OBERON);
-  Strings.Append("/lib/voc/sym:", OBERON);
-  Args.GetEnv("OBERON_LIB", LIB);
-  TimeUnit := 1000; timeStart := 0; timeStart := Time();
-  JmpBufCheck()
+  (* Strings.Append(":.:", OBERON);                *)
+  (* Strings.Append(MODULES, OBERON);              *)
+  (* Strings.Append(":", OBERON);                  *)
+  (* Strings.Append(Configuration.prefix, OBERON); *)
+  (* Strings.Append("/lib/voc/sym:", OBERON);      *)
+  (* TimeUnit := 1000; timeStart := 0; timeStart := Time(); *)
+  (* JmpBufCheck() *)
+  nofiles := 0;
 END Kernel0.

@@ -3,7 +3,7 @@ MODULE Files0;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files
 (* this module is not for use by developers and inteded to bootstrap voc *)
 (* for general use import Files module *)
 
-  IMPORT SYSTEM, Unix, Kernel := Kernel0, Heap, Args, Console;
+  IMPORT SYSTEM, Platform, Heap, Args, Console, Kernel := Kernel0;
 
   (* standard data type I/O
 
@@ -35,46 +35,32 @@ MODULE Files0;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files
     Handle = RECORD
       workName, registerName: FileName;
       tempFile: BOOLEAN;
-      dev, ino, mtime: LONGINT;
-      fd-: INTEGER;
+      identity: Platform.FileIdentity;
+      fd-:      Platform.FileHandle;
       len, pos: LONGINT;
       bufs: ARRAY nofbufs OF Buffer;
       swapper, state: INTEGER
-    END ;
+    END;
 
     BufDesc = RECORD
-      f: File;
-      chg: BOOLEAN;
-      org, size: LONGINT;
+      f:    File;
+      chg:  BOOLEAN;
+      org:  LONGINT;
+      size: LONGINT;
       data: ARRAY bufsize OF SYSTEM.BYTE
-    END ;
+    END;
 
     Rider* = RECORD
       res*: LONGINT;
       eof*: BOOLEAN;
       buf: Buffer;
       org, offset: LONGINT
-    END ;
+    END;
 
-    Time = POINTER TO TimeDesc;
-    TimeDesc = RECORD
-      sec*, min*, hour*, mday*, mon*, year*, wday*, isdst*, zone*, gmtoff*: LONGINT;
-(*      sec*, min*, hour*, mday*, mon*, year*, wday*, isdst*, zone*, gmtoff*: INTEGER;*)
-    END ;
 
   VAR
     fileTab: ARRAY fileTabSize OF LONGINT (*=File*);
     tempno: INTEGER;
-
-(* for localtime *)
-  PROCEDURE -includetime()
-      '#include "time.h"';
-
-  PROCEDURE -localtime(VAR clock: LONGINT): Time
-    "(Files0_Time) localtime(clock)";
-
-  PROCEDURE -getcwd(VAR cwd: Unix.Name)
-    "getcwd(cwd, cwd__len)";
 
   PROCEDURE -IdxTrap "__HALT(-1)";
 
@@ -85,8 +71,8 @@ MODULE Files0;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files
     Console.Ln; Console.String("-- "); Console.String(s); Console.String(": ");
     IF f # NIL THEN
       IF f.registerName # "" THEN Console.String(f.registerName) ELSE Console.String(f.workName) END
-    END ;
-    IF errno # 0 THEN Console.String(" errno = "); Console.Int(errno, 1) END ;
+    END;
+    IF errno # 0 THEN Console.String(" errno = "); Console.Int(errno, 1) END;
     Console.Ln;
     HALT(99)
   END Err;
@@ -94,9 +80,9 @@ MODULE Files0;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files
   PROCEDURE MakeFileName(dir, name: ARRAY OF CHAR; VAR dest: ARRAY OF CHAR);
     VAR i, j: INTEGER;
   BEGIN i := 0; j := 0;
-    WHILE dir[i] # 0X DO dest[i] := dir[i]; INC(i) END ;
-    IF dest[i-1] # "/" THEN dest[i] := "/"; INC(i) END ;
-    WHILE name[j] # 0X DO dest[i] := name[j]; INC(i); INC(j) END ;
+    WHILE dir[i] # 0X DO dest[i] := dir[i]; INC(i) END;
+    IF dest[i-1] # "/" THEN dest[i] := "/"; INC(i) END;
+    WHILE name[j] # 0X DO dest[i] := name[j]; INC(i); INC(j) END;
     dest[i] := 0X
   END MakeFileName;
 
@@ -105,8 +91,8 @@ MODULE Files0;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files
   BEGIN
     INC(tempno); n := tempno; i := 0;
     IF finalName[0] # "/" THEN  (* relative pathname *)
-      WHILE Kernel.CWD[i] # 0X DO name[i] := Kernel.CWD[i]; INC(i) END;
-      IF Kernel.CWD[i-1] # "/" THEN name[i] := "/"; INC(i) END
+      WHILE Platform.CWD[i] # 0X DO name[i] := Platform.CWD[i]; INC(i) END;
+      IF Platform.CWD[i-1] # "/" THEN name[i] := "/"; INC(i) END
     END;
     j := 0;
     WHILE finalName[j] # 0X DO name[i] := finalName[j]; INC(i); INC(j) END;
@@ -114,73 +100,86 @@ MODULE Files0;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files
     WHILE name[i] # "/" DO DEC(i) END;
     name[i+1] := "."; name[i+2] := "t"; name[i+3] := "m"; name[i+4] := "p"; name[i+5] := "."; INC(i, 6);
     WHILE n > 0 DO name[i] := CHR(n MOD 10 + ORD("0")); n := n DIV 10; INC(i) END;
-    name[i] := "."; INC(i); n := SHORT(Unix.Getpid());
+    name[i] := "."; INC(i); n := Platform.PID;
     WHILE n > 0 DO name[i] := CHR(n MOD 10 + ORD("0"));  n := n DIV 10; INC(i) END;
     name[i] := 0X
   END GetTempName;
 
   PROCEDURE Create(f: File);
-    VAR stat: Unix.Status; done: BOOLEAN;
-      errno: LONGINT; err: ARRAY 32 OF CHAR;
+    VAR
+      identity:  Platform.FileIdentity;
+      done:  BOOLEAN;
+      error: Platform.ErrorCode;
+      err:   ARRAY 32 OF CHAR;
   BEGIN
     IF f.fd = noDesc THEN
-      IF f.state = create THEN GetTempName(f.registerName, f.workName); f.tempFile := TRUE
+      IF f.state = create THEN
+        GetTempName(f.registerName, f.workName); f.tempFile := TRUE
       ELSIF f.state = close THEN
         f.workName := f.registerName; f.registerName := ""; f.tempFile := FALSE
-      END ;
-      errno := Unix.Unlink(f.workName);  (*unlink first to avoid stale NFS handles and to avoid reuse of inodes*)
-f.fd := Unix.Open(f.workName, SHORT(SYSTEM.VAL(LONGINT, (Unix.rdwr + Unix.creat + Unix.trunc))), SHORT(SYSTEM.VAL(LONGINT, ({2, 4,5, 7,8}))));
-      done := f.fd >= 0; errno := Unix.errno();
-      IF (~done & ((errno = Unix.ENFILE) OR (errno = Unix.EMFILE))) OR (done & (f.fd >= fileTabSize)) THEN
-        IF done & (f.fd >= fileTabSize) THEN errno := Unix.Close(f.fd) END ;
+      END;
+      error := Platform.Unlink(f.workName);  (*unlink first to avoid stale NFS handles and to avoid reuse of inodes*)
+
+      error := Platform.Newfile(f.workName, f.fd);
+      done := error = 0;
+      (* In case of too many files, try just once more. *)
+      IF (~done & Platform.TooManyFiles(error)) OR (done & (f.fd >= fileTabSize)) THEN
+        IF done & (f.fd >= fileTabSize) THEN error := Platform.Close(f.fd) END;
         Heap.GC(TRUE);
-        f.fd := Unix.Open(f.workName, SHORT(SYSTEM.VAL(LONGINT, (Unix.rdwr + Unix.creat + Unix.trunc))), SHORT(SYSTEM.VAL(LONGINT, {2, 4,5, 7,8})));
-        done := f.fd >= 0
-      END ;
+        error := Platform.Newfile(f.workName, f.fd);
+        done  := f.fd = 0
+      END;
       IF done THEN
-        IF f.fd >= fileTabSize THEN errno := Unix.Close(f.fd); Err("too many files open", f, 0)
-        ELSE fileTab[f.fd] := SYSTEM.VAL(LONGINT, f); INC(Kernel.nofiles); Kernel.RegisterObject(f, Finalize);
-          f.state := open; f.pos := 0; errno := Unix.Fstat(f.fd, stat);
-          f.dev := stat.dev; f.ino := stat.ino; f.mtime := stat.mtime
+        IF f.fd >= fileTabSize THEN error := Platform.Close(f.fd); Err("too many files open", f, 0)
+        ELSE
+          fileTab[f.fd] := SYSTEM.VAL(LONGINT, f);
+          INC(Kernel.nofiles);
+          Kernel.RegisterObject(f, Finalize);
+          f.state    := open;
+          f.pos      := 0;
+          error      := Platform.Identify(f.fd, f.identity);
         END
-      ELSE errno := Unix.errno();
-        IF errno = Unix.ENOENT THEN err := "no such directory"
-        ELSIF (errno = Unix.ENFILE) OR (errno = Unix.EMFILE) THEN err := "too many files open"
-        ELSE err := "file not created"
-        END ;
-        Err(err, f, errno)
+      ELSE
+        IF    Platform.NoSuchDirectory(error) THEN err := "no such directory"
+        ELSIF Platform.TooManyFiles(error)    THEN err := "too many files open"
+        ELSE  err := "file not created"
+        END;
+        Err(err, f, error)
       END
     END
   END Create;
 
   PROCEDURE Flush(buf: Buffer);
-    VAR res: LONGINT; f: File; stat: Unix.Status;
+    VAR
+      error: Platform.ErrorCode;
+      f:     File;
+      identity:  Platform.FileIdentity;
   BEGIN
     IF buf.chg THEN f := buf.f; Create(f);
-      IF buf.org # f.pos THEN res := Unix.Lseek(f.fd, buf.org, 0) END ;
-      res := Unix.Write(f.fd, SYSTEM.ADR(buf.data), buf.size);
-      IF res < 0 THEN Err("error in writing file", f, Unix.errno()) END ;
+      IF buf.org # f.pos THEN error := Platform.Seek(f.fd, buf.org) END;
+      error := Platform.Write(f.fd, SYSTEM.ADR(buf.data), buf.size);
+      IF error # 0 THEN Err("error in writing file", f, error) END;
       f.pos := buf.org + buf.size;
       buf.chg := FALSE;
-      res := Unix.Fstat(f.fd, stat);
-      f.mtime := stat.mtime
+      error := Platform.Identify(f.fd, f.identity);
     END
   END Flush;
 
   PROCEDURE Close* (f: File);
-    VAR i, res: LONGINT;
+    VAR
+      i:     LONGINT;
+      error: Platform.ErrorCode;
   BEGIN
     IF (f.state # create) OR (f.registerName # "") THEN
       Create(f); i := 0;
-      WHILE (i < nofbufs) & (f.bufs[i] # NIL) DO Flush(f.bufs[i]); INC(i) END ;
-      res := Unix.Fsync(f.fd);
-      IF res < 0 THEN Err("error in writing file", f, Unix.errno()) END
+      WHILE (i < nofbufs) & (f.bufs[i] # NIL) DO Flush(f.bufs[i]); INC(i) END;
+      error := Platform.Sync(f.fd);
+      IF error # 0 THEN Err("error in writing file", f, error) END
     END
   END Close;
 
   PROCEDURE Length* (f: File): LONGINT;
-  BEGIN RETURN f.len
-  END Length;
+  BEGIN RETURN f.len END Length;
 
   PROCEDURE New* (name: ARRAY OF CHAR): File;
     VAR f: File;
@@ -191,86 +190,89 @@ f.fd := Unix.Open(f.workName, SHORT(SYSTEM.VAL(LONGINT, (Unix.rdwr + Unix.creat 
   END New;
 
   PROCEDURE ScanPath(VAR pos: INTEGER; VAR dir: ARRAY OF CHAR);  (* supports ~, ~user and blanks inside path *)
-    VAR i: INTEGER; ch: CHAR; home: ARRAY 256 OF CHAR;
+    VAR i: INTEGER; ch: CHAR;
   BEGIN
-    i := 0; ch := Kernel.OBERON[pos];
-    WHILE (ch = " ") OR (ch = ":") DO INC(pos); ch := Kernel.OBERON[pos] END ;
+    i := 0; ch := Platform.OBERON[pos];
+    WHILE (ch = " ") OR (ch = ":") DO INC(pos); ch := Platform.OBERON[pos] END;
     IF ch = "~" THEN
-      INC(pos); ch := Kernel.OBERON[pos];
-      home := ""; Args.GetEnv("HOME", home);
-      WHILE home[i] # 0X DO dir[i] := home[i]; INC(i) END ;
+      INC(pos); ch := Platform.OBERON[pos];
+      WHILE Platform.HOME[i] # 0X DO dir[i] := Platform.HOME[i]; INC(i) END;
       IF (ch # "/") & (ch # 0X) & (ch # ":") & (ch # " ") THEN
         WHILE (i > 0) & (dir[i-1] # "/") DO DEC(i) END
       END
-    END ;
-    WHILE (ch # 0X) & (ch # ":") DO dir[i] := ch; INC(i); INC(pos); ch := Kernel.OBERON[pos] END ;
-    WHILE (i > 0) & (dir[i-1] = " ") DO DEC(i) END ;
+    END;
+    WHILE (ch # 0X) & (ch # ":") DO dir[i] := ch; INC(i); INC(pos); ch := Platform.OBERON[pos] END;
+    WHILE (i > 0) & (dir[i-1] = " ") DO DEC(i) END;
     dir[i] := 0X
   END ScanPath;
 
   PROCEDURE HasDir(VAR name: ARRAY OF CHAR): BOOLEAN;
     VAR i: INTEGER; ch: CHAR;
   BEGIN i := 0; ch := name[0];
-    WHILE (ch # 0X) & (ch # "/") DO INC(i); ch := name[i] END ;
+    WHILE (ch # 0X) & (ch # "/") DO INC(i); ch := name[i] END;
     RETURN ch = "/"
   END HasDir;
 
-  PROCEDURE CacheEntry(dev, ino: LONGINT; mtime: LONGINT): File;
-    VAR f: File; i: INTEGER; stat: Unix.Status; res: LONGINT;
+  PROCEDURE CacheEntry(identity: Platform.FileIdentity): File;
+    VAR f: File;  i: INTEGER;  error: Platform.ErrorCode;
   BEGIN i := 0;
     WHILE i < fileTabSize DO
       f := SYSTEM.VAL(File, fileTab[i]);
-      IF (f # NIL) & (ino = f.ino) & (dev = f.dev) THEN
-        IF mtime # f.mtime THEN i := 0;
+      IF (f # NIL) & (identity.index = f.identity.index) & (identity.volume = f.identity.volume) THEN
+        IF identity.mtime # f.identity.mtime THEN i := 0;
           WHILE i < nofbufs DO
-            IF f.bufs[i] # NIL THEN f.bufs[i].org := -1; f.bufs[i] := NIL END ;
+            IF f.bufs[i] # NIL THEN f.bufs[i].org := -1; f.bufs[i] := NIL END;
             INC(i)
-          END ;
-          f.swapper := -1; f.mtime := mtime;
-          res := Unix.Fstat(f.fd, stat); f.len := stat.size
-        END ;
+          END;
+          f.swapper := -1; f.identity.mtime := identity.mtime;
+          error := Platform.Size(f.fd, f.len);
+        END;
         RETURN f
-      END ;
+      END;
       INC(i)
-    END ;
+    END;
     RETURN NIL
   END CacheEntry;
 
   PROCEDURE Old* (name: ARRAY OF CHAR): File;
-    VAR f: File; fd: INTEGER; res, errno: LONGINT; pos: INTEGER; done: BOOLEAN;
+    VAR
+      f:         File;
+      fd:        Platform.FileHandle;
+      pos:       INTEGER;
+      done:      BOOLEAN;
       dir, path: ARRAY 256 OF CHAR;
-      stat: Unix.Status;
+      error:     Platform.ErrorCode;
+      identity:  Platform.FileIdentity;
   BEGIN
     IF name # "" THEN
       IF HasDir(name) THEN dir := ""; COPY(name, path)
       ELSE pos := 0; ScanPath(pos, dir); MakeFileName(dir, name, path); ScanPath(pos, dir)
-      END ;
+      END;
       LOOP
-        fd := Unix.Open(path, SHORT(SYSTEM.VAL(LONGINT, Unix.rdwr)), SHORT(SYSTEM.VAL(LONGINT, {}))); done := fd >= 0; errno := Unix.errno();
-        IF (~done & ((errno = Unix.ENFILE) OR (errno = Unix.EMFILE))) OR (done & (fd >= fileTabSize)) THEN
-          IF done & (fd >= fileTabSize) THEN res := Unix.Close(fd) END ;
+        error := Platform.OldRW(path, fd); done := error = 0;
+        IF (~done & Platform.TooManyFiles(error)) OR (done & (fd >= fileTabSize)) THEN
+          IF done & (fd >= fileTabSize) THEN error := Platform.Close(fd) END;
           Heap.GC(TRUE);
-          fd := Unix.Open(path, SHORT(SYSTEM.VAL(LONGINT, Unix.rdwr)), SHORT(SYSTEM.VAL(LONGINT, {})));
-          done := fd >= 0; errno := Unix.errno();
-          IF ~done & ((errno = Unix.ENFILE) OR (errno = Unix.EMFILE)) THEN Err("too many files open", f, errno) END
-        END ;
-        IF ~done & ((errno = Unix.EACCES) OR (errno = Unix.EROFS) OR (errno = Unix.EAGAIN)) THEN
-          (* errno EAGAIN observed on Solaris 2.4 *)
-          fd := Unix.Open(path, SHORT(SYSTEM.VAL(LONGINT, Unix.rdonly)), SHORT(SYSTEM.VAL(LONGINT, {}))); done :=  fd >= 0; errno := Unix.errno()
-        END ;
-IF (~done) & (errno # Unix.ENOENT) THEN
-  Console.String("warning Files0.Old "); Console.String(name);
-  Console.String(" errno = "); Console.Int(errno, 0); Console.Ln;
-END ;
+          error := Platform.OldRW(path, fd); done := error = 0;
+          IF ~done & Platform.TooManyFiles(error) THEN Err("too many files open", f, error) END
+        END;
+        IF ~done & Platform.Inaccessible(error) THEN
+          error := Platform.OldRO(path, fd); done := error = 0;
+        END;
+        IF (~done) & (~Platform.Absent(error)) THEN
+          Console.String("warning Files0.Old "); Console.String(name);
+          Console.String(" error = "); Console.Int(error, 0); Console.Ln;
+        END;
         IF done THEN
-          res := Unix.Fstat(fd, stat);
-          f := CacheEntry(stat.dev, stat.ino, stat.mtime);
-          IF f # NIL THEN res := Unix.Close(fd); RETURN f
-          ELSIF fd >= fileTabSize THEN res := Unix.Close(fd); Err("too many files open", f, 0)
+          error := Platform.Identify(fd, identity);
+          f := CacheEntry(identity);
+          IF f # NIL THEN error := Platform.Close(fd); RETURN f
+          ELSIF fd >= fileTabSize THEN error := Platform.Close(fd); Err("too many files open", f, 0)
           ELSE NEW(f); fileTab[fd] := SYSTEM.VAL(LONGINT, f); INC(Kernel.nofiles); Kernel.RegisterObject(f, Finalize);
-            f.fd := fd; f.state := open; f.len := stat.size; f.pos := 0; f.swapper := -1; (*all f.buf[i] = NIL*)
+            f.fd := fd; f.state := open; f.pos := 0; f.swapper := -1; (*all f.buf[i] = NIL*)
+            error := Platform.Size(fd, f.len);
             COPY(name, f.workName); f.registerName := ""; f.tempFile := FALSE;
-            f.dev := stat.dev; f.ino := stat.ino; f.mtime := stat.mtime;
+            f.identity := identity;
             RETURN f
           END
         ELSIF dir = "" THEN RETURN NIL
@@ -282,21 +284,23 @@ END ;
   END Old;
 
   PROCEDURE Purge* (f: File);
-    VAR i: INTEGER; stat: Unix.Status; res: LONGINT;
+    VAR i: INTEGER;  identity: Platform.FileIdentity;  error: Platform.ErrorCode;
   BEGIN i := 0;
     WHILE i < nofbufs DO
-      IF f.bufs[i] # NIL THEN f.bufs[i].org := -1; f.bufs[i] := NIL END ;
+      IF f.bufs[i] # NIL THEN f.bufs[i].org := -1; f.bufs[i] := NIL END;
       INC(i)
-    END ;
-    IF f.fd # noDesc THEN res := Unix.Ftruncate(f.fd, 0); res := Unix.Lseek(f.fd, 0, 0) END ;
+    END;
+    IF f.fd # noDesc THEN error := Platform.Truncate(f.fd, 0); error := Platform.Seek(f.fd, 0) END;
     f.pos := 0; f.len := 0; f.swapper := -1;
-    res := Unix.Fstat(f.fd, stat); f.mtime := stat.mtime
+    error := Platform.Identify(f.fd, identity); f.identity.mtime := identity.mtime
   END Purge;
 
   PROCEDURE GetDate* (f: File; VAR t, d: LONGINT);
-    VAR stat: Unix.Status; clock, res: LONGINT; time: Time;
+    VAR
+      identity: Platform.FileIdentity;  error: Platform.ErrorCode;
+      clock: LONGINT;  time: Time;
   BEGIN
-    Create(f); res := Unix.Fstat(f.fd, stat);
+    Create(f); error := Platform.Identify(f.fd, identity);
     time := localtime(stat.mtime);
     t := time.sec + ASH(time.min, 6) + ASH(time.hour, 12);
     d := time.mday + ASH(time.mon+1, 5) + ASH(time.year MOD 100, 9)
@@ -310,9 +314,9 @@ END ;
     VAR org, offset, i, n, res: LONGINT; buf: Buffer;
   BEGIN
     IF f # NIL THEN
-      IF pos > f.len THEN pos := f.len ELSIF pos < 0 THEN pos := 0 END ;
+      IF pos > f.len THEN pos := f.len ELSIF pos < 0 THEN pos := 0 END;
       offset := pos MOD bufsize; org := pos - offset; i := 0;
-      WHILE (i < nofbufs) & (f.bufs[i] # NIL) & (org # f.bufs[i].org) DO INC(i) END ;
+      WHILE (i < nofbufs) & (f.bufs[i] # NIL) & (org # f.bufs[i].org) DO INC(i) END;
       IF i < nofbufs THEN
         IF f.bufs[i] = NIL THEN NEW(buf); buf.chg := FALSE; buf.org := -1; buf.f := f; f.bufs[i] := buf
         ELSE buf := f.bufs[i]
@@ -321,20 +325,20 @@ END ;
         f.swapper := (f.swapper + 1) MOD nofbufs;
         buf := f.bufs[f.swapper];
         Flush(buf)
-      END ;
+      END;
       IF buf.org # org THEN
         IF org = f.len THEN buf.size := 0
         ELSE Create(f);
-          IF f.pos # org THEN res := Unix.Lseek(f.fd, org, 0) END ;
+          IF f.pos # org THEN res := Platform.Seek(f.fd, org) END;
           n := Unix.ReadBlk(f.fd, buf.data);
-          IF n < 0 THEN Err("read from file not done", f, Unix.errno()) END ;
+          IF n < 0 THEN Err("read from file not done", f, Unix.errno()) END;
           f.pos := org + n;
           buf.size := n
-        END ;
+        END;
         buf.org := org; buf.chg := FALSE
       END
     ELSE buf := NIL; org := 0; offset := 0
-    END ;
+    END;
     r.buf := buf; r.org := org; r.offset := offset; r.eof := FALSE; r.res := 0
   END Set;
 
@@ -342,7 +346,7 @@ END ;
     VAR offset: LONGINT; buf: Buffer;
   BEGIN
     buf := r.buf; offset := r.offset;
-    IF r.org # buf.org THEN Set(r, buf.f, r.org + offset); buf := r.buf; offset := r.offset END ;
+    IF r.org # buf.org THEN Set(r, buf.f, r.org + offset); buf := r.buf; offset := r.offset END;
     IF (offset < buf.size) THEN
       x := buf.data[offset]; r.offset := offset + 1
     ELSIF r.org + offset < buf.f.len THEN
@@ -356,19 +360,19 @@ END ;
   PROCEDURE ReadBytes* (VAR r: Rider; VAR x: ARRAY OF SYSTEM.BYTE; n: LONGINT);
     VAR xpos, min, restInBuf, offset: LONGINT; buf: Buffer;
   BEGIN
-    IF n > LEN(x) THEN IdxTrap END ;
+    IF n > LEN(x) THEN IdxTrap END;
     xpos := 0; buf := r.buf; offset := r.offset;
     WHILE n > 0 DO
       IF (r.org # buf.org) OR (offset >= bufsize) THEN
         Set(r, buf.f, r.org + offset);
         buf := r.buf; offset := r.offset
-      END ;
+      END;
       restInBuf := buf.size - offset;
       IF restInBuf = 0 THEN r.res := n; r.eof := TRUE; RETURN
-      ELSIF n > restInBuf THEN min := restInBuf ELSE min := n END ;
+      ELSIF n > restInBuf THEN min := restInBuf ELSE min := n END;
       SYSTEM.MOVE(SYSTEM.ADR(buf.data) + offset, SYSTEM.ADR(x) + xpos, min);
       INC(offset, min); r.offset := offset; INC(xpos, min); DEC(n, min)
-    END ;
+    END;
     r.res := 0; r.eof := FALSE
   END ReadBytes;
 
@@ -388,32 +392,32 @@ END ;
     IF (r.org # buf.org) OR (offset >= bufsize) THEN
       Set(r, buf.f, r.org + offset);
       buf := r.buf; offset := r.offset
-    END ;
+    END;
     buf.data[offset] := x;
     buf.chg := TRUE;
     IF offset = buf.size THEN
       INC(buf.size); INC(buf.f.len)
-    END ;
+    END;
     r.offset := offset + 1; r.res := 0
   END Write;
 
   PROCEDURE WriteBytes* (VAR r: Rider; VAR x: ARRAY OF SYSTEM.BYTE; n: LONGINT);
     VAR xpos, min, restInBuf, offset: LONGINT; buf: Buffer;
   BEGIN
-    IF n > LEN(x) THEN IdxTrap END ;
+    IF n > LEN(x) THEN IdxTrap END;
     xpos := 0; buf := r.buf; offset := r.offset;
     WHILE n > 0 DO
       IF (r.org # buf.org) OR (offset >= bufsize) THEN
         Set(r, buf.f, r.org + offset);
         buf := r.buf; offset := r.offset
-      END ;
+      END;
       restInBuf := bufsize - offset;
-      IF n > restInBuf THEN min := restInBuf ELSE min := n END ;
+      IF n > restInBuf THEN min := restInBuf ELSE min := n END;
       SYSTEM.MOVE(SYSTEM.ADR(x) + xpos, SYSTEM.ADR(buf.data) + offset, min);
       INC(offset, min); r.offset := offset;
-      IF offset > buf.size THEN INC(buf.f.len, offset - buf.size); buf.size := offset END ;
+      IF offset > buf.size THEN INC(buf.f.len, offset - buf.size); buf.size := offset END;
       INC(xpos, min); DEC(n, min); buf.chg := TRUE
-    END ;
+    END;
     r.res := 0
   END WriteBytes;
 
@@ -428,7 +432,7 @@ BEGIN
   buf := r.buf; offset := r.offset;
   IF (offset >= bufsize) OR (r.org # buf.org) THEN
     Set(r, buf.f, r.org + offset); buf := r.buf; offset := r.offset;
-  END ;
+  END;
   buf.data[offset] := x; r.offset := offset + 1; buf.chg := TRUE
 END Write;
 
@@ -442,7 +446,7 @@ BEGIN
     IF r.org + offset >= buf.f.len THEN x := 0X; r.eof := TRUE; RETURN
     ELSE Set(r, buf.f, r.org + offset); buf := r.buf; offset := r.offset
     END
-  END ;
+  END;
   x := buf.data[offset]; r.offset := offset + 1
 END Read;
 
@@ -457,39 +461,39 @@ Especially Length would become fairly complex.
   END Delete;
 
   PROCEDURE Rename* (old, new: ARRAY OF CHAR; VAR res: INTEGER);
-    VAR fdold, fdnew: INTEGER; n, errno, r: LONGINT;
+    VAR fdold, fdnew: INTEGER;
+      n: LONGINT;
+      error: Platform.Errorcode;
       ostat, nstat: Unix.Status;
       buf: ARRAY 4096 OF CHAR;
   BEGIN
-    r := Unix.Stat(old, ostat);
-    IF r >= 0 THEN
-      r := Unix.Stat(new, nstat);
-      IF (r >= 0) & ((ostat.dev # nstat.dev) OR (ostat.ino # nstat.ino)) THEN
+    error := Platform.Stat(old, ostat);
+    IF error = 0 THEN
+      error := Platform.Stat(new, nstat);
+      IF (error # 0) & ((ostat.volume # nstat.volume) OR (ostat.index # nstat.index)) THEN
         Delete(new, res);  (* work around stale nfs handles *)
-      END ;
-      r := Unix.Rename(old, new);
-      IF r < 0 THEN res := SHORT(Unix.errno());
-        IF res = Unix.EXDEV THEN (* cross device link, move the file *)
-          fdold := Unix.Open(old, SHORT(SYSTEM.VAL(LONGINT, Unix.rdonly)), SHORT(SYSTEM.VAL(LONGINT, {})));
-          IF fdold < 0 THEN res := 2; RETURN END ;
-          fdnew := Unix.Open(new, SHORT(SYSTEM.VAL(LONGINT, Unix.rdwr + Unix.creat + Unix.trunc)), SHORT(SYSTEM.VAL(LONGINT, {2,  4,5,  7,8})));
-          IF fdnew < 0 THEN r := Unix.Close(fdold); res := 3; RETURN END ;
-          n := Unix.Read(fdold, SYSTEM.ADR(buf), bufsize);
+      END;
+      error := Unix.Rename(old, new);
+      IF DifferentFilesystems(error) THEN (* cross device link, move the file *)
+          error := Platform.Oldfile(old, fdold);
+          IF error # 0 THEN res := 2; RETURN END;
+          error := Platform.Newfile(new, fdnew);
+          IF error # 0 THEN error := Platform.Close(fdold); res := 3; RETURN END;
+          error := Platform.Readfile(fdold, SYSTEM.ADR(buf), bufsize, n);
           WHILE n > 0 DO
-            r := Unix.Write(fdnew, SYSTEM.ADR(buf), n);
-            IF r < 0 THEN errno := Unix.errno(); r := Unix.Close(fdold); r := Unix.Close(fdnew);
+            error := Platform.Write(fdnew, SYSTEM.ADR(buf), n);
+            IF errno # 0 THEN Platform.Close(fdold); Platform.Close(fdnew);
               Err("cannot move file", NIL, errno)
-            END ;
-            n := Unix.Read(fdold, SYSTEM.ADR(buf), bufsize)
-          END ;
-          errno := Unix.errno();
-          r := Unix.Close(fdold); r := Unix.Close(fdnew);
-          IF n = 0 THEN r := Unix.Unlink(old); res := 0
+            END;
+            error := Platform.Readfile(fdold, SYSTEM.ADR(buf), bufsize, n);
+          END;
+          Platform.Close(fdold); Platform.Close(fdnew);
+          IF n = 0 THEN error := Platform.Unlink(old); res := 0
           ELSE Err("cannot move file", NIL, errno)
-          END ;
+          END;
         ELSE RETURN (* res is Unix.Rename return code *)
         END
-      END ;
+      END;
       res := 0
     ELSE res := 2 (* old file not found *)
     END
@@ -498,11 +502,11 @@ Especially Length would become fairly complex.
   PROCEDURE Register* (f: File);
     VAR idx, errno: INTEGER; f1: File; file: ARRAY 104 OF CHAR;
   BEGIN
-    IF (f.state = create) & (f.registerName # "") THEN f.state := close (* shortcut renaming *) END ;
+    IF (f.state = create) & (f.registerName # "") THEN f.state := close (* shortcut renaming *) END;
     Close(f);
     IF f.registerName # "" THEN
       Rename(f.workName, f.registerName, errno);
-      IF errno # 0 THEN COPY(f.registerName, file); HALT(99) END ;
+      IF errno # 0 THEN COPY(f.registerName, file); HALT(99) END;
       f.workName := f.registerName; f.registerName := ""; f.tempFile := FALSE
     END
   END Register;
@@ -510,13 +514,13 @@ Especially Length would become fairly complex.
   PROCEDURE ChangeDirectory*(path: ARRAY OF CHAR; VAR res: INTEGER);
   BEGIN
     res := SHORT(Unix.Chdir(path));
-    getcwd(Kernel.CWD)
+    getcwd(Platform.CWD)
   END ChangeDirectory;
 
   PROCEDURE FlipBytes(VAR src, dest: ARRAY OF SYSTEM.BYTE);
     VAR i, j: LONGINT;
   BEGIN
-    IF ~Kernel.littleEndian THEN i := LEN(src); j := 0;
+    IF ~Platform.littleEndian THEN i := LEN(src); j := 0;
       WHILE i > 0 DO DEC(i); dest[j] := src[i]; INC(j) END
     ELSE SYSTEM.MOVE(SYSTEM.ADR(src), SYSTEM.ADR(dest), LEN(src))
     END
@@ -605,7 +609,7 @@ Especially Length would become fairly complex.
   PROCEDURE WriteString* (VAR R: Rider; x: ARRAY [1] OF CHAR);
     VAR i: INTEGER;
   BEGIN i := 0;
-    WHILE x[i] # 0X DO INC(i) END ;
+    WHILE x[i] # 0X DO INC(i) END;
     WriteBytes(R, x, i+1)
   END WriteString;
 
@@ -620,7 +624,7 @@ Especially Length would become fairly complex.
   BEGIN
     f := SYSTEM.VAL(File, o);
     IF f.fd >= 0 THEN
-      fileTab[f.fd] := 0; res := Unix.Close(f.fd); f.fd := -1; DEC(Kernel.nofiles);
+      fileTab[f.fd] := 0; res := Platform.Close(f.fd); f.fd := -1; DEC(Kernel.nofiles);
       IF f.tempFile THEN res := Unix.Unlink(f.workName) END
     END
   END Finalize;
@@ -628,7 +632,7 @@ Especially Length would become fairly complex.
   PROCEDURE Init;
     VAR i: LONGINT;
   BEGIN
-    i := 0; WHILE i < fileTabSize DO fileTab[i] := 0; INC(i) END ;
+    i := 0; WHILE i < fileTabSize DO fileTab[i] := 0; INC(i) END;
     tempno := -1; Kernel.nofiles := 0
   END Init;
 
