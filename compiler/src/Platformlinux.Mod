@@ -1,5 +1,5 @@
 MODULE Platform;
-IMPORT SYSTEM, Strings, Configuration;
+IMPORT SYSTEM;
 
 
 
@@ -150,23 +150,30 @@ TYPE
 
   SignalHandler = PROCEDURE(signal: INTEGER);
 
+  TYPE
+    ArgPtr    = POINTER TO ARRAY 1024 OF CHAR;
+    ArgVec    = POINTER TO ARRAY 1024 OF ArgPtr;
+    ArgVecPtr = POINTER TO ARRAY 1 OF LONGINT;
+
 
 VAR
   LittleEndian-:   BOOLEAN;
   MainStackFrame-: LONGINT;
   HaltCode-:       LONGINT;
   AssertCode-:     LONGINT;
-  HaltHandler:     HaltProcedure;
-  ArgCount-:       INTEGER;
-  ArgVector-:      LONGINT;
-  TimeStart:       LONGINT;
   PID-:            INTEGER;    (* Note: Must be updated by Fork implementation *)
   CWD-:            ARRAY 256 OF CHAR;
-  MODULES-:        ARRAY 1024 OF CHAR;
-  OBERON-:         ARRAY 1024 OF CHAR;
-  LIB-:            ARRAY 1024 OF CHAR;
-  HOME-:           ARRAY 1024 OF CHAR;
+  ArgCount-:       INTEGER;
+  (*
+    MODULES-:        ARRAY 1024 OF CHAR;
+    OBERON-:         ARRAY 1024 OF CHAR;
+    LIB-:            ARRAY 1024 OF CHAR;
+    HOME-:           ARRAY 1024 OF CHAR;
+  *)
 
+  HaltHandler:     HaltProcedure;
+  ArgVector:       LONGINT;
+  TimeStart:       LONGINT;
 
 PROCEDURE -Aincludesystime  '#include <sys/time.h>';  (* for gettimeofday *)
 PROCEDURE -Aincludetime     '#include <time.h>';      (* for localtime *)
@@ -202,13 +209,33 @@ BEGIN RETURN (e = ENOENT) END Absent;
 
 
 
-(* Direct OS memory allocation *)
-(*
-  PROCEDURE -Allocate*(size: LONGINT): LONGINT "(LONGINT)malloc(size)";
-  PROCEDURE -Free*    (adr: LONGINT)           "(void)free(adr)";
-*)
+(* Program startup *)
 
-(* Program arguments *)
+PROCEDURE -HeapInitHeap()       "Heap_InitHeap()";
+PROCEDURE -HeapModuleInit()     "Heap__init()";
+PROCEDURE -PlatformModuleInit() "Platform__init()";
+
+PROCEDURE Init*(argc: INTEGER; argvadr: LONGINT);
+VAR  av: ArgVecPtr;
+BEGIN
+  MainStackFrame := argvadr;
+  ArgCount       := argc;
+  av             := SYSTEM.VAL(ArgVecPtr, argvadr);
+  ArgVector      := av[0];
+  HaltCode       := -128;
+
+  (* This function (Platform.Init) is called at program startup BEFORE any
+     modules have been initalised. In turn we must initialise first the heap
+     itself, then the rest of the heap module. *)
+  HeapInitHeap();
+  PlatformModuleInit();
+  HeapModuleInit();
+END Init;
+
+
+
+
+(* Program arguments and environmet access *)
 
 PROCEDURE -getenv(var: ARRAY OF CHAR): EnvPtr "(Platform_EnvPtr)getenv(var)";
 
@@ -219,27 +246,41 @@ BEGIN
   IF p # NIL THEN COPY(p^, val) END;
 END GetEnv;
 
-
-
-
-(* Program startup *)
-
-PROCEDURE -HeapModuleInit() "Heap__init()";
-PROCEDURE -HeapInitHeap()   "Heap_InitHeap()";
-
-PROCEDURE Init*(argc: INTEGER; argv: LONGINT);
+PROCEDURE GetArg*(n: INTEGER; VAR val: ARRAY OF CHAR);
+  VAR av: ArgVec;
 BEGIN
-  MainStackFrame := argv;
-  ArgCount       := argc;
-  ArgVector      := argv;
-  HaltCode       := -128;
+  IF n < ArgCount THEN
+    av := SYSTEM.VAL(ArgVec,ArgVector);
+    (*
+      c.String("  n: "); c.Int(n,1);
+      c.String(", argv[0]: "); c.Hex(SYSTEM.VAL(LONGINT,(av[0])));
+      c.String(", argv[1]: "); c.Hex(SYSTEM.VAL(LONGINT,(av[1])));
+      c.String(", argv[2]: "); c.Hex(SYSTEM.VAL(LONGINT,(av[2])));
+      c.Ln;
+    *)
+    COPY(av[n]^, val)
+  END
+END GetArg;
 
-  (* This function (Platform.Init) is called at program startup BEFORE any
-     modules have been initalised. In turn we must initialise first the heap
-     itself, then the rest of the heap module. *)
-  HeapInitHeap();
-  HeapModuleInit();
-END Init;
+PROCEDURE GetIntArg*(n: INTEGER; VAR val: LONGINT);
+  VAR s: ARRAY 64 OF CHAR; k, d, i: LONGINT;
+BEGIN
+  s := ""; GetArg(n, s); i := 0;
+  IF s[0] = "-" THEN i := 1 END ;
+  k := 0; d := ORD(s[i]) - ORD("0");
+  WHILE (d >= 0 ) & (d <= 9) DO k := k*10 + d; INC(i); d := ORD(s[i]) - ORD("0") END ;
+  IF s[0] = "-" THEN d := -d; DEC(i) END ;
+  IF i > 0 THEN val := k END
+END GetIntArg;
+
+PROCEDURE ArgPos*(s: ARRAY OF CHAR): INTEGER;
+  VAR i: INTEGER; arg: ARRAY 256 OF CHAR;
+BEGIN
+  i := 0; GetArg(i, arg);
+  WHILE (i < ArgCount) & (s # arg) DO INC(i); GetArg(i, arg) END ;
+  RETURN i
+END ArgPos;
+
 
 
 
@@ -366,7 +407,7 @@ PROCEDURE -closefile(fd: LONGINT):             INTEGER "close(fd)";
 PROCEDURE -unlink   (n: ARRAY OF CHAR):        INTEGER "unlink(n)";
 PROCEDURE -chdir    (n: ARRAY OF CHAR):        INTEGER "chdir(n)";
 PROCEDURE -rename   (o,n: ARRAY OF CHAR):      INTEGER "rename(o,n)";
-PROCEDURE -lseek    (fd: LONGINT; o: LONGINT): INTEGER "lseek(fd, h, SEEK_SET)";
+PROCEDURE -lseek    (fd: LONGINT; o: LONGINT): INTEGER "lseek(fd, o, SEEK_SET)";
 PROCEDURE -ftruncate(fd: LONGINT; l: LONGINT): INTEGER "ftruncate(fd, l)";
 PROCEDURE -structstats()                               "struct stat s";
 PROCEDURE -fstat    (fd: LONGINT):             INTEGER "fstat(fd, &s)";
@@ -436,12 +477,25 @@ BEGIN
   IF n < 0 THEN n := 0; RETURN err() ELSE RETURN 0 END
 END Read;
 
+PROCEDURE ReadBuf*(h: FileHandle; VAR b: ARRAY OF SYSTEM.BYTE; VAR n: LONGINT): ErrorCode;
+BEGIN
+  n := readfile(h, SYSTEM.ADR(b), LEN(b));
+  IF n < 0 THEN n := 0; RETURN err() ELSE RETURN 0 END
+END ReadBuf;
+
 PROCEDURE Write*(h: FileHandle; p: LONGINT; l: LONGINT): ErrorCode;
   VAR written: LONGINT;
 BEGIN
   written := writefile(h, p, l);
   IF written < 0 THEN RETURN err() ELSE RETURN 0 END
 END Write;
+
+PROCEDURE WriteBuf*(h: FileHandle; b: ARRAY OF SYSTEM.BYTE; l: LONGINT): ErrorCode;
+  VAR written: LONGINT;
+BEGIN
+  written := writefile(h, SYSTEM.ADR(b), LEN(b));
+  IF written < 0 THEN RETURN err() ELSE RETURN 0 END
+END WriteBuf;
 
 PROCEDURE Sync*(h: FileHandle): ErrorCode;
 BEGIN
@@ -497,16 +551,17 @@ BEGIN
   CWD         := "";  getcwd(CWD);
   PID         := getpid();
 
-  MODULES := "";  GetEnv("MODULES", MODULES);
-  LIB     := "";  GetEnv("OBERON_LIB", LIB);
-  HOME    := "";  GetEnv("HOME", HOME);
-  OBERON  := "."; GetEnv("OBERON", OBERON);
+  (*
+    MODULES := "";  GetEnv("MODULES", MODULES);
+    LIB     := "";  GetEnv("OBERON_LIB", LIB);
+    HOME    := "";  GetEnv("HOME", HOME);
+    OBERON  := "."; GetEnv("OBERON", OBERON);
 
-  Strings.Append(":.:",                OBERON);
-  Strings.Append(MODULES,              OBERON);
-  Strings.Append(":",                  OBERON);
-  Strings.Append(Configuration.prefix, OBERON);
-  Strings.Append("/lib/voc/sym:",      OBERON);
-
+    Strings.Append(":.:",                OBERON);
+    Strings.Append(MODULES,              OBERON);
+    Strings.Append(":",                  OBERON);
+    Strings.Append(Configuration.prefix, OBERON);
+    Strings.Append("/lib/voc/sym:",      OBERON);
+  *)
 END Platform.
 
