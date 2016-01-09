@@ -67,7 +67,7 @@ translateToC:
 	$(OBERONCOMPILER0) -PSFs    Configuration.Mod
 	$(OBERONCOMPILER0) -PSFs    Platform$(OSARCH).Mod
 	$(OBERONCOMPILER0) -PSsiapx Heap.Mod
-	$(OBERONCOMPILER0) -PSFs    Args.Mod
+	# $(OBERONCOMPILER0) -PSFs    Args.Mod
 	$(OBERONCOMPILER0) -PSFs    Console.Mod
 	# $(OBERONCOMPILER0) -PSFs    Unix.Mod
 	$(OBERONCOMPILER0) -PSFs    Strings.Mod
@@ -91,11 +91,11 @@ translateToC:
 
 compileC:
 	#
-	$(CC) Platform.c Heap.c Args.c Console.c Modules.c Strings.c Configuration.c \
+	$(CC) Platform.c Heap.c Console.c Modules.c Strings.c Configuration.c \
 	src/SYSTEM.c Files0.c Reals.c Texts0.c vt100.c extTools.c \
 	OPM.c OPS.c OPT.c OPC.c OPV.c OPB.c OPP.c errors.c
 	#
-	$(CL) -static  oc.c -o oc  Platform.o Heap.o Args.o Console.o Modules.o \
+	$(CL) -static  oc.c -o oc  Platform.o Heap.o Console.o Modules.o \
 	Strings.o Configuration.o Files0.o Reals.o Texts0.o vt100.o extTools.o \
 	SYSTEM.o OPM.o OPS.o OPT.o OPC.o OPV.o OPB.o OPP.o errors.o
 

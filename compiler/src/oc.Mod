@@ -68,35 +68,37 @@ MODULE oc;  (* J. Templ 3.2.95 *)
     VAR modulesobj: ARRAY 2048 OF CHAR; (* here we hold all modules name given on the command line, to add corresponding .o files to the external compiler options *)
   BEGIN
     modulesobj := "";
-    OPM.OpenPar;      (* gclock();   slightly faste rtranslation but may lead to opening "too many files" *)
+    IF OPM.OpenPar() THEN
+      (* gclock();   slightly faste rtranslation but may lead to opening "too many files" *)
 
-    LOOP
-      OPM.Init(done, mname);
-      IF ~done THEN RETURN END ;
+      LOOP
+        OPM.Init(done, mname);
+        IF ~done THEN RETURN END ;
 
-      OPM.InitOptions;
-      PropagateElementaryTypeSizes;
+        OPM.InitOptions;
+        PropagateElementaryTypeSizes;
 
-      Heap.GC(FALSE);
-      Module(done);
-      IF ~done THEN
-        OPM.LogWStr("OPM module compilation failed."); OPM.LogLn;
-        Platform.Exit(1)
-      END;
-
-      IF ~OPM.dontAsm THEN
-	      extTools.Assemble(OPM.modName);
-
-        IF ~(OPM.mainProg OR OPM.mainLinkStat) THEN
-          Strings.Append(" ",modulesobj);
-          Strings.Append(OPM.modName, modulesobj);
-          Strings.Append(".o ", modulesobj)
+        Heap.GC(FALSE);
+        Module(done);
+        IF ~done THEN
+          OPM.LogWStr("OPM module compilation failed."); OPM.LogLn;
+          Platform.Exit(1)
         END;
-        IF ~OPM.dontLink & (OPM.mainProg OR OPM.mainLinkStat) THEN
-          extTools.LinkMain (OPM.modName, OPM.mainLinkStat, modulesobj);
-	      END
-	    END
-    END (* loop *)
+
+        IF ~OPM.dontAsm THEN
+  	      extTools.Assemble(OPM.modName);
+
+          IF ~(OPM.mainProg OR OPM.mainLinkStat) THEN
+            Strings.Append(" ",modulesobj);
+            Strings.Append(OPM.modName, modulesobj);
+            Strings.Append(".o ", modulesobj)
+          END;
+          IF ~OPM.dontLink & (OPM.mainProg OR OPM.mainLinkStat) THEN
+            extTools.LinkMain (OPM.modName, OPM.mainLinkStat, modulesobj);
+  	      END
+  	    END
+      END (* loop *)
+    END
   END Translate;
 
   PROCEDURE Trap(sig: INTEGER);

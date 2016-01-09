@@ -3,7 +3,7 @@ MODULE Files0;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files
 (* this module is not for use by developers and inteded to bootstrap voc *)
 (* for general use import Files module *)
 
-  IMPORT SYSTEM, Platform, Heap, Args, Console;
+  IMPORT SYSTEM, Platform, Heap, Console;
 
   (* standard data type I/O
 

@@ -4,7 +4,7 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
   31.1.2007 jt synchronized with BlackBox version, in particular PromoteIntConstToLInt added
 *)
 
-  IMPORT SYSTEM, Texts := Texts0, Files := Files0, Args, Console, errors, Configuration, vt100;
+  IMPORT SYSTEM, Texts := Texts0, Files := Files0, Platform, Console, errors, Configuration, vt100;
 
   CONST
     OptionChar* = "-";
@@ -121,7 +121,7 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
 
     S: INTEGER;
 
-    stop, useLineNo, useParFile : BOOLEAN;
+    useLineNo, useParFile : BOOLEAN;
 
     dontAsm-, dontLink-, mainProg-, mainLinkStat-, notColorOutput-, forceNewSym-, Verbose-: BOOLEAN;
 
@@ -176,24 +176,10 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
   PROCEDURE ^GetProperties;
 
 
-  (*
-    PROCEDURE ShowParameters;
-      VAR i: INTEGER;
-      VAR p: ARRAY 256 OF CHAR;
-    BEGIN
-      Console.String("Parameters: argc="); Console.Int(Args.argc,1); Console.Ln;
-      FOR i:=0 TO Args.argc-1 DO
-        Args.Get(i, p);
-        Console.String("  '"); Console.String(p); Console.String("'"); Console.Ln;
-      END;
-    END ShowParameters;
-  *)
-
-  PROCEDURE OpenPar*;  (* prepare for a sequence of translations *)
+  PROCEDURE OpenPar*(): BOOLEAN;  (* prepare for a sequence of translations *)
     VAR s: ARRAY 256 OF CHAR;
   BEGIN
-    (* ShowParameters; *)
-    IF Args.argc = 1 THEN stop := TRUE;
+    IF Platform.ArgCount = 1 THEN
       Console.Ln;
       Console.String("oc: Oberon compiler ");
       Console.String(Configuration.version); Console.String(" ");
@@ -226,16 +212,15 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
       Console.String(" F      - force writing new symbol file"); Console.Ln;
       Console.String(" V      - verbose output"); Console.Ln;
       Console.Ln;
+      RETURN FALSE
     ELSE
-      stop := FALSE;
-
-      S:=1; s:=""; Args.Get(S, s);
+      S:=1; s:=""; Platform.GetArg(S, s);
 
       glbopt := defopt;
 
       WHILE s[0] = OptionChar DO
         ScanOptions(s, glbopt);
-        INC(S); s:=""; Args.Get(S, s)
+        INC(S); s:=""; Platform.GetArg(S, s)
       END;
 
       (* The following is redundant as it is reevaluated in InitOptions
@@ -253,6 +238,7 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
         GetProperties;
       *)
 
+      RETURN TRUE
     END;
   END OpenPar;
 
@@ -261,10 +247,10 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
     VAR s: ARRAY 256 OF CHAR;
   BEGIN
     opt := glbopt;
-    s:=""; Args.Get(S, s);
+    s:=""; Platform.GetArg(S, s);
     WHILE s[0] = OptionChar DO
       ScanOptions(s, opt);
-      INC(S); s:=""; Args.Get(S, s)
+      INC(S); s:=""; Platform.GetArg(S, s)
     END;
 
     useLineNo      := lineno         IN opt;
@@ -293,10 +279,9 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
     (* LogWStr("OPM init, S = "); LogWInt(S,1); LogLn; *)
     done := FALSE;
     curpos := 0;
-    IF stop           THEN LogWStr("OPM.Init stop requested."); LogLn;    RETURN END ;
-    IF S >= Args.argc THEN (* LogWStr("OPM.Init no more args"); LogLn; *) RETURN END ;
+    IF S >= Platform.ArgCount THEN (* LogWStr("OPM.Init no more args"); LogLn; *) RETURN END ;
 
-    s:=""; Args.Get(S, s);
+    s:=""; Platform.GetArg(S, s);
 
     NEW(T); Texts.Open(T, s);
     LogWStr(s);

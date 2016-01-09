@@ -1,6 +1,6 @@
 MODULE extTools;
 
-IMPORT Args, Strings, Console, Configuration, Platform;
+IMPORT Strings, Console, Configuration, Platform;
 
 VAR compilationOptions, CFLAGS: ARRAY 1023 OF CHAR;
 
@@ -65,7 +65,7 @@ BEGIN
   Strings.Append(Configuration.prefix,    compilationOptions);
   Strings.Append("/",                     compilationOptions);
   Strings.Append("lib/voc/obj ",          compilationOptions);
-  Args.GetEnv("CFLAGS", CFLAGS);
+  Platform.GetEnv("CFLAGS", CFLAGS);
   Strings.Append (CFLAGS,                 compilationOptions);
   Strings.Append (" ",                    compilationOptions);
 END extTools.

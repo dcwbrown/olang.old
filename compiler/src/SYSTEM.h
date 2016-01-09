@@ -45,8 +45,9 @@
 // Expose heap initialisation to main proram so it can
 // be called in the correct order.
 
-extern void Heap_InitHeap(void);
-extern void *Heap__init(void);
+extern void Heap_InitHeap();
+extern void *Heap__init();
+extern void *Platform__init();
 
 
 
