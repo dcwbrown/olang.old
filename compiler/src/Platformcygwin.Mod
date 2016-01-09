@@ -1,5 +1,5 @@
 MODULE Platform;
-IMPORT SYSTEM, Strings, Configuration;
+IMPORT SYSTEM;
 
 
 
@@ -163,11 +163,13 @@ VAR
   AssertCode-:     LONGINT;
   PID-:            INTEGER;    (* Note: Must be updated by Fork implementation *)
   CWD-:            ARRAY 256 OF CHAR;
-  MODULES-:        ARRAY 1024 OF CHAR;
-  OBERON-:         ARRAY 1024 OF CHAR;
-  LIB-:            ARRAY 1024 OF CHAR;
-  HOME-:           ARRAY 1024 OF CHAR;
   ArgCount-:       INTEGER;
+  (*
+    MODULES-:        ARRAY 1024 OF CHAR;
+    OBERON-:         ARRAY 1024 OF CHAR;
+    LIB-:            ARRAY 1024 OF CHAR;
+    HOME-:           ARRAY 1024 OF CHAR;
+  *)
 
   HaltHandler:     HaltProcedure;
   ArgVector:       LONGINT;
@@ -203,15 +205,6 @@ BEGIN RETURN (e = EACCES) OR (e = EROFS) OR (e = EAGAIN) END Inaccessible;
 
 PROCEDURE Absent*(e: ErrorCode): BOOLEAN;
 BEGIN RETURN (e = ENOENT) END Absent;
-
-
-
-
-(* Direct OS memory allocation *)
-(*
-  PROCEDURE -Allocate*(size: LONGINT): LONGINT "(LONGINT)malloc(size)";
-  PROCEDURE -Free*    (adr: LONGINT)           "(void)free(adr)";
-*)
 
 
 
@@ -414,7 +407,7 @@ PROCEDURE -closefile(fd: LONGINT):             INTEGER "close(fd)";
 PROCEDURE -unlink   (n: ARRAY OF CHAR):        INTEGER "unlink(n)";
 PROCEDURE -chdir    (n: ARRAY OF CHAR):        INTEGER "chdir(n)";
 PROCEDURE -rename   (o,n: ARRAY OF CHAR):      INTEGER "rename(o,n)";
-PROCEDURE -lseek    (fd: LONGINT; o: LONGINT): INTEGER "lseek(fd, h, SEEK_SET)";
+PROCEDURE -lseek    (fd: LONGINT; o: LONGINT): INTEGER "lseek(fd, o, SEEK_SET)";
 PROCEDURE -ftruncate(fd: LONGINT; l: LONGINT): INTEGER "ftruncate(fd, l)";
 PROCEDURE -structstats()                               "struct stat s";
 PROCEDURE -fstat    (fd: LONGINT):             INTEGER "fstat(fd, &s)";
@@ -484,12 +477,25 @@ BEGIN
   IF n < 0 THEN n := 0; RETURN err() ELSE RETURN 0 END
 END Read;
 
+PROCEDURE ReadBuf*(h: FileHandle; VAR b: ARRAY OF SYSTEM.BYTE; VAR n: LONGINT): ErrorCode;
+BEGIN
+  n := readfile(h, SYSTEM.ADR(b), LEN(b));
+  IF n < 0 THEN n := 0; RETURN err() ELSE RETURN 0 END
+END ReadBuf;
+
 PROCEDURE Write*(h: FileHandle; p: LONGINT; l: LONGINT): ErrorCode;
   VAR written: LONGINT;
 BEGIN
   written := writefile(h, p, l);
   IF written < 0 THEN RETURN err() ELSE RETURN 0 END
 END Write;
+
+PROCEDURE WriteBuf*(h: FileHandle; b: ARRAY OF SYSTEM.BYTE; l: LONGINT): ErrorCode;
+  VAR written: LONGINT;
+BEGIN
+  written := writefile(h, SYSTEM.ADR(b), LEN(b));
+  IF written < 0 THEN RETURN err() ELSE RETURN 0 END
+END WriteBuf;
 
 PROCEDURE Sync*(h: FileHandle): ErrorCode;
 BEGIN
@@ -545,16 +551,17 @@ BEGIN
   CWD         := "";  getcwd(CWD);
   PID         := getpid();
 
-  MODULES := "";  GetEnv("MODULES", MODULES);
-  LIB     := "";  GetEnv("OBERON_LIB", LIB);
-  HOME    := "";  GetEnv("HOME", HOME);
-  OBERON  := "."; GetEnv("OBERON", OBERON);
+  (*
+    MODULES := "";  GetEnv("MODULES", MODULES);
+    LIB     := "";  GetEnv("OBERON_LIB", LIB);
+    HOME    := "";  GetEnv("HOME", HOME);
+    OBERON  := "."; GetEnv("OBERON", OBERON);
 
-  Strings.Append(":.:",                OBERON);
-  Strings.Append(MODULES,              OBERON);
-  Strings.Append(":",                  OBERON);
-  Strings.Append(Configuration.prefix, OBERON);
-  Strings.Append("/lib/voc/sym:",      OBERON);
-
+    Strings.Append(":.:",                OBERON);
+    Strings.Append(MODULES,              OBERON);
+    Strings.Append(":",                  OBERON);
+    Strings.Append(Configuration.prefix, OBERON);
+    Strings.Append("/lib/voc/sym:",      OBERON);
+  *)
 END Platform.
 

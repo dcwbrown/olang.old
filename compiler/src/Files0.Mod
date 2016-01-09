@@ -3,7 +3,7 @@ MODULE Files0;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files
 (* this module is not for use by developers and inteded to bootstrap voc *)
 (* for general use import Files module *)
 
-  IMPORT SYSTEM, Platform, Heap, Console;
+  IMPORT SYSTEM, Platform, Heap, Strings, Configuration, Console;
 
   (* standard data type I/O
 
@@ -60,7 +60,13 @@ MODULE Files0;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files
 
   VAR
     fileTab: ARRAY fileTabSize OF LONGINT (*=File*);
-    tempno: INTEGER;
+    tempno:  INTEGER;
+    OBERON:  ARRAY 1024 OF CHAR;
+    HOME:    ARRAY 1024 OF CHAR;
+    MODULES: ARRAY 1024 OF CHAR;
+
+
+
 
   PROCEDURE -IdxTrap "__HALT(-1)";
 
@@ -151,17 +157,31 @@ MODULE Files0;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files
 
   PROCEDURE Flush(buf: Buffer);
     VAR
-      error: Platform.ErrorCode;
-      f:     File;
-      identity:  Platform.FileIdentity;
+      error:     Platform.ErrorCode;
+      f:         File;
+      (* identity:  Platform.FileIdentity; *)
   BEGIN
+    (*
+      Console.String("Flush buffer at $"); Console.Hex(SYSTEM.ADR(buf.data));
+      Console.String(", size "); Console.Int(buf.size,1); Console.Ln;
+    *)
     IF buf.chg THEN f := buf.f; Create(f);
-      IF buf.org # f.pos THEN error := Platform.Seek(f.fd, buf.org) END;
+      IF buf.org # f.pos THEN
+        error := Platform.Seek(f.fd, buf.org);
+        (*
+          Console.String("Seeking to "); Console.Int(buf.org,1);
+          Console.String(", error code "); Console.Int(error,1); Console.Ln;
+        *)
+      END;
       error := Platform.Write(f.fd, SYSTEM.ADR(buf.data), buf.size);
       IF error # 0 THEN Err("error in writing file", f, error) END;
       f.pos := buf.org + buf.size;
       buf.chg := FALSE;
       error := Platform.Identify(f.fd, f.identity);
+      (*
+        error := Platform.Identify(f.fd, identity);
+        f.identity.mtime := identity.mtime;
+      *)
     END
   END Flush;
 
@@ -192,16 +212,16 @@ MODULE Files0;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files
   PROCEDURE ScanPath(VAR pos: INTEGER; VAR dir: ARRAY OF CHAR);  (* supports ~, ~user and blanks inside path *)
     VAR i: INTEGER; ch: CHAR;
   BEGIN
-    i := 0; ch := Platform.OBERON[pos];
-    WHILE (ch = " ") OR (ch = ":") DO INC(pos); ch := Platform.OBERON[pos] END;
+    i := 0; ch := OBERON[pos];
+    WHILE (ch = " ") OR (ch = ":") DO INC(pos); ch := OBERON[pos] END;
     IF ch = "~" THEN
-      INC(pos); ch := Platform.OBERON[pos];
-      WHILE Platform.HOME[i] # 0X DO dir[i] := Platform.HOME[i]; INC(i) END;
+      INC(pos); ch := OBERON[pos];
+      WHILE HOME[i] # 0X DO dir[i] := HOME[i]; INC(i) END;
       IF (ch # "/") & (ch # 0X) & (ch # ":") & (ch # " ") THEN
         WHILE (i > 0) & (dir[i-1] # "/") DO DEC(i) END
       END
     END;
-    WHILE (ch # 0X) & (ch # ":") DO dir[i] := ch; INC(i); INC(pos); ch := Platform.OBERON[pos] END;
+    WHILE (ch # 0X) & (ch # ":") DO dir[i] := ch; INC(i); INC(pos); ch := OBERON[pos] END;
     WHILE (i > 0) & (dir[i-1] = " ") DO DEC(i) END;
     dir[i] := 0X
   END ScanPath;
@@ -327,7 +347,7 @@ MODULE Files0;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files
         IF org = f.len THEN buf.size := 0
         ELSE Create(f);
           IF f.pos # org THEN error := Platform.Seek(f.fd, org) END;
-          error := Platform.Read(f.fd, SYSTEM.ADR(buf.data), LEN(buf.data), n);
+          error := Platform.ReadBuf(f.fd, buf.data, n);
           IF error # 0 THEN Err("read from file not done", f, error) END;
           f.pos := org + n;
           buf.size := n
@@ -634,7 +654,18 @@ Especially Length would become fairly complex.
     VAR i: LONGINT;
   BEGIN
     i := 0; WHILE i < fileTabSize DO fileTab[i] := 0; INC(i) END;
-    tempno := -1; Heap.FileCount := 0
+    tempno := -1;
+    Heap.FileCount := 0;
+
+    MODULES := "";  Platform.GetEnv("MODULES", MODULES);
+    HOME    := "";  Platform.GetEnv("HOME", HOME);
+    OBERON  := "."; Platform.GetEnv("OBERON", OBERON);
+
+    Strings.Append(":.:",                OBERON);
+    Strings.Append(MODULES,              OBERON);
+    Strings.Append(":",                  OBERON);
+    Strings.Append(Configuration.prefix, OBERON);
+    Strings.Append("/lib/voc/sym:",      OBERON);
   END Init;
 
 BEGIN Init
