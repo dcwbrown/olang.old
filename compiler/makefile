@@ -3,13 +3,23 @@ BUILDDATE=$(shell date +%Y/%m/%d)
 # Get OS architecture, linux or cygwin
 OSARCH = $(shell uname -o | sed "s/GNU\///" | tr A-Z a-z)
 
+ifeq ($(OSARCH),cygwin)
+	BINEXT = .exe
+else
+	BINEXT =
+endif
+
 # Get processor architecture, i686 or amd64
 CPUARCH = $(shell uname -m | sed "s/x86_64/amd64/" | tr A-Z a-z)
+
+TARGET = oc.$(CCOMP).$(OSARCH).$(CPUARCH)$(BINEXT)
+
+
 
 # Compiler to use
 CCOMP = clang
 
-RELEASE = 1.2
+RELEASE = 0.5
 
 INCLUDEPATH = -Isrc
 
@@ -17,8 +27,7 @@ SETENV  = CFLAGS=$(INCLUDEPATH)
 SETENV += PATH=bin:/usr/bin
 SETENV += MODULES=.:src
 
-OBERONCOMPILER0 = $(SETENV) bin/oc.$(CCOMP).$(OSARCH).$(CPUARCH)
-OBERONCOMPILER  = $(SETENV) ./oc
+OBERONCOMPILER = $(SETENV) bin/$(TARGET)
 LIBNAME = OberonCompiler
 LIBRARY = lib$(LIBNAME)
 
@@ -42,16 +51,16 @@ all: translateToC compileC
 
 
 setoriginal:
-	cp bin/oc.$(CCOMP).$(OSARCH).$(CPUARCH).bak bin/oc.$(CCOMP).$(OSARCH).$(CPUARCH)
+	cp bin/$(TARGET).bak bin/$(TARGET)
 
 
 setnew:
-	cp oc.exe bin/oc.$(CCOMP).$(OSARCH).$(CPUARCH)
+	cp oc$(BINEXT) bin/$(TARGET)
 
 
 translateToC:
 	#
-	$(info $(BUILDDATE) making Oberon compiler for $(OSARCH) $(CPUARCH) using compiler $(CCOMP).)
+	$(info $(BUILDDATE) making Oberon compiler for $(OSARCH) $(CPUARCH) using C compiler $(CCOMP).)
 
 	$(file  >Configuration.Mod,MODULE Configuration;)
 	$(file >>Configuration.Mod,CONST)
@@ -64,29 +73,26 @@ translateToC:
 	$(file >>Configuration.Mod,  versionLong* = "Oberon compiler OC for $(OSARCH) $(CPUARCH) [$(BUILDDATE)] $(PREFIX)";)
 	$(file >>Configuration.Mod,END Configuration.)
 
-	$(OBERONCOMPILER0) -PSFs    Configuration.Mod
-	$(OBERONCOMPILER0) -PSFs    Platform$(OSARCH).Mod
-	$(OBERONCOMPILER0) -PSsiapx Heap.Mod
-	# $(OBERONCOMPILER0) -PSFs    Args.Mod
-	$(OBERONCOMPILER0) -PSFs    Console.Mod
-	# $(OBERONCOMPILER0) -PSFs    Unix.Mod
-	$(OBERONCOMPILER0) -PSFs    Strings.Mod
-	# $(OBERONCOMPILER0) -PSFs    Kernel0.Mod
-	$(OBERONCOMPILER0) -PSFs    Modules.Mod
-	$(OBERONCOMPILER0) -PSFsx   Files0.Mod
-	$(OBERONCOMPILER0) -PSFs    Reals.Mod
-	$(OBERONCOMPILER0) -PSFs    Texts0.Mod
-	$(OBERONCOMPILER0) -PSFs    vt100.Mod
-	$(OBERONCOMPILER0) -PSFs    errors.Mod
-	$(OBERONCOMPILER0) -PSFs    extTools.Mod
-	$(OBERONCOMPILER0) -PSFs    OPM.cmdln.Mod
-	$(OBERONCOMPILER0) -PSFsx   OPS.Mod
-	$(OBERONCOMPILER0) -PSFs    OPT.Mod
-	$(OBERONCOMPILER0) -PSFs    OPC.Mod
-	$(OBERONCOMPILER0) -PSFs    OPV.Mod
-	$(OBERONCOMPILER0) -PSFs    OPB.Mod
-	$(OBERONCOMPILER0) -PSFs    OPP.Mod
-	$(OBERONCOMPILER0) -PSsm    oc.Mod
+	$(OBERONCOMPILER) -PSFs    Configuration.Mod
+	$(OBERONCOMPILER) -PSFs    Platform$(OSARCH).Mod
+	$(OBERONCOMPILER) -PSsiapx Heap.Mod
+	$(OBERONCOMPILER) -PSFs    Console.Mod
+	$(OBERONCOMPILER) -PSFs    Strings.Mod
+	$(OBERONCOMPILER) -PSFs    Modules.Mod
+	$(OBERONCOMPILER) -PSFsx   Files0.Mod
+	$(OBERONCOMPILER) -PSFs    Reals.Mod
+	$(OBERONCOMPILER) -PSFs    Texts0.Mod
+	$(OBERONCOMPILER) -PSFs    vt100.Mod
+	$(OBERONCOMPILER) -PSFs    errors.Mod
+	$(OBERONCOMPILER) -PSFs    extTools.Mod
+	$(OBERONCOMPILER) -PSFs    OPM.cmdln.Mod
+	$(OBERONCOMPILER) -PSFsx   OPS.Mod
+	$(OBERONCOMPILER) -PSFs    OPT.Mod
+	$(OBERONCOMPILER) -PSFs    OPC.Mod
+	$(OBERONCOMPILER) -PSFs    OPV.Mod
+	$(OBERONCOMPILER) -PSFs    OPB.Mod
+	$(OBERONCOMPILER) -PSFs    OPP.Mod
+	$(OBERONCOMPILER) -PSsm    oc.Mod
 
 
 compileC:
