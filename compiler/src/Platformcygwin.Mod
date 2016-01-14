@@ -338,7 +338,7 @@ BEGIN signal(4, handler); END SetBadInstructionHandler;
 PROCEDURE -gettimeval          "struct timeval tv; gettimeofday(&tv,0)";
 PROCEDURE -tvsec():  LONGINT   "tv.tv_sec";
 PROCEDURE -tvusec(): LONGINT   "tv.tv_usec";
-PROCEDURE -sectotm(s: LONGINT) "struct tm *time = localtime(&s)";
+PROCEDURE -sectotm(s: LONGINT) "struct tm *time = localtime((time_t*)&s)";
 PROCEDURE -tmsec():  LONGINT   "(LONGINT)time->tm_sec";
 PROCEDURE -tmmin():  LONGINT   "(LONGINT)time->tm_min";
 PROCEDURE -tmhour(): LONGINT   "(LONGINT)time->tm_hour";

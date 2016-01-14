@@ -29,15 +29,24 @@
 #define CHAR         unsigned char
 #define SHORTINT     signed char
 #define INTEGER      int
-#define LONGINT      long
 #define REAL         float
 #define LONGREAL     double
-#define SET          unsigned long
 #define SYSTEM_INT8  int8_t
 #define SYSTEM_INT16 int16_t
 #define SYSTEM_INT32 int32_t
 #define SYSTEM_INT64 int64_t
 #define SYSTEM_PTR   void*
+
+
+// Ensure LONGINT and SET are 64 bits even on 32 bit Windows.
+
+#if ULONG_MAX != UINT_MAX
+  #define LONGINT long
+  #define SET     unsigned long
+#else
+  #define LONGINT long long
+  #define SET     unsigned long long
+#endif
 
 //typedef unsigned short int LONGCHAR;
 
@@ -228,9 +237,9 @@ extern void SYSTEM_INHERIT();
 #define __ENUMR(adr, typ, size, n, P) SYSTEM_ENUMR(adr, typ, (long)(size), (long)(n), P)
 
 #define __INITYP(t, t0, level) \
-	t##__typ= &t##__desc.blksz; \
+	t##__typ= (LONGINT*)&t##__desc.blksz; \
 	memcpy(t##__desc.base, t0##__typ - __BASEOFF, level*sizeof(long)); \
-	t##__desc.base[level]=t##__typ; \
+	t##__desc.base[level]=(long*)t##__typ; \
 	t##__desc.module=(long)m; \
 	if(t##__desc.blksz!=sizeof(struct t)) __HALT(-15); \
 	t##__desc.blksz=(t##__desc.blksz+5*sizeof(long)-1)/(4*sizeof(long))*(4*sizeof(long)); \
@@ -238,7 +247,8 @@ extern void SYSTEM_INHERIT();
 	SYSTEM_INHERIT(t##__typ, t0##__typ)
 
 #define __IS(tag, typ, level)	(*(tag-(__BASEOFF-level))==(long)typ##__typ)
-#define __TYPEOF(p)	(*(((long**)(p))-1))
+// #define __TYPEOF(p)	(*(((long**)(p))-1))
+#define __TYPEOF(p)	(*(((LONGINT**)(p))-1))
 #define __ISP(p, typ, level)	__IS(__TYPEOF(p),typ,level)
 
 

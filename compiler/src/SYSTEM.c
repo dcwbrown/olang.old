@@ -138,7 +138,7 @@ SYSTEM_PTR SYSTEM_NEWARR(long *typ, long elemsz, int elemalgn, int nofdim, int n
 		/* element typ does not contain pointers */
 		x = Heap_NEWBLK(size);
 	}
-	else if (typ == POINTER__typ) {
+	else if (typ == (long*)POINTER__typ) {
 		/* element type is a pointer */
 		x = Heap_NEWBLK(size + nofelems * sizeof(long));
 		p = (long*)x[-1];

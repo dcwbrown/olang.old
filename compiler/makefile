@@ -47,7 +47,7 @@ LD = $(CCOMP) -shared -o $(LIBRARY).$(SHRLIBEXT)
 ARCHIVE = ar rcs $(LIBRARY).a
 
 
-all: translateToC compileC
+all: selectplatform translatetoc compilec
 
 
 setoriginal:
@@ -58,9 +58,14 @@ setnew:
 	cp oc$(BINEXT) bin/$(TARGET)
 
 
-translateToC:
+# Run make selectplatfrom on the target system
+selectplatform:
+	cp src/$(CPUARCH).par voc.par
+
+# Run make translatetoc on an existing supported system
+translatetoc:
 	#
-	$(info $(BUILDDATE) making Oberon compiler for $(OSARCH) $(CPUARCH) using C compiler $(CCOMP).)
+	printf "\ec$(BUILDDATE) making Oberon compiler for $(OSARCH) $(CPUARCH) using C compiler $(CCOMP)."
 
 	$(file  >Configuration.Mod,MODULE Configuration;)
 	$(file >>Configuration.Mod,CONST)
@@ -95,7 +100,8 @@ translateToC:
 	$(OBERONCOMPILER) -PSsm    oc.Mod
 
 
-compileC:
+# Run make compilec on the target system
+compilec:
 	#
 	$(CC) Platform.c Heap.c Console.c Modules.c Strings.c Configuration.c \
 	src/SYSTEM.c Files0.c Reals.c Texts0.c vt100.c extTools.c \
@@ -107,7 +113,7 @@ compileC:
 
 
 clean:
-	rm -f *.c *.h *.o *.Mod *.sym *.exe *.stackdump
+	rm -f *.c *.h *.o *.Mod *.sym *.exe *.par *.stackdump
 
 
 

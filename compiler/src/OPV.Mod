@@ -57,38 +57,38 @@ MODULE OPV;  (* J. Templ 16.2.95 / 3.7.96
 
     super = 1;
 
-    UndefinedType = 0; (* named type not yet defined *)
+    UndefinedType  = 0; (* named type not yet defined *)
     ProcessingType = 1; (* pointer type is being processed *)
     PredefinedType = 2; (* for all predefined types *)
-    DefinedInHdr = 3+OPM.HeaderFile; (* named type has been defined in header file *)
-    DefinedInBdy = 3+OPM.BodyFile; (* named type has been defined in body file *)
+    DefinedInHdr   = 3+OPM.HeaderFile; (* named type has been defined in header file *)
+    DefinedInBdy   = 3+OPM.BodyFile; (* named type has been defined in body file *)
 
-    OpenParen = "(";
-    CloseParen = ")";
-    OpenBracket = "[";
+    OpenParen    = "(";
+    CloseParen   = ")";
+    OpenBracket  = "[";
     CloseBracket = "]";
-    Blank = " ";
-    Comma = ", ";
-    Deref = "*";
-    EntierFunc = "__ENTIER(";
-    IsFunc = "__IS(";
-    IsPFunc = "__ISP(";
+    Blank        = " ";
+    Comma        = ", ";
+    Deref        = "*";
+    EntierFunc   = "__ENTIER(";
+    IsFunc       = "__IS(";
+    IsPFunc      = "__ISP(";
     GuardPtrFunc = "__GUARDP(";
     GuardRecFunc = "__GUARDR(";
-    TypeFunc = "__TYPEOF(";
-    SetOfFunc = "__SETOF(";
+    TypeFunc     = "__TYPEOF(";
+    SetOfFunc    = "__SETOF(";
     SetRangeFunc = "__SETRNG(";
-    CopyFunc = "__COPY(";
-    MoveFunc = "__MOVE(";
-    GetFunc = "__GET(";
-    PutFunc = "__PUT(";
-    DynTypExt = "__typ";
-    WithChk = "__WITHCHK";
-    Break = "break";
-    ElseStat = "else ";
+    CopyFunc     = "__COPY(";
+    MoveFunc     = "__MOVE(";
+    GetFunc      = "__GET(";
+    PutFunc      = "__PUT(";
+    DynTypExt    = "__typ";
+    WithChk      = "__WITHCHK";
+    Break        = "break";
+    ElseStat     = "else ";
 
-    MinPrec = -1;
-    MaxPrec = 12;
+    MinPrec     = -1;
+    MaxPrec     = 12;
     ProcTypeVar = 11; (* precedence number when a call is made with a proc type variable *)
 
     internal = 0;
