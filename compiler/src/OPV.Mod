@@ -1029,14 +1029,19 @@ MODULE OPV;  (* J. Templ 16.2.95 / 3.7.96
             IF OPM.level = 0 THEN
               IF mainprog THEN OPM.WriteString("__FINI") ELSE OPM.WriteString("__ENDMOD") END
             ELSE
-              OPC.ExitProc(outerProc, FALSE, FALSE);
-              OPM.WriteString("return");
-              IF n^.left # NIL THEN OPM.Write(Blank);
+              IF n^.left # NIL THEN
+                (* Make local copy of result before ExitProc deletes dynamic vars *)
+                OPM.WriteString("_o_result = ");
                 IF (n^.left^.typ^.form = Pointer) & (n^.obj^.typ # n^.left^.typ) THEN
                   OPM.WriteString("(void*)"); expr(n^.left, 10)
                 ELSE
                   expr(n^.left, MinPrec)
-                END
+                END;
+                OPM.WriteString(";"); OPM.WriteLn; OPC.BegStat;
+                OPC.ExitProc(outerProc, FALSE, FALSE);
+                OPM.WriteString("return _o_result");
+              ELSE
+                OPM.WriteString("return");
               END
             END
       |  Nwith:
