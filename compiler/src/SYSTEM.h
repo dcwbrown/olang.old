@@ -37,19 +37,15 @@
 #define SYSTEM_INT64 int64_t
 #define SYSTEM_PTR   void*
 
-
 // Ensure LONGINT and SET are 64 bits even on 32 bit Windows.
 
 #if ULONG_MAX != UINT_MAX
-  #define LONGINT long
-  #define SET     unsigned long
+  #define LONGINT  long
 #else
-  #define LONGINT long long
-  #define SET     unsigned long long
+  #define LONGINT  long long
 #endif
 
-//typedef unsigned short int LONGCHAR;
-
+#define SET unsigned LONGINT
 
 // Expose heap initialisation to main proram so it can
 // be called in the correct order.
@@ -60,18 +56,21 @@ extern void *Platform__init();
 
 
 
-/* Run time system routines */
+/* Run time system routines in SYSTEM.c */
 
-extern long   SYSTEM_DIV();
-extern long   SYSTEM_MOD();
-extern long   SYSTEM_ENTIER();
-extern long   SYSTEM_ASH();
-extern long   SYSTEM_ABS();
-extern long   SYSTEM_XCHK();
-extern long   SYSTEM_RCHK();
-extern double SYSTEM_ABSD();
-extern long   SYSTEM_DIV(unsigned long x, unsigned long y);
-extern long   SYSTEM_MOD(unsigned long x, unsigned long y);
+extern LONGINT SYSTEM_XCHK   (LONGINT i, LONGINT ub);
+extern LONGINT SYSTEM_RCHK   (LONGINT i, LONGINT ub);
+extern LONGINT SYSTEM_ASH    (LONGINT i, LONGINT n);
+extern LONGINT SYSTEM_ABS    (LONGINT i);
+extern double  SYSTEM_ABSD   (double i);
+extern void    SYSTEM_INHERIT(LONGINT *t, LONGINT *t0);
+extern void    SYSTEM_ENUMP  (void *adr, LONGINT n, void (*P)());
+extern void    SYSTEM_ENUMR  (void *adr, LONGINT *typ, LONGINT size, LONGINT n, void (*P)());
+extern LONGINT SYSTEM_DIV    (unsigned LONGINT x, unsigned LONGINT y);
+extern LONGINT SYSTEM_MOD    (unsigned LONGINT x, unsigned LONGINT y);
+extern LONGINT SYSTEM_ENTIER (double x);
+
+
 
 
 // extern void SYSTEM_INCREF();
@@ -81,15 +80,15 @@ extern long   SYSTEM_MOD(unsigned long x, unsigned long y);
 // extern void SYSTEM_HALT();
 
 
-extern void SYSTEM_ENUMP();
-extern void SYSTEM_ENUMR();
+// extern void SYSTEM_ENUMP();
+// extern void SYSTEM_ENUMR();
 
 
 
 // String comparison
 
 static int __STRCMP(CHAR *x, CHAR *y){
-  long i = 0;
+  LONGINT i = 0;
   CHAR ch1, ch2;
   do {ch1 = x[i]; ch2 = y[i]; i++;
     if (!ch1) return -(int)ch2;
@@ -101,7 +100,7 @@ static int __STRCMP(CHAR *x, CHAR *y){
 
 // Inline string, record and array copy
 
-#define __COPY(s, d, n)	{char*_a=(void*)s,*_b=(void*)d;long _i=0,_t=n-1;while(_i<_t&&((_b[_i]=_a[_i])!=0)){_i++;};_b[_i]=0;}
+#define __COPY(s, d, n)	{char*_a=(void*)s,*_b=(void*)d; LONGINT _i=0,_t=n-1; while(_i<_t&&((_b[_i]=_a[_i])!=0)){_i++;};_b[_i]=0;}
 #define __DUP(x, l, t)  x=(void*)memcpy(malloc(l*sizeof(t)),x,l*sizeof(t))
 #define __DUPARR(v, t)	v=(void*)memcpy(v##__copy,v,sizeof(t))
 #define __DEL(x)        free(x)
@@ -110,7 +109,9 @@ static int __STRCMP(CHAR *x, CHAR *y){
 
 /* SYSTEM ops */
 
-#define __VAL(t, x)	    (*(t*)&(x))
+// #define __VAL(t, x)	    (*(t*)&(x))
+#define __VAL(t, x)	    ((t)(x))
+
 #define __GET(a, x, t)	x= *(t*)(a)
 #define __PUT(a, x, t)	*(t*)(a)=x
 #define __LSHL(x, n, t)	((t)((unsigned t)(x)<<(n)))
@@ -123,23 +124,23 @@ static int __STRCMP(CHAR *x, CHAR *y){
 #define __ROTL(x, n, t)	((t)((unsigned t)(x)<<(n)|(unsigned t)(x)>>(8*sizeof(t)-(n))))
 #define __ROTR(x, n, t)	((t)((unsigned t)(x)>>(n)|(unsigned t)(x)<<(8*sizeof(t)-(n))))
 #define __ROT(x, n, t)	((n)>=0? __ROTL(x, n, t): __ROTR(x, -(n), t))
-#define __BIT(x, n)	    (*(unsigned long*)(x)>>(n)&1)
+#define __BIT(x, n)	    (*(unsigned LONGINT*)(x)>>(n)&1)
 #define __MOVE(s, d, n)	memcpy((char*)(d),(char*)(s),n)
-#define __ASHL(x, n)	((long)(x)<<(n))
-#define __ASHR(x, n)	((long)(x)>>(n))
+#define __ASHL(x, n)	((LONGINT)(x)<<(n))
+#define __ASHR(x, n)	((LONGINT)(x)>>(n))
 #define __ASH(x, n)	    ((n)>=0?__ASHL(x,n):__ASHR(x,-(n)))
-#define __ASHF(x, n)	SYSTEM_ASH((long)(x), (long)(n))
-#define __SHORT(x, y)	((int)((unsigned long)(x)+(y)<(y)+(y)?(x):(__HALT(-8),0)))
+#define __ASHF(x, n)	SYSTEM_ASH((LONGINT)(x), (LONGINT)(n))
+#define __SHORT(x, y)	((int)((unsigned LONGINT)(x)+(y)<(y)+(y)?(x):(__HALT(-8),0)))
 #define __SHORTF(x, y)	((int)(__RF((x)+(y),(y)+(y))-(y)))
 #define __CHR(x)	    ((CHAR)__R(x, 256))
 #define __CHRF(x)	    ((CHAR)__RF(x, 256))
 #define __DIV(x, y)	    ((x)>=0?(x)/(y):-(((y)-1-(x))/(y)))
-#define __DIVF(x, y)	SYSTEM_DIV((long)(x),(long)(y))
+#define __DIVF(x, y)	SYSTEM_DIV((LONGINT)(x),(LONGINT)(y))
 #define __MOD(x, y)	    ((x)>=0?(x)%(y):__MODF(x,y))
-#define __MODF(x, y)	SYSTEM_MOD((long)(x),(long)(y))
+#define __MODF(x, y)	SYSTEM_MOD((LONGINT)(x),(LONGINT)(y))
 #define __ENTIER(x)	    SYSTEM_ENTIER(x)
 #define __ABS(x)	    (((x)<0)?-(x):(x))
-#define __ABSF(x)	    SYSTEM_ABS((long)(x))
+#define __ABSF(x)	    SYSTEM_ABS((LONGINT)(x))
 #define __ABSFD(x)	    SYSTEM_ABSD((double)(x))
 #define __CAP(ch)	    ((CHAR)((ch)&0x5f))
 #define __ODD(x)	    ((x)&1)
@@ -152,10 +153,10 @@ static int __STRCMP(CHAR *x, CHAR *y){
 
 // Runtime checks
 
-#define __X(i, ub)	 (((unsigned)(long)(i)<(unsigned long)(ub))?i:(__HALT(-2),0))
-#define __XF(i, ub)	 SYSTEM_XCHK((long)(i), (long)(ub))
-#define __R(i, ub)	 (((unsigned)(long)(i)<(unsigned long)(ub))?i:(__HALT(-8),0))
-#define __RF(i, ub)	 SYSTEM_RCHK((long)(i),(long)(ub))
+#define __X(i, ub)	 (((unsigned LONGINT)(i)<(unsigned LONGINT)(ub))?i:(__HALT(-2),0))
+#define __XF(i, ub)	 SYSTEM_XCHK((LONGINT)(i), (LONGINT)(ub))
+#define __R(i, ub)	 (((unsigned LONGINT)(i)<(unsigned LONGINT)(ub))?i:(__HALT(-8),0))
+#define __RF(i, ub)	 SYSTEM_RCHK((LONGINT)(i),(LONGINT)(ub))
 #define __RETCHK	 __retchk: __HALT(-3); return 0;
 #define __CASECHK	 __HALT(-4)
 #define __WITHCHK	 __HALT(-7)
@@ -172,6 +173,7 @@ static int __STRCMP(CHAR *x, CHAR *y){
 
 extern void       Heap_REGCMD();
 extern SYSTEM_PTR Heap_REGMOD();
+extern void       Heap_REGTYP();
 extern void       Heap_INCREF();
 
 #define __DEFMOD	          static void *m; if (m!=0) {return m;}
@@ -204,9 +206,9 @@ extern void Platform_AssertFail(LONGINT x);
 
 // Memory allocation
 
-extern SYSTEM_PTR Heap_NEWBLK();
-extern SYSTEM_PTR Heap_NEWREC();
-extern SYSTEM_PTR SYSTEM_NEWARR(long*, long, int, int, int, ...);
+extern SYSTEM_PTR Heap_NEWBLK (LONGINT size);
+extern SYSTEM_PTR Heap_NEWREC (LONGINT tag);
+extern SYSTEM_PTR SYSTEM_NEWARR(LONGINT*, LONGINT, int, int, int, ...);
 
 #define __SYSNEW(p, len) p = Heap_NEWBLK((LONGINT)(len))
 #define __NEW(p, t)	     p = Heap_NEWREC((LONGINT)t##__typ)
@@ -216,41 +218,41 @@ extern SYSTEM_PTR SYSTEM_NEWARR(long*, long, int, int, int, ...);
 
 /* Type handling */
 
-extern void Heap_REGTYP();
-extern void SYSTEM_INHERIT();
-
-#define __TDESC(t, m, n) \
-	static struct t##__desc {\
-		long tproc[m]; \
-		long tag, next, level, module; \
-		char name[24]; \
-		long *base[__MAXEXT]; \
-		char *rsrvd; \
-		long blksz, ptr[n+1]; \
+#define __TDESC(t, m, n)                                                 \
+	static struct t##__desc {                                            \
+		LONGINT  tproc[m];         /* Proc for each ptr field     */     \
+		LONGINT  tag;                                                    \
+		LONGINT  next;                                                   \
+		LONGINT  level;                                                  \
+		LONGINT  module;                                                 \
+		char     name[24];                                               \
+		LONGINT  basep[__MAXEXT];  /* List of bases this extends  */     \
+		LONGINT  reserved;                                               \
+		LONGINT  blksz;                                                  \
+		LONGINT  ptr[n+1];         /* Offsets of ptrs + sentinel  */     \
 	} t##__desc
 
-#define __BASEOFF	(__MAXEXT+1)
-#define __TPROC0OFF	(__BASEOFF+24/sizeof(long)+5)
+#define __BASEOFF	(__MAXEXT+1)                           // blksz as index to base.
+#define __TPROC0OFF	(__BASEOFF+24/sizeof(LONGINT)+5)       // blksz as index to tproc IFF m=1.
 #define __EOM	1
 #define __TDFLDS(name, size)	      {__EOM}, 1, 0, 0, 0, name, {0}, 0, size
-#define __ENUMP(adr, n, P)	          SYSTEM_ENUMP(adr, (long)(n), P)
-#define __ENUMR(adr, typ, size, n, P) SYSTEM_ENUMR(adr, typ, (long)(size), (long)(n), P)
+#define __ENUMP(adr, n, P)	          SYSTEM_ENUMP(adr, (LONGINT)(n), P)
+#define __ENUMR(adr, typ, size, n, P) SYSTEM_ENUMR(adr, typ, (LONGINT)(size), (LONGINT)(n), P)
 
 #define __INITYP(t, t0, level) \
-	t##__typ= (LONGINT*)&t##__desc.blksz; \
-	memcpy(t##__desc.base, t0##__typ - __BASEOFF, level*sizeof(long)); \
-	t##__desc.base[level]=(long*)t##__typ; \
-	t##__desc.module=(long)m; \
-	if(t##__desc.blksz!=sizeof(struct t)) __HALT(-15); \
-	t##__desc.blksz=(t##__desc.blksz+5*sizeof(long)-1)/(4*sizeof(long))*(4*sizeof(long)); \
-	Heap_REGTYP(m, (long)&t##__desc.next); \
+	t##__typ               = (LONGINT*)&t##__desc.blksz;                                                    \
+	memcpy(t##__desc.basep, t0##__typ - __BASEOFF, level*sizeof(LONGINT));                                  \
+	t##__desc.basep[level] = (LONGINT)t##__typ;                                                             \
+	t##__desc.module       = (LONGINT)m;                                                                    \
+	if(t##__desc.blksz!=sizeof(struct t)) __HALT(-15);                                                      \
+	t##__desc.blksz        = (t##__desc.blksz+5*sizeof(LONGINT)-1)/(4*sizeof(LONGINT))*(4*sizeof(LONGINT)); \
+	Heap_REGTYP(m, (LONGINT)&t##__desc.next);                                                               \
 	SYSTEM_INHERIT(t##__typ, t0##__typ)
 
-#define __IS(tag, typ, level)	(*(tag-(__BASEOFF-level))==(long)typ##__typ)
-// #define __TYPEOF(p)	(*(((long**)(p))-1))
-#define __TYPEOF(p)	(*(((LONGINT**)(p))-1))
+#define __IS(tag, typ, level)	(*(tag-(__BASEOFF-level))==(LONGINT)typ##__typ)
+//#define __TYPEOF(p)	            (*(((LONGINT**)(p))-1))
+#define __TYPEOF(p)	            ((LONGINT*)(*(((LONGINT*)(p))-1)))
 #define __ISP(p, typ, level)	__IS(__TYPEOF(p),typ,level)
-
 
 
 #endif
@@ -277,7 +279,7 @@ extern void SYSTEM_INHERIT();
 //
 //
 //
-//  extern void *memcpy(void *dest, const void *src, unsigned long n);
+//  extern void *memcpy(void *dest, const void *src, unsigned LONGINT n);
 //  extern void *malloc(size_t size);
 //  extern void exit(int status);
 //
@@ -295,7 +297,7 @@ extern void SYSTEM_INHERIT();
 //  /* std procs and operator mappings */
 //  static int __STRCMP(x, y)
 //  	CHAR *x, *y;
-//  {long i = 0; CHAR ch1, ch2;
+//  {LONGINT i = 0; CHAR ch1, ch2;
 //  	do {ch1 = x[i]; ch2 = y[i]; i++;
 //  		if (!ch1) return -(int)ch2;
 //  	} while (ch1==ch2);

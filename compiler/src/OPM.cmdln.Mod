@@ -676,9 +676,9 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
       SetSize     := 8;    SetAlign     := 8;
       RealSize    := 4;    RealAlign    := 4;
       LRealSize   := 8;    LRealAlign   := 8;
-      ProcSize    := 8;    ProcAlign    := 8;
-      PointerSize := 8;    PointerAlign := 8;
       RecSize     := 1;    RecAlign     := 1;
+      ProcSize    := SIZE(SYSTEM.PTR);    ProcAlign    := SIZE(SYSTEM.PTR);
+      PointerSize := SIZE(SYSTEM.PTR);    PointerAlign := SIZE(SYSTEM.PTR);
     ELSE
       IF Verbose THEN Console.String ("Loading type sizes from voc.par"); Console.Ln; END;
       NEW(T); Texts.Open(T, "voc.par");

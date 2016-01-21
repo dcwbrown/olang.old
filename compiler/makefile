@@ -60,13 +60,6 @@ setnew:
 
 # Run make selectplatfrom on the target system
 selectplatform:
-	cp src/$(CPUARCH).par voc.par
-
-# Run make translatetoc on an existing supported system
-translatetoc:
-	#
-	printf "\ec$(BUILDDATE) making Oberon compiler for $(OSARCH) $(CPUARCH) using C compiler $(CCOMP)."
-
 	$(file  >Configuration.Mod,MODULE Configuration;)
 	$(file >>Configuration.Mod,CONST)
 	$(file >>Configuration.Mod,  prefix*      = "$(PREFIX)";)
@@ -76,7 +69,40 @@ translatetoc:
 	$(file >>Configuration.Mod,  compiler*    = "$(CCOMP)";)
 	$(file >>Configuration.Mod,  version*     = "$(RELEASE)";)
 	$(file >>Configuration.Mod,  versionLong* = "Oberon compiler OC for $(OSARCH) $(CPUARCH) [$(BUILDDATE)] $(PREFIX)";)
+	$(file >>Configuration.Mod,TYPE)
+ifeq ($(CPUARCH),i686)
+	$(file >>Configuration.Mod,  ADDRINT* = INTEGER;)
+else
+	$(file >>Configuration.Mod,  ADDRINT* = LONGINT;)
+endif
 	$(file >>Configuration.Mod,END Configuration.)
+
+	$(file  >voc.par,CHAR 1 1)
+	$(file >>voc.par,BOOLEAN 1 1)
+	$(file >>voc.par,SHORTINT 1 1)
+	$(file >>voc.par,INTEGER 4 4)
+	$(file >>voc.par,LONGINT 8 8)
+	$(file >>voc.par,SET 8 8)
+	$(file >>voc.par,REAL 4 4)
+	$(file >>voc.par,LONGREAL 8 8)
+ifeq ($(CPUARCH),i686)
+	$(file >>voc.par,PTR 4 4)
+	$(file >>voc.par,PROC 4 4)
+else
+	$(file >>voc.par,PTR 8 8)
+	$(file >>voc.par,PROC 8 8)
+endif
+	$(file >>voc.par,RECORD 1 1)
+	$(file >>voc.par,ENDIAN 1 0)
+	$(file >>voc.par,SYSTEM.INT8 1 1)
+	$(file >>voc.par,SYSTEM.INT16 2 2)
+	$(file >>voc.par,SYSTEM.INT32 4 4)
+	$(file >>voc.par,SYSTEM.INT64 8 8)
+
+# Run make translatetoc on an existing supported system
+translatetoc:
+	#
+	printf "\ec$(BUILDDATE) making Oberon compiler for $(OSARCH) $(CPUARCH) using C compiler $(CCOMP)."
 
 	$(OBERONCOMPILER) -PSFs    Configuration.Mod
 	$(OBERONCOMPILER) -PSFs    Platform$(OSARCH).Mod

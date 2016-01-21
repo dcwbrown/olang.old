@@ -17,96 +17,56 @@
 #include "stdarg.h"
 
 
-// void (*SYSTEM_Halt)();
-// LONGINT SYSTEM_halt;	/* x in HALT(x) */
-// LONGINT SYSTEM_assert;	/* x in ASSERT(cond, x) */
-// LONGINT SYSTEM_argc;
-// LONGINT SYSTEM_argv;
-// LONGINT SYSTEM_lock;
-// BOOLEAN SYSTEM_interrupted;
-// static LONGINT SYSTEM_mainfrm;	/* adr of main proc stack frame, used for stack collection */
+LONGINT SYSTEM_XCHK(LONGINT i, LONGINT ub) {return __X(i, ub);}
+LONGINT SYSTEM_RCHK(LONGINT i, LONGINT ub) {return __R(i, ub);}
+LONGINT SYSTEM_ASH (LONGINT i, LONGINT n)  {return __ASH(i, n);}
+LONGINT SYSTEM_ABS (LONGINT i)             {return __ABS(i);}
+double  SYSTEM_ABSD(double i)              {return __ABS(i);}
 
-
-
-//  static void SYSTEM_InitHeap();
-//  void *SYSTEM__init();
-//
-//  void SYSTEM_INIT(argc, argvadr)
-//  	int argc; long argvadr;
-//  {
-//  	SYSTEM_mainfrm = argvadr;
-//  	SYSTEM_argc = argc;
-//  	SYSTEM_argv = *(long*)argvadr;
-//  	SYSTEM_InitHeap();
-//  	SYSTEM_halt = -128;
-//  	SYSTEM__init();
-//  }
-//
-//  void SYSTEM_FINI()
-//  {
-//  	SYSTEM_FINALL();
-//  }
-
-long SYSTEM_XCHK(i, ub) long i, ub; {return __X(i, ub);}
-long SYSTEM_RCHK(i, ub) long i, ub; {return __R(i, ub);}
-long SYSTEM_ASH(i, n) long i, n; {return __ASH(i, n);}
-long SYSTEM_ABS(i) long i; {return __ABS(i);}
-double SYSTEM_ABSD(i) double i; {return __ABS(i);}
-
-void SYSTEM_INHERIT(t, t0)
-	long *t, *t0;
+void SYSTEM_INHERIT(LONGINT *t, LONGINT *t0)
 {
 	t -= __TPROC0OFF;
 	t0 -= __TPROC0OFF;
 	while (*t0 != __EOM) {*t = *t0; t--; t0--;}
 }
 
-void SYSTEM_ENUMP(adr, n, P)
-	long *adr;
-	long n;
-	void (*P)();
+void SYSTEM_ENUMP(void *adr, LONGINT n, void (*P)())
 {
-	while (n > 0) {P(*adr); adr++; n--;}
+	while (n > 0) {P(*((LONGINT*)adr)); adr++; n--;}
 }
 
-void SYSTEM_ENUMR(adr, typ, size, n, P)
-	char *adr;
-	long *typ, size, n;
-	void (*P)();
+void SYSTEM_ENUMR(void *adr, LONGINT *typ, LONGINT size, LONGINT n, void (*P)())
 {
-	long *t, off;
+	LONGINT *t, off;
 	typ++;
 	while (n > 0) {
 		t = typ;
 		off = *t;
-		while (off >= 0) {P(*(long*)(adr+off)); t++; off = *t;}
+		while (off >= 0) {P(*(LONGINT*)((char*)adr+off)); t++; off = *t;}
 		adr += size; n--;
 	}
 }
 
-long SYSTEM_DIV(x, y)
-	unsigned long x, y;
-{  if ((long) x >= 0) return (x / y);
+LONGINT SYSTEM_DIV(unsigned LONGINT x, unsigned LONGINT y)
+{  if ((LONGINT) x >= 0) return (x / y);
 	else return -((y - 1 - x) / y);
 }
 
-long SYSTEM_MOD(x, y)
-	unsigned long x, y;
-{ unsigned long m;
-	if ((long) x >= 0) return (x % y);
+LONGINT SYSTEM_MOD(unsigned LONGINT x, unsigned LONGINT y)
+{ unsigned LONGINT m;
+	if ((LONGINT) x >= 0) return (x % y);
 	else { m = (-x) % y;
 		if (m != 0) return (y - m); else return 0;
 	}
 }
 
-long SYSTEM_ENTIER(x)
-	double x;
+LONGINT SYSTEM_ENTIER(double x)
 {
-	long y;
+	LONGINT y;
 	if (x >= 0)
-		return (long)x;
+		return (LONGINT)x;
 	else {
-		y = (long)x;
+		y = (LONGINT)x;
 		if (y <= x) return y; else return y - 1;
 	}
 }
@@ -116,19 +76,19 @@ extern void Heap_Unlock();
 #define Lock   Heap_Lock()
 #define Unlock Heap_Unlock();
 
-SYSTEM_PTR SYSTEM_NEWARR(long *typ, long elemsz, int elemalgn, int nofdim, int nofdyn, ...)
+SYSTEM_PTR SYSTEM_NEWARR(LONGINT *typ, LONGINT elemsz, int elemalgn, int nofdim, int nofdyn, ...)
 {
-	long nofelems, size, dataoff, n, nptr, *x, *p, nofptrs, i, *ptab, off;
+	LONGINT nofelems, size, dataoff, n, nptr, *x, *p, nofptrs, i, *ptab, off;
 	va_list ap;
 	va_start(ap, nofdyn);
 	nofelems = 1;
 	while (nofdim > 0) {
-		nofelems = nofelems * va_arg(ap, long); nofdim--;
+		nofelems = nofelems * va_arg(ap, LONGINT); nofdim--;
 		if (nofelems <= 0) __HALT(-20);
 	}
 	va_end(ap);
-	dataoff = nofdyn * sizeof(long);
-	if (elemalgn > sizeof(long)) {
+	dataoff = nofdyn * sizeof(LONGINT);
+	if (elemalgn > sizeof(LONGINT)) {
 		n = dataoff % elemalgn;
 		if (n != 0) dataoff += elemalgn - n;
 	}
@@ -138,37 +98,37 @@ SYSTEM_PTR SYSTEM_NEWARR(long *typ, long elemsz, int elemalgn, int nofdim, int n
 		/* element typ does not contain pointers */
 		x = Heap_NEWBLK(size);
 	}
-	else if (typ == (long*)POINTER__typ) {
+	else if (typ == (LONGINT*)POINTER__typ) {
 		/* element type is a pointer */
-		x = Heap_NEWBLK(size + nofelems * sizeof(long));
-		p = (long*)x[-1];
+		x = Heap_NEWBLK(size + nofelems * sizeof(LONGINT));
+		p = (LONGINT*)x[-1];
 		p[-nofelems] = *p;	/* build new type desc in situ: 1. copy block size; 2. setup ptr tab; 3. set sentinel; 4. patch tag */
 		p -= nofelems - 1; n = 1;	/* n =1 for skipping the size field */
-		while (n <= nofelems) {*p = n*sizeof(long); p++; n++;}
-		*p = - (nofelems + 1) * sizeof(long);	/* sentinel */
-		x[-1] -= nofelems * sizeof(long);
+		while (n <= nofelems) {*p = n*sizeof(LONGINT); p++; n++;}
+		*p = - (nofelems + 1) * sizeof(LONGINT);	/* sentinel */
+		x[-1] -= nofelems * sizeof(LONGINT);
 	}
 	else {
 		/* element type is a record that contains pointers */
 		ptab = typ + 1; nofptrs = 0;
 		while (ptab[nofptrs] >= 0) {nofptrs++;}	/* number of pointers per element */
 		nptr = nofelems * nofptrs;	/* total number of pointers */
-		x = Heap_NEWBLK(size + nptr * sizeof(long));
-		p = (long*)x[- 1];
+		x = Heap_NEWBLK(size + nptr * sizeof(LONGINT));
+		p = (LONGINT*)x[- 1];
 		p[-nptr] = *p;	/* build new type desc in situ; 1. copy block size; 2. setup ptr tab; 3. set sentinel; 4. patch tag */
 		p -= nptr - 1; n = 0; off = dataoff;
 		while (n < nofelems) {i = 0;
 			while (i < nofptrs) {*p = off + ptab[i]; p++; i++;}
 			off += elemsz; n++;
 		}
-		*p = - (nptr + 1) * sizeof(long);	/* sentinel */
-		x[-1] -= nptr * sizeof(long);
+		*p = - (nptr + 1) * sizeof(LONGINT);	/* sentinel */
+		x[-1] -= nptr * sizeof(LONGINT);
 	}
 	if (nofdyn != 0) {
 		/* setup len vector for index checks */
 		va_start(ap, nofdyn);
 		p = x;
-		while (nofdyn > 0) {*p = va_arg(ap, long); p++, nofdyn--;}
+		while (nofdyn > 0) {*p = va_arg(ap, LONGINT); p++, nofdyn--;}
 		va_end(ap);
 	}
 	Unlock;

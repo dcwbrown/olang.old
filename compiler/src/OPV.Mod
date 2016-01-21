@@ -878,11 +878,11 @@ MODULE OPV;  (* J. Templ 16.2.95 / 3.7.96
     WHILE typ # base DO
       OPM.WriteString(", ");
       IF typ^.comp = DynArr THEN
-        IF x^.class = Nconst THEN expr(x, MinPrec); OPM.WriteString("L")
+        IF x^.class = Nconst THEN OPM.WriteString("(LONGINT)("); expr(x, MinPrec); OPM.WriteString(")")
         ELSE OPM.WriteString("(LONGINT)"); expr(x, 10)
         END ;
         x := x^.link
-      ELSE OPM.WriteInt(typ^.n); OPM.WriteString("L")
+      ELSE OPM.WriteString("(LONGINT)"); OPM.WriteInt(typ^.n)
       END ;
       typ := typ^.BaseTyp
     END ;
