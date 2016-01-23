@@ -81,10 +81,19 @@ endif
 	$(file >>voc.par,BOOLEAN 1 1)
 	$(file >>voc.par,SHORTINT 1 1)
 	$(file >>voc.par,INTEGER 4 4)
+ifeq ($(CPUARCH)-$(OSARCH),i686-linux)
+	$(file >>voc.par,LONGINT 8 4)
+	$(file >>voc.par,SET 8 4)
+else
 	$(file >>voc.par,LONGINT 8 8)
 	$(file >>voc.par,SET 8 8)
+endif
 	$(file >>voc.par,REAL 4 4)
+ifeq ($(CPUARCH)-$(OSARCH),i686-linux)
+	$(file >>voc.par,LONGREAL 8 4)
+else
 	$(file >>voc.par,LONGREAL 8 8)
+endif
 ifeq ($(CPUARCH),i686)
 	$(file >>voc.par,PTR 4 4)
 	$(file >>voc.par,PROC 4 4)
@@ -97,7 +106,12 @@ endif
 	$(file >>voc.par,SYSTEM.INT8 1 1)
 	$(file >>voc.par,SYSTEM.INT16 2 2)
 	$(file >>voc.par,SYSTEM.INT32 4 4)
+ifeq ($(CPUARCH)-$(OSARCH),i686-linux)
+	$(file >>voc.par,SYSTEM.INT64 8 4)
+else
 	$(file >>voc.par,SYSTEM.INT64 8 8)
+endif
+
 
 # Run make translatetoc on an existing supported system
 translatetoc:
