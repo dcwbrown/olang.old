@@ -1,7 +1,12 @@
-BUILDDATE=$(shell date +%Y/%m/%d)
+OLANG_VERSION = 0.5
+OLANG_ROOT    = /opt
 
-# Get OS architecture, linux or cygwin
-OSARCH = $(shell uname -o | sed "s/GNU\///" | tr A-Z a-z)
+# Select one of the following:
+#CC = clang -fPIC -Wno-pointer-sign -g
+CC = gcc -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast
+
+MAKEINCLUDEVARS != $(CC) -D OLANG_VERSION=$(OLANG_VERSION) -D OLANG_ROOT=$(OLANG_ROOT) -o a.o src/EstablishParameters.c; ./a.o; rm a.o
+include ./make.include
 
 ifeq ($(OSARCH),cygwin)
 	BINEXT = .exe
@@ -9,151 +14,85 @@ else
 	BINEXT =
 endif
 
-# Get processor architecture, i686 or amd64
-CPUARCH = $(shell uname -m | sed "s/x86_64/amd64/" | tr A-Z a-z)
-
-TARGET = oc.$(CCOMP).$(OSARCH).$(CPUARCH)$(BINEXT)
+OLANGNAME = olang.$(CCOMP).$(OSARCH).$(CPUARCH)$(BINEXT)
+BUILDDIR = build.$(CCOMP).$(OSARCH).$(CPUARCH)
 
 
-
-# Compiler to use
-CCOMP = clang
-
-RELEASE = 0.5
-
-INCLUDEPATH = -Isrc
+INCLUDEPATH = -I../src
 
 SETENV  = CFLAGS=$(INCLUDEPATH)
 SETENV += PATH=bin:/usr/bin
-SETENV += MODULES=.:src
+SETENV += MODULES=..:../src
 
-OBERONCOMPILER = $(SETENV) bin/$(TARGET)
-LIBNAME = OberonCompiler
+OLANG = $(SETENV) ../bin/$(OLANGNAME)
+LIBNAME = olang
 LIBRARY = lib$(LIBNAME)
 
-ifndef DIRPREFIX
-DIRPREFIX = /opt
-endif
-PREFIX = $(DIRPREFIX)/oc-$(RELEASE)
-PREFIXLINK = $(DIRPREFIX)/oc
-
-CCOPT = -fPIC $(INCLUDEPATH) -g
-SHRLIBEXT = so
-CC = $(CCOMP) $(CCOPT) -c -Wno-pointer-sign
-CL = $(CCOMP) $(CCOPT) -Wno-pointer-sign
-LD = $(CCOMP) -shared -o $(LIBRARY).$(SHRLIBEXT)
-
-# s is necessary to create index inside an archive
-ARCHIVE = ar rcs $(LIBRARY).a
 
 
-all: selectplatform translatetoc compilec
+#SHRLIBEXT = so
+#LD = $(CCOMP) -shared -o $(LIBRARY).$(SHRLIBEXT)
+#
+## s is necessary to create index inside an archive
+#ARCHIVE = ar rcs $(LIBRARY).a
+
+
+.phony: all selectplatform tarnslatetoc compilec setoriginal setnew clean
+
+all: translatetoc compilec
 
 
 setoriginal:
-	cp bin/$(TARGET).bak bin/$(TARGET)
+	cp bin/$(OLANGNAME).bak bin/$(OLANGNAME)
 
 
 setnew:
-	cp oc$(BINEXT) bin/$(TARGET)
+	cp olang$(BINEXT) bin/$(OLANGNAME)
 
-
-# Run make selectplatfrom on the target system
-selectplatform:
-	$(file  >Configuration.Mod,MODULE Configuration;)
-	$(file >>Configuration.Mod,CONST)
-	$(file >>Configuration.Mod,  prefix*      = "$(PREFIX)";)
-	$(file >>Configuration.Mod,  osarch*      = "$(OSARCH)";)
-	$(file >>Configuration.Mod,  cpuarch*     = "$(CPUARCH)";)
-	$(file >>Configuration.Mod,  date*        = "[$(BUILDDATE)]";)
-	$(file >>Configuration.Mod,  compiler*    = "$(CCOMP)";)
-	$(file >>Configuration.Mod,  version*     = "$(RELEASE)";)
-	$(file >>Configuration.Mod,  versionLong* = "Oberon compiler OC for $(OSARCH) $(CPUARCH) [$(BUILDDATE)] $(PREFIX)";)
-	$(file >>Configuration.Mod,TYPE)
-ifeq ($(CPUARCH),i686)
-	$(file >>Configuration.Mod,  ADDRINT* = INTEGER;)
-else
-	$(file >>Configuration.Mod,  ADDRINT* = LONGINT;)
-endif
-	$(file >>Configuration.Mod,END Configuration.)
-
-	$(file  >voc.par,CHAR 1 1)
-	$(file >>voc.par,BOOLEAN 1 1)
-	$(file >>voc.par,SHORTINT 1 1)
-	$(file >>voc.par,INTEGER 4 4)
-ifeq ($(CPUARCH)-$(OSARCH),i686-linux)
-	$(file >>voc.par,LONGINT 8 4)
-	$(file >>voc.par,SET 8 4)
-else
-	$(file >>voc.par,LONGINT 8 8)
-	$(file >>voc.par,SET 8 8)
-endif
-	$(file >>voc.par,REAL 4 4)
-ifeq ($(CPUARCH)-$(OSARCH),i686-linux)
-	$(file >>voc.par,LONGREAL 8 4)
-else
-	$(file >>voc.par,LONGREAL 8 8)
-endif
-ifeq ($(CPUARCH),i686)
-	$(file >>voc.par,PTR 4 4)
-	$(file >>voc.par,PROC 4 4)
-else
-	$(file >>voc.par,PTR 8 8)
-	$(file >>voc.par,PROC 8 8)
-endif
-	$(file >>voc.par,RECORD 1 1)
-	$(file >>voc.par,ENDIAN 1 0)
-	$(file >>voc.par,SYSTEM.INT8 1 1)
-	$(file >>voc.par,SYSTEM.INT16 2 2)
-	$(file >>voc.par,SYSTEM.INT32 4 4)
-ifeq ($(CPUARCH)-$(OSARCH),i686-linux)
-	$(file >>voc.par,SYSTEM.INT64 8 4)
-else
-	$(file >>voc.par,SYSTEM.INT64 8 8)
-endif
 
 
 # Run make translatetoc on an existing supported system
 translatetoc:
-	#
-	printf "\ec$(BUILDDATE) making Oberon compiler for $(OSARCH) $(CPUARCH) using C compiler $(CCOMP)."
-
-	$(OBERONCOMPILER) -PSFs    Configuration.Mod
-	$(OBERONCOMPILER) -PSFs    Platform$(OSARCH).Mod
-	$(OBERONCOMPILER) -PSsiapx Heap.Mod
-	$(OBERONCOMPILER) -PSFs    Console.Mod
-	$(OBERONCOMPILER) -PSFs    Strings.Mod
-	$(OBERONCOMPILER) -PSFs    Modules.Mod
-	$(OBERONCOMPILER) -PSFsx   Files0.Mod
-	$(OBERONCOMPILER) -PSFs    Reals.Mod
-	$(OBERONCOMPILER) -PSFs    Texts0.Mod
-	$(OBERONCOMPILER) -PSFs    vt100.Mod
-	$(OBERONCOMPILER) -PSFs    errors.Mod
-	$(OBERONCOMPILER) -PSFs    extTools.Mod
-	$(OBERONCOMPILER) -PSFs    OPM.cmdln.Mod
-	$(OBERONCOMPILER) -PSFsx   OPS.Mod
-	$(OBERONCOMPILER) -PSFs    OPT.Mod
-	$(OBERONCOMPILER) -PSFs    OPC.Mod
-	$(OBERONCOMPILER) -PSFs    OPV.Mod
-	$(OBERONCOMPILER) -PSFs    OPB.Mod
-	$(OBERONCOMPILER) -PSFs    OPP.Mod
-	$(OBERONCOMPILER) -PSsm    oc.Mod
+	mkdir -vp $(BUILDDIR)
+	cd $(BUILDDIR); $(OLANG) -PSFs    Configuration.Mod
+	cd $(BUILDDIR); $(OLANG) -PSFs    Platform$(PLATFORM).Mod
+	cd $(BUILDDIR); $(OLANG) -PSsiapx Heap.Mod
+	cd $(BUILDDIR); $(OLANG) -PSFs    Console.Mod
+	cd $(BUILDDIR); $(OLANG) -PSFs    Strings.Mod
+	cd $(BUILDDIR); $(OLANG) -PSFs    Modules.Mod
+	cd $(BUILDDIR); $(OLANG) -PSFsx   Files0.Mod
+	cd $(BUILDDIR); $(OLANG) -PSFs    Reals.Mod
+	cd $(BUILDDIR); $(OLANG) -PSFs    Texts0.Mod
+	cd $(BUILDDIR); $(OLANG) -PSFs    vt100.Mod
+	cd $(BUILDDIR); $(OLANG) -PSFs    errors.Mod
+	cd $(BUILDDIR); $(OLANG) -PSFs    extTools.Mod
+	cd $(BUILDDIR); $(OLANG) -PSFs    OPM.cmdln.Mod
+	cd $(BUILDDIR); $(OLANG) -PSFsx   OPS.Mod
+	cd $(BUILDDIR); $(OLANG) -PSFs    OPT.Mod
+	cd $(BUILDDIR); $(OLANG) -PSFs    OPC.Mod
+	cd $(BUILDDIR); $(OLANG) -PSFs    OPV.Mod
+	cd $(BUILDDIR); $(OLANG) -PSFs    OPB.Mod
+	cd $(BUILDDIR); $(OLANG) -PSFs    OPP.Mod
+	cd $(BUILDDIR); $(OLANG) -PSsm    oc.Mod
+	rm -f make.include voc.par Configuration.Mod
 
 
 # Run make compilec on the target system
 compilec:
 	#
-	$(CC) Platform.c Heap.c Console.c Modules.c Strings.c Configuration.c \
-	src/SYSTEM.c Files0.c Reals.c Texts0.c vt100.c extTools.c \
+	cd $(BUILDDIR) && $(CC) -c $(INCLUDEPATH)                       \
+	Platform.c Heap.c Console.c Modules.c Strings.c Configuration.c \
+	../src/SYSTEM.c Files0.c Reals.c Texts0.c vt100.c extTools.c    \
 	OPM.c OPS.c OPT.c OPC.c OPV.c OPB.c OPP.c errors.c
 	#
-	$(CL) -static  oc.c -o oc  Platform.o Heap.o Console.o Modules.o \
+	cd $(BUILDDIR) && $(CC) -static $(INCLUDEPATH)                         \
+	oc.c -o ../olang$(BINEXT)  Platform.o Heap.o Console.o Modules.o       \
 	Strings.o Configuration.o Files0.o Reals.o Texts0.o vt100.o extTools.o \
 	SYSTEM.o OPM.o OPS.o OPT.o OPC.o OPV.o OPB.o OPP.o errors.o
 
 
 clean:
-	rm -f *.c *.h *.o *.Mod *.sym *.exe *.par *.stackdump
+	rm -f *.c *.h *.o *.Mod *.sym *.exe *.par *.stackdump oc oc.exe make.include voc.par Configuration.mod $(BUILDDIR)/*
 
 
 

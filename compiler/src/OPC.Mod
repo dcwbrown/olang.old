@@ -657,8 +657,8 @@ MODULE OPC;	(* copyright (c) J. Templ 12.7.95 / 3.7.96 *)
 		IF (curAlign < align) & (gap - (adr - off) >= align) THEN (* preserve alignment of the enclosing struct! *)
 			DEC(gap, (adr - off) + align);
 			BegStat;
-			IF align = OPM.IntSize THEN OPM.WriteString("INTEGER")
-			ELSIF align = OPM.LIntSize THEN OPM.WriteString("LONGINT")
+			IF    align = OPM.IntSize   THEN OPM.WriteString("INTEGER")
+			ELSIF align = OPM.LIntSize  THEN OPM.WriteString("LONGINT")
 			ELSIF align = OPM.LRealSize THEN OPM.WriteString("LONGREAL")
 			END ;
 			Str1(" _prvt#", n); INC(n); EndStat;

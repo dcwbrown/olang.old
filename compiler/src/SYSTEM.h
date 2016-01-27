@@ -16,9 +16,9 @@
 
 // Known constants
 
-#define NIL	((void*)0)
-#define __MAXEXT	16
-#define POINTER__typ ((LONGINT*)(1))	/* not NIL and not a valid type */
+#define NIL          ((void*)0)
+#define __MAXEXT     16
+#define POINTER__typ ((LONGINT*)(1))  // not NIL and not a valid type
 
 
 // Oberon types

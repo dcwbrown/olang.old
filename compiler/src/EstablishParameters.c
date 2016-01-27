@@ -25,9 +25,52 @@
 #define macrotostringhelper(s) #s
 #define macrotostring(s)  macrotostringhelper(s)
 
-#define OLANG_PREFIX macrotostring(OLANG_ROOT) "/olang-" macrotostring(OLANG_VERSION)
-
 void fail(char *msg) {printf("%s\n", msg); exit(1);}
+
+
+struct utsname sys;
+
+char  builddate[64];
+char* platform = "unknown";
+char* olangdir = macrotostring(OLANG_ROOT) "/olang-" macrotostring(OLANG_VERSION);
+char* version  = macrotostring(OLANG_VERSION);
+char* cpuarch  = "unknown";
+char* osarch   = "unknown";
+char* ccomp    = "unknown";
+
+
+void computeParameters() {
+  if (uname(&sys)<0) fail("Couldn't get sys name - uname() failed.");
+
+  // Normalise os and cpu architecture names
+
+  if      (strncasecmp(sys.sysname, "cygwin",  6) == 0) {osarch = "cygwin";  platform = "unix";}
+  else if (strncasecmp(sys.sysname, "linux",   5) == 0) {osarch = "linux";   platform = "unix";}
+  else if (strncasecmp(sys.sysname, "freebsd", 5) == 0) {osarch = "freebsd"; platform = "unix";}
+  else fail("Unrecognised OS architecture name returned by uname.");
+
+  if      (strncasecmp(sys.machine, "i686",   6) == 0) cpuarch = "i686";
+  else if (strncasecmp(sys.machine, "x86",    4) == 0) cpuarch = "i686";
+  else if (strncasecmp(sys.machine, "x86_64", 6) == 0) cpuarch = "amd64";
+  else if (strncasecmp(sys.machine, "amd64",  5) == 0) cpuarch = "amd64";
+  else fail("Unrecognised machine architecture name returned by uname.");
+
+  time_t t = time(0);
+  strftime(builddate, sizeof(builddate), "%Y/%m/%d", localtime(&t));
+
+  #if defined(__clang__)
+  ccomp = "clang";
+  #elif defined(__GNUC__)
+  ccomp = "gcc";
+  #elif defined(_MSC_VER)
+  ccomp = "msc";
+  #else
+  ccomp = "unknown";
+  #endif
+}
+
+
+
 
 struct {CHAR ch; CHAR x;} c;
 struct {CHAR ch; BOOLEAN x;} b;
@@ -50,7 +93,7 @@ struct {char x[65];} rec2;
 
 long x = 1;
 
-void makevocpar() {
+void writeCompilationParameters() {
   FILE *fd = fopen("voc.par", "w");
   if (fd == NULL) fail("Couldn't create voc.par.");
 
@@ -75,75 +118,10 @@ void makevocpar() {
   fclose(fd);
 }
 
-void makeconfigurationmod() {
-  FILE *fd = fopen("Configuration.Mod", "w");
-  if (fd == NULL) fail("Couldn't create Configuration.Mod.");
 
-  struct utsname system;
-  if (uname(&system)<0) fail("Couldn't get system name - uname() failed.");
-  printf("uname results:\n");
-  printf("  sysname:  %s\n", system.sysname);
-  printf("  nodename: %s\n", system.nodename);
-  printf("  release:  %s\n", system.release);
-  printf("  version:  %s\n", system.version);
-  printf("  machine:  %s\n", system.machine);
 
-  // Normalise os and cpu architecture names
 
-  char osarch[64];
-  if      (strncasecmp(system.sysname, "cygwin", 6) == 0) strcpy(osarch, "cygwin");
-  else if (strncasecmp(system.sysname, "linux",  5) == 0) strcpy(osarch, "linux");
-  else fail("Unrecognised OS architecture name returned by uname.");
-
-  char cpuarch[64];
-  if      (strncasecmp(system.machine, "i686",   6) == 0) strcpy(cpuarch, "i686");
-  else if (strncasecmp(system.machine, "x86",    4) == 0) strcpy(cpuarch, "i686");
-  else if (strncasecmp(system.machine, "x86_64", 6) == 0) strcpy(cpuarch, "amd64");
-  else if (strncasecmp(system.machine, "amd64",  5) == 0) strcpy(cpuarch, "amd64");
-  else fail("Unrecognised machine architecture name returned by uname.");
-
-  time_t t = time(0);
-  char builddate[64];
-  strftime(builddate, sizeof(builddate), "%Y/%m/%d", localtime(&t));
-
-  #if defined(__clang__)
-  char ccomp[] = "clang";
-  #elif defined(__GNUC__)
-  char ccomp[] = "gcc";
-  #elif defined(_MSC_VER)
-  char ccomp[] = "msc";
-  #else
-  char ccomp[] = "unknown";
-  #endif
-
-  printf("Configuration:\n");
-  printf("  builddate: %s\n", builddate);
-  printf("  compiler:  %s\n", ccomp);
-  printf("  osarch:    %s\n", osarch);
-  printf("  cpuarch:   %s\n", cpuarch);
-  printf("  version:   %s\n", macrotostring(OLANG_VERSION));
-  printf("  prefix:    %s\n", OLANG_PREFIX);
-
-  fprintf(fd, "MODULE Configuration;\n");
-  fprintf(fd, "CONST\n");
-  fprintf(fd, "  prefix*      = '%s';\n",   OLANG_PREFIX);
-  fprintf(fd, "  osarch*      = '%s';\n",   osarch);
-  fprintf(fd, "  cpuarch*     = '%s';\n",   cpuarch);
-  fprintf(fd, "  date*        = '[%s]';\n", builddate);
-  fprintf(fd, "  compiler*    = '%s';\n",   ccomp);
-  fprintf(fd, "  version*     = '%s';\n",   macrotostring(OLANG_VERSION));
-  fprintf(fd, "  versionLong* = 'Oberon compiler OC for %s %s [%s] %s';\n",
-    osarch, cpuarch, builddate, macrotostring(OLANG_PREFIX));
-  fprintf(fd, "END Configuration.\n");
-
-  fclose(fd);
-}
-
-int main()
-{
-  makevocpar();
-  makeconfigurationmod();
-
+void testPlatformSupport() {
   if (sizeof(CHAR)    != 1)          printf("error: CHAR should have size 1\n");
   if (sizeof(BOOLEAN) != 1)          printf("error: BOOLEAN should have size 1\n");
   if (sizeof(SHORTINT)!= 1)          printf("error: SHORTINT should have size 1\n");
@@ -171,4 +149,55 @@ int main()
     b[0] = 0;
     if (__STRCMP(a, b) < 0) printf("error: __STRCMP(a, b)  with extended ascii charcters; should be unsigned\n");
   }
+}
+
+
+
+
+void writeMakeParameters() {
+  FILE *fd = fopen("make.include", "w");
+  if (fd == NULL) fail("Couldn't create make.include.");
+
+  fprintf(fd, "BUILDDATE = %s\n", builddate);
+  fprintf(fd, "PLATFORM  = %s\n", platform);
+  fprintf(fd, "CPUARCH   = %s\n", cpuarch);
+  fprintf(fd, "OSARCH    = %s\n", osarch);
+  fprintf(fd, "CCOMP     = %s\n", ccomp);
+  fprintf(fd, "PREFIX    = %s\n", olangdir);
+
+  fclose(fd);
+}
+
+
+
+
+void writeConfigurationMod() {
+  FILE *fd = fopen("Configuration.Mod", "w");
+  if (fd == NULL) fail("Couldn't create Configuration.Mod.");
+
+  fprintf(fd, "MODULE Configuration;\n");
+  fprintf(fd, "CONST\n");
+  fprintf(fd, "  prefix*      = '%s';\n",   olangdir);
+  fprintf(fd, "  osarch*      = '%s';\n",   osarch);
+  fprintf(fd, "  cpuarch*     = '%s';\n",   cpuarch);
+  fprintf(fd, "  date*        = '[%s]';\n", builddate);
+  fprintf(fd, "  compiler*    = '%s';\n",   ccomp);
+  fprintf(fd, "  version*     = '%s';\n",   version);
+  fprintf(fd, "  versionLong* = 'Oberon compiler olang for %s %s %s [%s] %s';\n",
+    osarch, cpuarch, ccomp, builddate, olangdir);
+  fprintf(fd, "END Configuration.\n");
+
+  fclose(fd);
+}
+
+
+
+
+int main()
+{
+  computeParameters();
+  testPlatformSupport();
+  writeCompilationParameters();
+  writeConfigurationMod();
+  writeMakeParameters();
 }

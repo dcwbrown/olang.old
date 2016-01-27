@@ -181,36 +181,36 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
   BEGIN
     IF Platform.ArgCount = 1 THEN
       Console.Ln;
-      Console.String("oc: Oberon compiler ");
+      Console.String("olang - Oberon compiler ");
       Console.String(Configuration.version); Console.String(" ");
       Console.String(Configuration.date); Console.String(" for "); Console.String(Configuration.osarch);
       Console.String(" "); Console.String(Configuration.cpuarch); Console.String(".");
       Console.Ln; Console.Ln;
-      Console.String("Based on Ofront by Software Templ OEG"); Console.Ln;
-      Console.String("based on Vishap Oberon by Norayr Chilingarian and others"); Console.Ln;
-      Console.String("continued by Dave CW Brown."); Console.Ln;
+      Console.String("Originally Ofront by Software Templ OEG"); Console.Ln;
+      Console.String("Reworked by Norayr Chilingarian and others as Vishap Oberon"); Console.Ln;
+      Console.String("Further updated by Dave CW Brown."); Console.Ln;
       Console.Ln;
-      Console.String('command = "oc" options {files}.'); Console.Ln;
+      Console.String('command = "olang" options {files}.'); Console.Ln;
       Console.String('options = ["-" {option} ].'); Console.Ln;
       Console.String('option  = "m" | "M" | "s" | "e" | "i" | "l" | "k" | "r" | "x" | "a" | "p" | "t" | "P" | "S" | "c" | "f" | "F" | "V" .'); Console.Ln;
       Console.Ln;
-      Console.String(" m      - generate code for main module"); Console.Ln;
-      Console.String(" M      - generate code for main module and link object statically"); Console.Ln;
-      Console.String(" s      - generate new symbol file"); Console.Ln;
-      Console.String(" e      - allow extending the module interface"); Console.Ln;
-      Console.String(" i      - include header and body prefix files (c0)"); Console.Ln;
-      Console.String(" l      - use line numbers"); Console.Ln;
-      Console.String(" r      - check value ranges"); Console.Ln;
-      Console.String(" x      - turn off array indices check"); Console.Ln;
-      Console.String(" a      - don't check ASSERTs at runtime, use this option in tested production code"); Console.Ln;
-      Console.String(" p      - turn off automatic pointer initialization"); Console.Ln;
-      Console.String(" t      - don't check type guards (use in rare cases such as low-level modules where every cycle counts)"); Console.Ln;
-      Console.String(" P      - use .par file"); Console.Ln;
-      Console.String(" S      - don't call external assembler/compiler, only generate the asm/C code"); Console.Ln;
-      Console.String(" c      - don't call linker"); Console.Ln;
-      Console.String(" f      - don't use color output"); Console.Ln;
-      Console.String(" F      - force writing new symbol file"); Console.Ln;
-      Console.String(" V      - verbose output"); Console.Ln;
+      Console.String("  m - generate code for main module"); Console.Ln;
+      Console.String("  M - generate code for main module and link object statically"); Console.Ln;
+      Console.String("  s - generate new symbol file"); Console.Ln;
+      Console.String("  e - allow extending the module interface"); Console.Ln;
+      Console.String("  i - include header and body prefix files (c0)"); Console.Ln;
+      Console.String("  l - use line numbers"); Console.Ln;
+      Console.String("  r - check value ranges"); Console.Ln;
+      Console.String("  x - turn off array indices check"); Console.Ln;
+      Console.String("  a - don't check ASSERTs at runtime, use this option in tested production code"); Console.Ln;
+      Console.String("  p - turn off automatic pointer initialization"); Console.Ln;
+      Console.String("  t - don't check type guards (use in rare cases such as low-level modules where every cycle counts)"); Console.Ln;
+      Console.String("  P - use .par file"); Console.Ln;
+      Console.String("  S - don't call external assembler/compiler, only generate C code"); Console.Ln;
+      Console.String("  c - don't call linker"); Console.Ln;
+      Console.String("  f - don't use color output"); Console.Ln;
+      Console.String("  F - force writing new symbol file"); Console.Ln;
+      Console.String("  V - verbose output"); Console.Ln;
       Console.Ln;
       RETURN FALSE
     ELSE
