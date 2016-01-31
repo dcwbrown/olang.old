@@ -4,7 +4,7 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
   31.1.2007 jt synchronized with BlackBox version, in particular PromoteIntConstToLInt added
 *)
 
-  IMPORT SYSTEM, Texts := Texts0, Files := Files0, Platform, Console, errors, Configuration, vt100;
+  IMPORT SYSTEM, Texts, Files, Platform, Console, errors, Configuration, vt100;
 
   CONST
     OptionChar* = "-";

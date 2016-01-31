@@ -22,11 +22,11 @@ PROCEDURE Assemble*(moduleName: ARRAY OF CHAR);
   VAR
     cmd: ARRAY 1023 OF CHAR;
   BEGIN
-    cmd := Configuration.compiler;
+    cmd := Configuration.cc;
     Strings.Append(compilationOptions, cmd);
     Strings.Append(moduleName,         cmd);
     Strings.Append(".c",               cmd);
-    execute("Assembly", cmd);
+    execute("C compilation", cmd);
   END Assemble;
 
 
@@ -34,8 +34,9 @@ PROCEDURE LinkMain*(VAR moduleName: ARRAY OF CHAR; statically : BOOLEAN; additio
   VAR
     cmd: ARRAY 1023 OF CHAR;
   BEGIN
-    cmd := Configuration.compiler;
+    cmd := Configuration.cc;
     Strings.Append(" ",                  cmd);
+    Strings.Append(compilationOptions,   cmd);
     Strings.Append(moduleName,           cmd);
     Strings.Append(".c ",                cmd);
     Strings.Append(additionalopts,       cmd);
@@ -44,27 +45,29 @@ PROCEDURE LinkMain*(VAR moduleName: ARRAY OF CHAR; statically : BOOLEAN; additio
     END;
     Strings.Append(" -o ",               cmd);
     Strings.Append(moduleName,           cmd);
-    Strings.Append(" -lOberon -L. -L",   cmd);
+    Strings.Append(" -L",                cmd);
     Strings.Append(Configuration.prefix, cmd);
-    Strings.Append("/lib ",              cmd);
-    execute("Link", cmd);
+    Strings.Append(" -lolang ",          cmd);
+    execute("Linking", cmd);
   END LinkMain;
 
 BEGIN
-  compilationOptions := " -c -Wno-pointer-sign -g -I ";
-  Strings.Append(Configuration.prefix,    compilationOptions);
-  Strings.Append("/",                     compilationOptions);
-  Strings.Append("src/lib/system/linux/", compilationOptions);
-  Strings.Append(Configuration.compiler,  compilationOptions);
-(*Strings.Append("/",                     compilationOptions); *)
-(*Strings.Append(Configuration.cpuarch,   compilationOptions); *)
-  IF Configuration.compiler # "gcc" THEN
-    Strings.Append(" -fPIC",              compilationOptions)
-  END;
+  (* compilationOptions := " -c -Wno-pointer-sign -g -I ";*)
+  (*
+    compilationOptions := " -I ";
+    Strings.Append(Configuration.prefix,    compilationOptions);
+    Strings.Append("/",                     compilationOptions);
+    Strings.Append("src/lib/system/linux/", compilationOptions);
+    Strings.Append(Configuration.compiler,  compilationOptions);
+    Strings.Append("/",                     compilationOptions);
+    Strings.Append(Configuration.cpuarch,   compilationOptions);
+    IF Configuration.compiler # "gcc" THEN
+      Strings.Append(" -fPIC",              compilationOptions)
+    END;
+  *)
   Strings.Append(" -I ",                  compilationOptions);
   Strings.Append(Configuration.prefix,    compilationOptions);
-  Strings.Append("/",                     compilationOptions);
-  Strings.Append("lib/voc/obj ",          compilationOptions);
+  Strings.Append("/include ",             compilationOptions);
   Platform.GetEnv("CFLAGS", CFLAGS);
   Strings.Append (CFLAGS,                 compilationOptions);
   Strings.Append (" ",                    compilationOptions);

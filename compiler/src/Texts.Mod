@@ -1,9 +1,6 @@
-MODULE Texts0;  (** CAS/HM 23.9.93 -- interface based on Texts by JG/NW 6.12.91**)  (* << RC, MB, JT *)
+MODULE Texts;  (** CAS/HM 23.9.93 -- interface based on Texts by JG/NW 6.12.91**)  (* << RC, MB, JT *)
   IMPORT
-    Files := Files0, Modules, Reals;
-
-  (*--- insert field e: Elem into Texts.Scanner and change Texts.Scan to set it in case of class=6 *)
-  (* this module is for bootstrapping voc, use Texts instead *)
+    Files, Modules, Reals;
 
   CONST
     Displaywhite = 15;
@@ -877,4 +874,4 @@ MODULE Texts0;  (** CAS/HM 23.9.93 -- interface based on Texts by JG/NW 6.12.91*
   END Close;
 
 BEGIN del := NIL; NEW(FontsDefault); FontsDefault.name := "Syntax10.Scn.Fnt"
-END Texts0.
+END Texts.

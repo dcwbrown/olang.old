@@ -106,10 +106,9 @@ BEGIN
 
   (* This function (Platform.Init) is called at program startup BEFORE any
      modules have been initalised. In turn we must initialise first the heap
-     itself, then the rest of the heap module. *)
+     itself, then the platform module. *)
   HeapInitHeap();
   PlatformModuleInit();
-  (*HeapModuleInit();*)
 END Init;
 
 
@@ -131,13 +130,6 @@ PROCEDURE GetArg*(n: INTEGER; VAR val: ARRAY OF CHAR);
 BEGIN
   IF n < ArgCount THEN
     av := SYSTEM.VAL(ArgVec,ArgVector);
-    (*
-      c.String("  n: "); c.Int(n,1);
-      c.String(", argv[0]: "); c.Hex(SYSTEM.VAL(LONGINT,(av[0])));
-      c.String(", argv[1]: "); c.Hex(SYSTEM.VAL(LONGINT,(av[1])));
-      c.String(", argv[2]: "); c.Hex(SYSTEM.VAL(LONGINT,(av[2])));
-      c.Ln;
-    *)
     COPY(av[n]^, val)
   END
 END GetArg;
@@ -167,6 +159,7 @@ END ArgPos;
 
 (* Process termination *)
 
+PROCEDURE -getpid(): INTEGER    "(INTEGER)getpid()";
 PROCEDURE -Exit*(code: INTEGER) "exit(code)";
 
 PROCEDURE Halt*(code: LONGINT);
@@ -182,7 +175,7 @@ BEGIN
   Halt(-1);
 END AssertFail;
 
-PROCEDURE -killself() "kill(getpid(), 4);";  (* SIGILL: Illegal instruction *)
+PROCEDURE -killself() "kill(getpid(), 4);";  (* 4 is SIGILL: Illegal instruction *)
 
 PROCEDURE Suicide(n: LONGINT);
 BEGIN
@@ -248,10 +241,6 @@ END Time;
 
 
 
-PROCEDURE -getcwd(VAR cwd: ARRAY OF CHAR) "getcwd(cwd, cwd__len)";
-PROCEDURE -getpid(): INTEGER              "(INTEGER)getpid()";
-
-
 
 (* System call *)
 
@@ -285,6 +274,8 @@ PROCEDURE -stat      (n: ARRAY OF CHAR):        INTEGER "stat(n, &s)";
 PROCEDURE -unlink    (n: ARRAY OF CHAR):        INTEGER "unlink(n)";
 PROCEDURE -chdir     (n: ARRAY OF CHAR):        INTEGER "chdir(n)";
 PROCEDURE -rename    (o,n: ARRAY OF CHAR):      INTEGER "rename(o,n)";
+
+PROCEDURE -getcwd(VAR cwd: ARRAY OF CHAR) "getcwd(cwd, cwd__len)";
 
 PROCEDURE -structstats          "struct stat s";
 PROCEDURE -statdev():   LONGINT "(LONGINT)s.st_dev";
@@ -421,7 +412,7 @@ BEGIN
   HaltCode    := -128;
   HaltHandler := Suicide;
   AssertCode  := 0;
-  TimeStart   := 0;   TimeStart := Time();
+  TimeStart   := Time();
   CWD         := "";  getcwd(CWD);
   PID         := getpid();
 END Platform.

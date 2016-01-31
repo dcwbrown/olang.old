@@ -31,12 +31,15 @@ void fail(char *msg) {printf("%s\n", msg); exit(1);}
 struct utsname sys;
 
 char  builddate[64];
-char* platform = "unknown";
-char* olangdir = macrotostring(OLANG_ROOT) "/olang-" macrotostring(OLANG_VERSION);
-char* version  = macrotostring(OLANG_VERSION);
-char* cpuarch  = "unknown";
-char* osarch   = "unknown";
-char* ccomp    = "unknown";
+char* platform   = "unknown";
+char* olangdirln = macrotostring(OLANG_ROOT) "/olang";
+char* olangdir   = macrotostring(OLANG_ROOT) "/olang-" macrotostring(OLANG_VERSION);
+char* version    = macrotostring(OLANG_VERSION);
+char* cpuarch    = "unknown";
+char* osarch     = "unknown";
+char* ccomp      = "unknown";
+char* cc         = macrotostring(OLANG_CC);
+char* binext     = "";
 
 
 void computeParameters() {
@@ -44,7 +47,7 @@ void computeParameters() {
 
   // Normalise os and cpu architecture names
 
-  if      (strncasecmp(sys.sysname, "cygwin",  6) == 0) {osarch = "cygwin";  platform = "unix";}
+  if      (strncasecmp(sys.sysname, "cygwin",  6) == 0) {osarch = "cygwin";  platform = "unix"; binext = ".exe";}
   else if (strncasecmp(sys.sysname, "linux",   5) == 0) {osarch = "linux";   platform = "unix";}
   else if (strncasecmp(sys.sysname, "freebsd", 5) == 0) {osarch = "freebsd"; platform = "unix";}
   else fail("Unrecognised OS architecture name returned by uname.");
@@ -163,7 +166,9 @@ void writeMakeParameters() {
   fprintf(fd, "CPUARCH   = %s\n", cpuarch);
   fprintf(fd, "OSARCH    = %s\n", osarch);
   fprintf(fd, "CCOMP     = %s\n", ccomp);
+  fprintf(fd, "PREFIXLN  = %s\n", olangdirln);
   fprintf(fd, "PREFIX    = %s\n", olangdir);
+  fprintf(fd, "BINEXT    = %s\n", binext);
 
   fclose(fd);
 }
@@ -181,6 +186,7 @@ void writeConfigurationMod() {
   fprintf(fd, "  osarch*      = '%s';\n",   osarch);
   fprintf(fd, "  cpuarch*     = '%s';\n",   cpuarch);
   fprintf(fd, "  date*        = '[%s]';\n", builddate);
+  fprintf(fd, "  cc*          = '%s';\n",   cc);
   fprintf(fd, "  compiler*    = '%s';\n",   ccomp);
   fprintf(fd, "  version*     = '%s';\n",   version);
   fprintf(fd, "  versionLong* = 'Oberon compiler olang for %s %s %s [%s] %s';\n",
