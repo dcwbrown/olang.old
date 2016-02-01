@@ -181,13 +181,10 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
   BEGIN
     IF Platform.ArgCount = 1 THEN
       Console.Ln;
-      Console.String("olang - Oberon compiler ");
-      Console.String(Configuration.version); Console.String(" ");
-      Console.String(Configuration.date); Console.String(" for "); Console.String(Configuration.osarch);
-      Console.String(" "); Console.String(Configuration.cpuarch); Console.String(".");
-      Console.Ln; Console.Ln;
-      Console.String("Originally Ofront by Software Templ OEG"); Console.Ln;
-      Console.String("Reworked by Norayr Chilingarian and others as Vishap Oberon"); Console.Ln;
+      Console.String(Configuration.versionLong); Console.String("."); Console.Ln; 
+      Console.Ln;
+      Console.String("Originally from Ofront by Software Templ OEG."); Console.Ln;
+      Console.String("Reworked by Norayr Chilingarian and others as Vishap Oberon."); Console.Ln;
       Console.String("Further updated by Dave CW Brown."); Console.Ln;
       Console.Ln;
       Console.String('command = "olang" options {files}.'); Console.Ln;
@@ -222,21 +219,6 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
         ScanOptions(s, glbopt);
         INC(S); s:=""; Platform.GetArg(S, s)
       END;
-
-      (* The following is redundant as it is reevaluated in InitOptions
-        useLineNo      := lineno         IN glbopt;
-        useParFile     := useparfile     IN glbopt;
-        dontAsm        := dontasm        IN glbopt;
-        dontLink       := dontlink       IN glbopt;
-        mainProg       := mainprog       IN glbopt;
-        mainLinkStat   := mainlinkstat   IN glbopt;
-        notColorOutput := notcoloroutput IN glbopt;
-        forceNewSym    := forcenewsym    IN glbopt;
-        Verbose        := verbose        IN glbopt;
-        IF useLineNo THEN curpos := 256; errpos := curpos; lasterrpos := curpos - 10 END;
-        IF mainLinkStat THEN INCL(glbopt, mainprog); mainProg := TRUE END;
-        GetProperties;
-      *)
 
       RETURN TRUE
     END;
@@ -662,48 +644,50 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
 
 
   PROCEDURE GetProperties();
-    VAR T: Texts.Text; S: Texts.Scanner;
-    base : LONGINT;
+    VAR 
+      T: Texts.Text; 
+      S: Texts.Scanner;
+      base : LONGINT;
   BEGIN
     (* default characteristics *)
     IF ~useParFile THEN
-      ByteSize    := 1;
-      CharSize    := 1;    CharAlign    := 1;
-      BoolSize    := 1;    BoolAlign    := 1;
-      SIntSize    := 1;    SIntAlign    := 1;
-      IntSize     := 4;    IntAlign     := 4;
-      LIntSize    := 8;    LIntAlign    := 8;
-      SetSize     := 8;    SetAlign     := 8;
-      RealSize    := 4;    RealAlign    := 4;
-      LRealSize   := 8;    LRealAlign   := 8;
-      RecSize     := 1;    RecAlign     := 1;
-      ProcSize    := SIZE(SYSTEM.PTR);    ProcAlign    := SIZE(SYSTEM.PTR);
-      PointerSize := SIZE(SYSTEM.PTR);    PointerAlign := SIZE(SYSTEM.PTR);
+      CharSize    := Configuration.CharSize;     CharAlign    := Configuration.CharAlign;
+      BoolSize    := Configuration.BoolSize;     BoolAlign    := Configuration.BoolAlign;
+      SIntSize    := Configuration.SIntSize;     SIntAlign    := Configuration.SIntAlign;
+      IntSize     := Configuration.IntSize;      IntAlign     := Configuration.IntAlign;
+      LIntSize    := Configuration.LIntSize;     LIntAlign    := Configuration.LIntAlign;
+      SetSize     := Configuration.SetSize;      SetAlign     := Configuration.SetAlign;
+      RealSize    := Configuration.RealSize;     RealAlign    := Configuration.RealAlign;
+      LRealSize   := Configuration.LRealSize;    LRealAlign   := Configuration.LRealAlign;
+      PointerSize := Configuration.PointerSize;  PointerAlign := Configuration.PointerAlign;
+      ProcSize    := Configuration.ProcSize;     ProcAlign    := Configuration.ProcAlign;
+      RecSize     := Configuration.RecSize;      RecAlign     := Configuration.RecAlign;
+      ByteOrder   := Configuration.ByteOrder;    BitOrder     := Configuration.BitOrder;
     ELSE
-      IF Verbose THEN Console.String ("Loading type sizes from voc.par"); Console.Ln; END;
-      NEW(T); Texts.Open(T, "voc.par");
+      IF Verbose THEN Console.String ("Loading type sizes from BasicTypeParameters"); Console.Ln; END;
+      NEW(T); Texts.Open(T, "BasicTypeParameters");
       IF T.len # 0 THEN
         Texts.OpenScanner(S, T, 0); Texts.Scan(S);
-        GetProperty(S, "CHAR", CharSize, CharAlign);
-        GetProperty(S, "BOOLEAN", BoolSize, BoolAlign);
-        GetProperty(S, "SHORTINT", SIntSize, SIntAlign);
-        GetProperty(S, "INTEGER", IntSize, IntAlign);
-        GetProperty(S, "LONGINT", LIntSize, LIntAlign);
-        GetProperty(S, "SET", SetSize, SetAlign);
-        GetProperty(S, "REAL", RealSize, RealAlign);
-        GetProperty(S, "LONGREAL", LRealSize, LRealAlign);
-        GetProperty(S, "PTR", PointerSize, PointerAlign);
-        GetProperty(S, "PROC", ProcSize, ProcAlign);
-        GetProperty(S, "RECORD", RecSize, RecAlign);
+        GetProperty(S, "CHAR",     CharSize,    CharAlign);
+        GetProperty(S, "BOOLEAN",  BoolSize,    BoolAlign);
+        GetProperty(S, "SHORTINT", SIntSize,    SIntAlign);
+        GetProperty(S, "INTEGER",  IntSize,     IntAlign);
+        GetProperty(S, "LONGINT",  LIntSize,    LIntAlign);
+        GetProperty(S, "SET",      SetSize,     SetAlign);
+        GetProperty(S, "REAL",     RealSize,    RealAlign);
+        GetProperty(S, "LONGREAL", LRealSize,   LRealAlign);
+        GetProperty(S, "PTR",      PointerSize, PointerAlign);
+        GetProperty(S, "PROC",     ProcSize,    ProcAlign);
+        GetProperty(S, "RECORD",   RecSize,     RecAlign);
         (* Size = 0: natural size aligned to next power of 2 up to RecAlign; e.g. i960
           Size = 1; size and alignment follows from field types but at least RecAlign; e.g, SPARC, MIPS, PowerPC
         *)
         GetProperty(S, "ENDIAN", ByteOrder, BitOrder);  (*currently not used*)
-        ByteSize := CharSize;
       ELSE
         Mark(-156, -1)
       END
     END;
+    ByteSize := CharSize;
 
     (* and I'd like to calculate it, not hardcode constants *)
     base := -2;
@@ -944,13 +928,6 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
     HFile := NIL; BFile := NIL; HIFile := NIL; newSFile := NIL; oldSFile := NIL;
     Files.Set(R[0], NIL, 0); Files.Set(R[1], NIL, 0); Files.Set(R[2], NIL, 0); Files.Set(newSF, NIL, 0); Files.Set(oldSF, NIL, 0)
   END CloseFiles;
-
-  PROCEDURE PromoteIntConstToLInt*();
-  BEGIN
-    Write("L")
-  END PromoteIntConstToLInt;
-
-
 
 
 BEGIN

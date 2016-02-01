@@ -1296,7 +1296,7 @@ MODULE OPC;	(* copyright (c) J. Templ 12.7.95 / 3.7.96 *)
 			IF dim # 0 THEN OPM.WriteInt(dim) END
 		ELSE (* array *)
 			WHILE dim > 0 DO array := array^.BaseTyp; DEC(dim) END ;
-			OPM.WriteInt(array^.n); OPM.PromoteIntConstToLInt()
+			OPM.WriteString("((LONGINT)("); OPM.WriteInt(array^.n); OPM.WriteString("))");
 		END
 	END Len;
 

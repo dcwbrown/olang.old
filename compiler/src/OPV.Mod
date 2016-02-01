@@ -545,14 +545,16 @@ MODULE OPV;  (* J. Templ 16.2.95 / 3.7.96
       ELSIF ansi THEN
         (* casting of params should be simplified eventually *)
         IF (mode = VarPar) & (typ # n^.typ) & (prec = MinPrec) THEN OPM.WriteString("(void*)") END
-      END ;
-      IF (mode = VarPar) & (n^.class = Nmop) & (n^.subcl = val) THEN expr(n^.left, prec)  (* avoid cast in lvalue *)
-      ELSE expr(n, prec)
-      END ;
-      IF (form = LInt) & (n^.class = Nconst)
-      & (n^.conval^.intval <= OPM.MaxInt) & (n^.conval^.intval >= OPM.MinInt) THEN
-        OPM.PromoteIntConstToLInt()
-      ELSIF (comp = Record) & (mode = VarPar) THEN
+      END;
+      IF (mode = VarPar) & (n^.class = Nmop) & (n^.subcl = val) THEN 
+        expr(n^.left, prec)  (* avoid cast in lvalue *)
+      ELSIF (form = LInt) & (n^.class = Nconst) 
+          & (n^.conval^.intval <= OPM.MaxInt) & (n^.conval^.intval >= OPM.MinInt) THEN
+        OPM.WriteString("((LONGINT)("); expr(n, prec); OPM.WriteString("))");
+      ELSE 
+        expr(n, prec)
+      END;
+      IF (comp = Record) & (mode = VarPar) THEN
         OPM.WriteString(", "); TypeOf(n)
       ELSIF comp = DynArr THEN
         IF n^.class = Nconst THEN (* ap is string constant *)
@@ -568,7 +570,7 @@ MODULE OPV;  (* J. Templ 16.2.95 / 3.7.96
             WHILE aptyp^.comp = DynArr DO
               Len(n, dim); OPM.WriteString(" * "); INC(dim); aptyp := aptyp^.BaseTyp
             END ;
-            OPM.WriteInt(aptyp^.size); OPM.PromoteIntConstToLInt()
+            OPM.WriteString("((LONGINT)("); OPM.WriteInt(aptyp^.size); OPM.WriteString("))");
           END
         END
       END ;
@@ -871,7 +873,7 @@ MODULE OPV;  (* J. Templ 16.2.95 / 3.7.96
     ELSIF base^.form = Pointer THEN OPM.WriteString("POINTER__typ")
     ELSE OPM.WriteString("NIL")
     END ;
-    OPM.WriteString(", "); OPM.WriteInt(base^.size); OPM.PromoteIntConstToLInt();  (* element size *)
+    OPM.WriteString(", "); OPM.WriteString("((LONGINT)("); OPM.WriteInt(base^.size); OPM.WriteString("))");
     OPM.WriteString(", "); OPM.WriteInt(OPC.Base(base));  (* element alignment *)
     OPM.WriteString(", "); OPM.WriteInt(nofdim);  (* total number of dimensions = number of additional parameters *)
     OPM.WriteString(", "); OPM.WriteInt(nofdyn);  (* number of dynamic dimensions *)
