@@ -72,19 +72,6 @@ extern LONGINT SYSTEM_ENTIER (double x);
 
 
 
-
-// extern void SYSTEM_INCREF();
-// extern void SYSTEM_REGTYP();
-// extern void SYSTEM_REGFIN();
-// extern void SYSTEM_FINI();
-// extern void SYSTEM_HALT();
-
-
-// extern void SYSTEM_ENUMP();
-// extern void SYSTEM_ENUMR();
-
-
-
 // String comparison
 
 static int __STRCMP(CHAR *x, CHAR *y){
@@ -250,9 +237,13 @@ extern SYSTEM_PTR SYSTEM_NEWARR(LONGINT*, LONGINT, int, int, int, ...);
 	SYSTEM_INHERIT(t##__typ, t0##__typ)
 
 #define __IS(tag, typ, level)	(*(tag-(__BASEOFF-level))==(LONGINT)typ##__typ)
-//#define __TYPEOF(p)	            (*(((LONGINT**)(p))-1))
 #define __TYPEOF(p)	            ((LONGINT*)(*(((LONGINT*)(p))-1)))
 #define __ISP(p, typ, level)	__IS(__TYPEOF(p),typ,level)
+
+// Oberon-2 type bound procedures support
+#define __INITBP(t, proc, num)	*(t##__typ-(__TPROC0OFF+num))=(LONGINT)proc
+#define __SEND(typ, num, funtyp, parlist)	((funtyp)(*(typ-(__TPROC0OFF+num))))parlist
+
 
 
 #endif

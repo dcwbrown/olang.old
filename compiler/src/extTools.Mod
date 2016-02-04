@@ -8,10 +8,11 @@ VAR compilationOptions, CFLAGS: ARRAY 1023 OF CHAR;
 PROCEDURE execute(title: ARRAY OF CHAR; cmd: ARRAY OF CHAR);
   VAR r: INTEGER;
 BEGIN
-  Console.Ln; Console.String(title); Console.String(" command: "); Console.String(cmd); Console.Ln;
+  (* Console.Ln; Console.String(title); Console.String(" command: "); Console.String(cmd); Console.Ln; *)
   r := Platform.System(cmd);
   IF (r < 0) OR (r = 127) THEN
-    Console.String("Command failed with termination status ");
+    Console.String(title);
+    Console.String(" failed with termination status ");
     Console.Int(r,1); Console.Ln;
     Platform.Exit(r);
   END;
@@ -24,6 +25,7 @@ PROCEDURE Assemble*(moduleName: ARRAY OF CHAR);
   BEGIN
     cmd := Configuration.cc;
     Strings.Append(compilationOptions, cmd);
+    Strings.Append("-c ",              cmd);
     Strings.Append(moduleName,         cmd);
     Strings.Append(".c",               cmd);
     execute("C compilation", cmd);

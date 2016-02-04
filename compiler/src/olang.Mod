@@ -1,4 +1,4 @@
-MODULE oc;  (* J. Templ 3.2.95 *)
+MODULE olang;  (* J. Templ 3.2.95 *)
 
   IMPORT
     SYSTEM, Heap, Platform,
@@ -22,20 +22,26 @@ MODULE oc;  (* J. Templ 3.2.95 *)
         OPC.Init;
         OPV.Module(p);
         IF OPM.noerr THEN
-          (*IF (OPM.mainprog IN OPM.opt) & (OPM.modName # "SYSTEM") THEN*)
           IF (OPM.mainProg OR OPM.mainLinkStat) & (OPM.modName # "SYSTEM") THEN
             OPM.DeleteNewSym;
-	          IF ~OPM.notColorOutput THEN vt100.SetAttr(vt100.Green) END;
-	          OPM.LogWStr("  main program");
-	          IF ~OPM.notColorOutput THEN vt100.SetAttr(vt100.ResetAll) END;
+	          (* 
+              IF ~OPM.notColorOutput THEN vt100.SetAttr(vt100.Green) END;
+              OPM.LogWStr("  main program");
+	            IF ~OPM.notColorOutput THEN vt100.SetAttr(vt100.ResetAll) END;
+            *)
           ELSE
             IF new THEN
-	            IF ~OPM.notColorOutput THEN vt100.SetAttr(vt100.Green) END;
-	            OPM.LogWStr("  new symbol file");
-	            IF ~OPM.notColorOutput THEN vt100.SetAttr(vt100.ResetAll) END;
+              (*
+	              IF ~OPM.notColorOutput THEN vt100.SetAttr(vt100.Green) END;
+	              OPM.LogWStr("  new symbol file");
+	              IF ~OPM.notColorOutput THEN vt100.SetAttr(vt100.ResetAll) END;
+              *)
 	            OPM.RegisterNewSym
             ELSIF ext THEN
-              OPM.LogWStr("  extended symbol file"); OPM.RegisterNewSym
+              (*
+                OPM.LogWStr("  extended symbol file"); 
+              *)
+              OPM.RegisterNewSym
             END
           END;
       	ELSE
@@ -44,7 +50,8 @@ MODULE oc;  (* J. Templ 3.2.95 *)
       END
     END;
     OPM.CloseFiles; OPT.Close;
-    OPM.LogLn; done := OPM.noerr;
+    (* OPM.LogLn; *)
+    done := OPM.noerr;
   END Module;
 
 
@@ -108,7 +115,7 @@ MODULE oc;  (* J. Templ 3.2.95 *)
       Platform.Exit(0)
     ELSE
       IF (sig = 4) & (Platform.HaltCode = -15) THEN
-        OPM.LogWStr(" --- oc: internal error");
+        OPM.LogWStr(" --- olang: internal error");
         OPM.LogLn
       END ;
       Platform.Exit(2)
@@ -120,4 +127,4 @@ BEGIN
   Platform.SetQuitHandler(Trap);
   Platform.SetBadInstructionHandler(Trap);
   OPB.typSize := OPV.TypSize; OPT.typSize := OPV.TypSize; Translate
-END oc.
+END olang.

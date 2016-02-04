@@ -167,7 +167,7 @@ MODULE Files;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files 
     *)
     IF buf.chg THEN f := buf.f; Create(f);
       IF buf.org # f.pos THEN
-        error := Platform.Seek(f.fd, buf.org);
+        error := Platform.Seek(f.fd, buf.org, Platform.SeekSet);
         (*
           Console.String("Seeking to "); Console.Int(buf.org,1);
           Console.String(", error code "); Console.Int(error,1); Console.Ln;
@@ -310,7 +310,10 @@ MODULE Files;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files 
       IF f.bufs[i] # NIL THEN f.bufs[i].org := -1; f.bufs[i] := NIL END;
       INC(i)
     END;
-    IF f.fd # noDesc THEN error := Platform.Truncate(f.fd, 0); error := Platform.Seek(f.fd, 0) END;
+    IF f.fd # noDesc THEN 
+      error := Platform.Truncate(f.fd, 0); 
+      error := Platform.Seek(f.fd, 0, Platform.SeekSet) 
+    END;
     f.pos := 0; f.len := 0; f.swapper := -1;
     error := Platform.Identify(f.fd, identity); f.identity.mtime := identity.mtime
   END Purge;
@@ -346,7 +349,7 @@ MODULE Files;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files 
       IF buf.org # org THEN
         IF org = f.len THEN buf.size := 0
         ELSE Create(f);
-          IF f.pos # org THEN error := Platform.Seek(f.fd, org) END;
+          IF f.pos # org THEN error := Platform.Seek(f.fd, org, Platform.SeekSet) END;
           error := Platform.ReadBuf(f.fd, buf.data, n);
           IF error # 0 THEN Err("read from file not done", f, error) END;
           f.pos := org + n;
@@ -585,6 +588,22 @@ Especially Length would become fairly complex.
     REPEAT Read(R, ch); x[i] := ch; INC(i) UNTIL ch = 0X
   END ReadString;
 
+  PROCEDURE ReadLine* (VAR R: Rider; VAR x: ARRAY OF CHAR);
+    VAR i: INTEGER; ch: CHAR; b : BOOLEAN;
+  BEGIN 
+    i := 0;
+    b := FALSE;
+    REPEAT 
+      Read(R, ch); 
+      IF ((ch = 0X) OR (ch = 0AX) OR (ch = 0DX)) THEN 
+        b := TRUE
+      ELSE
+        x[i] := ch;
+        INC(i);
+      END;
+    UNTIL b
+  END ReadLine;
+ 
   PROCEDURE ReadNum* (VAR R: Rider; VAR x: LONGINT);
     VAR s: SHORTINT; ch: CHAR; n: LONGINT;
   BEGIN s := 0; n := 0; Read(R, ch);
@@ -639,6 +658,11 @@ Especially Length would become fairly complex.
     WHILE (x < - 64) OR (x > 63) DO Write(R, CHR(x MOD 128 + 128)); x := x DIV 128 END;
     Write(R, CHR(x MOD 128))
   END WriteNum;
+
+  PROCEDURE GetName*(f: File; VAR name: ARRAY OF CHAR);
+  BEGIN
+     COPY (f.workName, name);
+  END GetName;
 
   PROCEDURE Finalize(o: SYSTEM.PTR);
     VAR f: File; res: LONGINT;

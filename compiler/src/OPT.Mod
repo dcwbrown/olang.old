@@ -294,17 +294,16 @@ PROCEDURE ^IdFPrint*(typ: Struct);
 
 PROCEDURE DebugStruct(btyp: Struct);
 BEGIN
-
-                        OPM.LogLn;
-			IF btyp = NIL THEN OPM.LogWStr("btyp is nil"); OPM.LogLn END;
-                        OPM.LogWStr("btyp^.strobji^.name = "); OPM.LogWStr(btyp^.strobj^.name); OPM.LogLn;
-                        OPM.LogWStr("btyp^.form = "); OPM.LogWInt(btyp^.form, 0); OPM.LogLn;
-                        OPM.LogWStr("btyp^.comp = "); OPM.LogWInt(btyp^.comp, 0); OPM.LogLn;
-                        OPM.LogWStr("btyp^.mno = "); OPM.LogWInt(btyp^.mno, 0); OPM.LogLn;
-                        OPM.LogWStr("btyp^.extlev = "); OPM.LogWInt(btyp^.extlev, 0); OPM.LogLn;
-                        OPM.LogWStr("btyp^.size = "); OPM.LogWInt(btyp^.size, 0); OPM.LogLn;
-                        OPM.LogWStr("btyp^.align = "); OPM.LogWInt(btyp^.align, 0); OPM.LogLn;
-                        OPM.LogWStr("btyp^.txtpos = "); OPM.LogWInt(btyp^.txtpos, 0); OPM.LogLn;
+  OPM.LogLn;
+  IF btyp = NIL THEN OPM.LogWStr("btyp is nil"); OPM.LogLn END;
+  OPM.LogWStr("btyp^.strobji^.name = "); OPM.LogWStr(btyp^.strobj^.name); OPM.LogLn;
+  OPM.LogWStr("btyp^.form = "); OPM.LogWInt(btyp^.form, 0); OPM.LogLn;
+  OPM.LogWStr("btyp^.comp = "); OPM.LogWInt(btyp^.comp, 0); OPM.LogLn;
+  OPM.LogWStr("btyp^.mno = "); OPM.LogWInt(btyp^.mno, 0); OPM.LogLn;
+  OPM.LogWStr("btyp^.extlev = "); OPM.LogWInt(btyp^.extlev, 0); OPM.LogLn;
+  OPM.LogWStr("btyp^.size = "); OPM.LogWInt(btyp^.size, 0); OPM.LogLn;
+  OPM.LogWStr("btyp^.align = "); OPM.LogWInt(btyp^.align, 0); OPM.LogLn;
+  OPM.LogWStr("btyp^.txtpos = "); OPM.LogWInt(btyp^.txtpos, 0); OPM.LogLn;
 END DebugStruct;
 
 PROCEDURE FPrintSign(VAR fp: LONGINT; result: Struct; par: Object);
@@ -639,9 +638,9 @@ BEGIN
       InMod(mno); InName(name); obj := NewObj();
       IF name = "" THEN
          IF impCtxt.self THEN
-	    old := NIL  (* do not insert type desc anchor here, but in OPL *)
+      old := NIL  (* do not insert type desc anchor here, but in OPL *)
         ELSE
-	    obj^.name := "@"; InsertImport(obj, GlbMod[mno].right, old(*=NIL*)); obj^.name := ""
+      obj^.name := "@"; InsertImport(obj, GlbMod[mno].right, old(*=NIL*)); obj^.name := ""
          END ;
          typ := NewStr(Undef, Basic)
       ELSE
@@ -655,7 +654,7 @@ BEGIN
                typ^.fpdone := FALSE; typ^.idfpdone := FALSE
             END
          ELSE
-	    typ := NewStr(Undef, Basic)
+      typ := NewStr(Undef, Basic)
          END
       END ;
       impCtxt.ref[ref] := typ; impCtxt.old[ref] := old;
@@ -669,26 +668,26 @@ BEGIN
       CASE tag OF
          | Sptr:
                typ^.form := Pointer; typ^.size := OPM.PointerSize;
-	       typ^.n := 0; InStruct(typ^.BaseTyp)
+         typ^.n := 0; InStruct(typ^.BaseTyp)
          | Sarr:
                typ^.form := Comp; typ^.comp := Array;
-	       InStruct(typ^.BaseTyp); typ^.n := OPM.SymRInt();
+         InStruct(typ^.BaseTyp); typ^.n := OPM.SymRInt();
                typSize(typ) (* no bounds address !! *)
          | Sdarr:
                typ^.form := Comp; typ^.comp := DynArr; InStruct(typ^.BaseTyp);
                IF typ^.BaseTyp^.comp = DynArr THEN
-	          typ^.n := typ^.BaseTyp^.n + 1
+            typ^.n := typ^.BaseTyp^.n + 1
                ELSE
-	          typ^.n := 0
+            typ^.n := 0
                END ;
                typSize(typ)
          | Srec:
                 typ^.form := Comp; typ^.comp := Record;
-		InStruct(typ^.BaseTyp);
+    InStruct(typ^.BaseTyp);
                 IF typ^.BaseTyp = notyp THEN typ^.BaseTyp := NIL END;
                 typ.extlev := 0; t := typ.BaseTyp;
                 (* do not take extlev from base type due to possible cycles! *)
-		WHILE (t # NIL) (*& (t^.BaseTyp # t)*)(*(t^.(*BaseTyp^.*)form # 0)*) DO INC(typ^.extlev); t := t.BaseTyp END; (* !!! *)
+    WHILE (t # NIL) (*& (t^.BaseTyp # t)*)(*(t^.(*BaseTyp^.*)form # 0)*) DO INC(typ^.extlev); t := t.BaseTyp END; (* !!! *)
                 typ^.size := OPM.SymRInt(); typ^.align := OPM.SymRInt();
                 typ^.n := OPM.SymRInt();
                 impCtxt.nextTag := OPM.SymRInt(); last := NIL;
@@ -698,16 +697,16 @@ BEGIN
                    last := fld; InsertImport(fld, typ^.link, dummy);
                    impCtxt.nextTag := OPM.SymRInt()
                 END ;
-		WHILE impCtxt.nextTag # Send DO
-		   fld := InTProc(mno);
+    WHILE impCtxt.nextTag # Send DO
+       fld := InTProc(mno);
                    InsertImport(fld, typ^.link, dummy);
                    impCtxt.nextTag := OPM.SymRInt()
                 END
          | Spro:
                 typ^.form := ProcTyp; typ^.size := OPM.ProcSize;
-		InSign(mno, typ^.BaseTyp, typ^.link)
+    InSign(mno, typ^.BaseTyp, typ^.link)
          ELSE
-	    OPM.LogWStr("unhandled case at OPT.InStruct, tag = "); OPM.LogWInt(tag, 0); OPM.LogLn;
+      OPM.LogWStr("unhandled case at OPT.InStruct, tag = "); OPM.LogWInt(tag, 0); OPM.LogLn;
 END ;
       IF ref = impCtxt.minr THEN
          WHILE (ref < impCtxt.nofr) (*OR ((ref >= Int8) & (ref <= Int64))*) DO
@@ -716,39 +715,39 @@ END ;
             IF obj^.name # "" THEN FPrintObj(obj) END ;
             old := impCtxt.old[ref];
             IF old # NIL THEN
-	       t^.strobj := old;  (* restore strobj *)
+         t^.strobj := old;  (* restore strobj *)
                IF impCtxt.self THEN
                   IF old^.mnolev < 0 THEN
-	             IF old^.history # inconsistent THEN
-	                IF old^.fprint # obj^.fprint THEN
-			   old^.history := pbmodified
-	                ELSIF impCtxt.pvfp[ref] # t^.pvfp THEN
-			   old^.history := pvmodified
-	                END
-	(* ELSE remain inconsistent *)
-	             END
-                  ELSIF old^.fprint # obj^.fprint THEN
-		     old^.history := pbmodified
+               IF old^.history # inconsistent THEN
+                  IF old^.fprint # obj^.fprint THEN
+         old^.history := pbmodified
                   ELSIF impCtxt.pvfp[ref] # t^.pvfp THEN
-		     old^.history := pvmodified
+         old^.history := pvmodified
+                  END
+  (* ELSE remain inconsistent *)
+               END
+                  ELSIF old^.fprint # obj^.fprint THEN
+         old^.history := pbmodified
+                  ELSIF impCtxt.pvfp[ref] # t^.pvfp THEN
+         old^.history := pvmodified
                   ELSIF old^.vis = internal THEN
-		     old^.history := same  (* may be changed to "removed" in InObj *)
+         old^.history := same  (* may be changed to "removed" in InObj *)
                   ELSE
-		     old^.history := inserted  (* may be changed to "same" in InObj *)
+         old^.history := inserted  (* may be changed to "same" in InObj *)
                   END
                ELSE
                   (* check private part, delay error message until really used *)
                   IF impCtxt.pvfp[ref] # t^.pvfp THEN
-		     old^.history := inconsistent
-		  END ;
+         old^.history := inconsistent
+      END ;
                   IF old^.fprint # obj^.fprint THEN
-		     FPrintErr(old, 249)
-		  END
+         FPrintErr(old, 249)
+      END
                END
             ELSIF impCtxt.self THEN
-	       obj^.history := removed
+         obj^.history := removed
             ELSE
-	       obj^.history := same
+         obj^.history := same
             END ;
             INC(ref)
          END ;
@@ -780,8 +779,8 @@ END InStruct;
           ext := NewExt(); obj^.conval^.ext := ext;
           s := SHORT(OPM.SymRInt()); ext^[0] := CHR(s); i := 1;
           WHILE i <= s DO OPM.SymRCh(ext^[i]); INC(i) END
-	ELSE
-	   OPM.LogWStr("unhandled case at OPT.InObj, tag = "); OPM.LogWInt(tag, 0); OPM.LogLn;
+  ELSE
+     OPM.LogWStr("unhandled case at OPT.InObj, tag = "); OPM.LogWInt(tag, 0); OPM.LogLn;
         END
       ELSIF tag = Salias THEN
         obj^.mode := Typ; InStruct(obj^.typ)
@@ -956,7 +955,7 @@ END InStruct;
         | pvmodified: FPrintErr(strobj, 251)
         | inconsistent: FPrintErr(strobj, 249)
         ELSE (* checked in OutObj or correct indirect export *)
-	  (* OPM.LogWStr("unhandled case at OPT.OutStr, strobj^.history = "); OPM.LogWInt(strobj^.history, 0); OPM.LogLn;*)
+    (* OPM.LogWStr("unhandled case at OPT.OutStr, strobj^.history = "); OPM.LogWInt(strobj^.history, 0); OPM.LogLn;*)
         END
       ELSE OPM.SymWCh(0X)  (* anonymous => never inconsistent, pvfp influences the client fp *)
       END ;
@@ -980,8 +979,8 @@ END InStruct;
           nofhdfld := 0; OutFlds(typ^.link, 0, TRUE);
           IF nofhdfld > OPM.MaxHdFld THEN OPM.Mark(223, typ^.txtpos) END ;
           OutTProcs(typ, typ^.link); OPM.SymWInt(Send)
-	ELSE
-	   OPM.LogWStr("unhandled case at OPT.OutStr, typ^.comp = "); OPM.LogWInt(typ^.comp, 0); OPM.LogLn;
+  ELSE
+     OPM.LogWStr("unhandled case at OPT.OutStr, typ^.comp = "); OPM.LogWInt(typ^.comp, 0); OPM.LogLn;
         END
       ELSE OPM.LogWStr("unhandled case at OPT.OutStr, typ^.form = "); OPM.LogWInt(typ^.form, 0); OPM.LogLn;
       END
@@ -1023,8 +1022,8 @@ END InStruct;
           | same:  (* ok *)
           | pbmodified: FPrintErr(obj, 252)
           | pvmodified: FPrintErr(obj, 251)
-	  ELSE
-	     OPM.LogWStr("unhandled case at OPT.OutObj, obj^.history = "); OPM.LogWInt(obj^.history, 0); OPM.LogLn;
+    ELSE
+       OPM.LogWStr("unhandled case at OPT.OutObj, obj^.history = "); OPM.LogWInt(obj^.history, 0); OPM.LogLn;
           END ;
           CASE obj^.mode OF
           | Con:
@@ -1049,8 +1048,8 @@ END InStruct;
             j := ORD(ext^[0]); i := 1; OPM.SymWInt(j);
             WHILE i <= j DO OPM.SymWCh(ext^[i]); INC(i) END ;
             OutName(obj^.name)
-	  ELSE
-	     OPM.LogWStr("unhandled case at OPT.OutObj, obj.mode = "); OPM.LogWInt(obj.mode, 0); OPM.LogLn;
+    ELSE
+       OPM.LogWStr("unhandled case at OPT.OutObj, obj.mode = "); OPM.LogWInt(obj.mode, 0); OPM.LogLn;
           END
         END
       END ;
@@ -1072,17 +1071,17 @@ END InStruct;
         i := 1; WHILE i < maxImps DO expCtxt.locmno[i] := -1; INC(i) END ;
         OutObj(topScope^.right);
         ext := sfpresent & symExtended; new := ~sfpresent OR symNew;
-	IF OPM.forceNewSym THEN
-	   new := TRUE
-	END; (* for bootstrapping -- noch *)
+  IF OPM.forceNewSym THEN
+     new := TRUE
+  END; (* for bootstrapping -- noch *)
         IF OPM.noerr & sfpresent & (impCtxt.reffp # expCtxt.reffp) THEN
           new := TRUE;
           IF ~extsf THEN err(155) END
         END ;
         newsf := FALSE; symNew := FALSE;  (* because of call to FPrintErr from OPL *)
         IF ~OPM.noerr OR findpc THEN
-	   OPM.DeleteNewSym
-	END
+     OPM.DeleteNewSym
+  END
         (* OPM.RegisterNewSym is called in OP2 after writing the object file *)
       END
     END

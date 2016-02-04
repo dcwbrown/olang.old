@@ -1,12 +1,11 @@
 MODULE Platform;
 IMPORT SYSTEM;
 
-
-
-CONST
-  TimeUnit* = 1000;
-
 TYPE
+  HaltProcedure = PROCEDURE(n: LONGINT);
+  SignalHandler = PROCEDURE(signal: INTEGER);
+
+  ErrorCode*  = INTEGER;
   FileHandle* = LONGINT;
 
   FileIdentity* = RECORD
@@ -15,18 +14,10 @@ TYPE
     mtime*:  LONGINT;  (* File modification time, value is system dependent *)
   END;
 
-  ErrorCode*  = INTEGER;
-
-  HaltProcedure = PROCEDURE(n: LONGINT);
-
-  EnvPtr = POINTER TO ARRAY 1024 OF CHAR;
-
-  SignalHandler = PROCEDURE(signal: INTEGER);
-
-  TYPE
-    ArgPtr    = POINTER TO ARRAY 1024 OF CHAR;
-    ArgVec    = POINTER TO ARRAY 1024 OF ArgPtr;
-    ArgVecPtr = POINTER TO ARRAY 1 OF LONGINT;
+  EnvPtr    = POINTER TO ARRAY 1024 OF CHAR;
+  ArgPtr    = POINTER TO ARRAY 1024 OF CHAR;
+  ArgVec    = POINTER TO ARRAY 1024 OF ArgPtr;
+  ArgVecPtr = POINTER TO ARRAY 1 OF LONGINT;
 
 
 VAR
@@ -38,13 +29,18 @@ VAR
   CWD-:            ARRAY 256 OF CHAR;
   ArgCount-:       INTEGER;
 
-  ArgVector:       LONGINT;
+  ArgVector-:      LONGINT;
   HaltHandler:     HaltProcedure;
   TimeStart:       LONGINT;
 
+  SeekSet-:        INTEGER;
+  SeekCur-:        INTEGER;
+  SeekEnd-:        INTEGER;
 
 
-(* Unix headers to include *)
+
+
+(* Unix headers to be included *)
 
 PROCEDURE -Aincludesystime  '#include <sys/time.h>';  (* for gettimeofday *)
 PROCEDURE -Aincludetime     '#include <time.h>';      (* for localtime *)
@@ -118,11 +114,17 @@ END Init;
 
 PROCEDURE -getenv(var: ARRAY OF CHAR): EnvPtr "(Platform_EnvPtr)getenv(var)";
 
-PROCEDURE GetEnv*(var: ARRAY OF CHAR; VAR val: ARRAY OF CHAR);
+PROCEDURE getEnv*(var: ARRAY OF CHAR; VAR val: ARRAY OF CHAR): BOOLEAN;
   VAR p: EnvPtr;
 BEGIN
   p := getenv(var);
   IF p # NIL THEN COPY(p^, val) END;
+  RETURN p # NIL;
+END getEnv;
+
+PROCEDURE GetEnv*(var: ARRAY OF CHAR; VAR val: ARRAY OF CHAR);
+BEGIN
+  IF ~ getEnv(var, val) THEN val[0] := 0X END;
 END GetEnv;
 
 PROCEDURE GetArg*(n: INTEGER; VAR val: ARRAY OF CHAR);
@@ -178,14 +180,10 @@ END AssertFail;
 PROCEDURE -killself() "kill(getpid(), 4);";  (* 4 is SIGILL: Illegal instruction *)
 
 PROCEDURE Suicide(n: LONGINT);
-BEGIN
-  killself;
-END Suicide;
+BEGIN killself; END Suicide;
 
-PROCEDURE SetHalt*(p: HaltProcedure );
-BEGIN
-  HaltHandler := p;
-END SetHalt;
+PROCEDURE SetHalt*(p: HaltProcedure);
+BEGIN HaltHandler := p; END SetHalt;
 
 
 
@@ -240,6 +238,17 @@ BEGIN
 END Time;
 
 
+PROCEDURE -nanosleep(s: LONGINT; ns: LONGINT) "struct timespec req, rem; req.tv_sec = s; req.tv_nsec = ns; nanosleep(&req, &rem)";
+
+PROCEDURE Delay*(ms: LONGINT);
+VAR s, ns: LONGINT;
+BEGIN
+  s  :=  ms DIV 1000;
+  ns := (ms MOD 1000) * 1000;
+  nanosleep(s, ns);
+END Delay;
+
+
 
 
 (* System call *)
@@ -264,16 +273,16 @@ PROCEDURE -opennew(n: ARRAY OF CHAR): INTEGER "open(n, O_CREAT | O_TRUNC | O_RDW
 PROCEDURE -writefile(fd: LONGINT; p: LONGINT; l: LONGINT): LONGINT "write(fd, (void*)p, l)";
 PROCEDURE -readfile (fd: LONGINT; p: LONGINT; l: LONGINT): LONGINT "read(fd, (void*)p, l)";
 
-PROCEDURE -fsync     (fd: LONGINT):             INTEGER "fsync(fd)";
-PROCEDURE -closefile (fd: LONGINT):             INTEGER "close(fd)";
-PROCEDURE -lseek     (fd: LONGINT; o: LONGINT): INTEGER "lseek(fd, o, SEEK_SET)";
-PROCEDURE -ftruncate (fd: LONGINT; l: LONGINT): INTEGER "ftruncate(fd, l)";
-PROCEDURE -fstat     (fd: LONGINT):             INTEGER "fstat(fd, &s)";
+PROCEDURE -fsync     (fd: LONGINT):                         INTEGER "fsync(fd)";
+PROCEDURE -closefile (fd: LONGINT):                         INTEGER "close(fd)";
+PROCEDURE -lseek     (fd: LONGINT; o: LONGINT; r: INTEGER): INTEGER "lseek(fd, o, r)";
+PROCEDURE -ftruncate (fd: LONGINT; l: LONGINT):             INTEGER "ftruncate(fd, l)";
+PROCEDURE -fstat     (fd: LONGINT):                         INTEGER "fstat(fd, &s)";
 
-PROCEDURE -stat      (n: ARRAY OF CHAR):        INTEGER "stat(n, &s)";
-PROCEDURE -unlink    (n: ARRAY OF CHAR):        INTEGER "unlink(n)";
-PROCEDURE -chdir     (n: ARRAY OF CHAR):        INTEGER "chdir(n)";
-PROCEDURE -rename    (o,n: ARRAY OF CHAR):      INTEGER "rename(o,n)";
+PROCEDURE -stat      (n: ARRAY OF CHAR):                    INTEGER "stat(n, &s)";
+PROCEDURE -unlink    (n: ARRAY OF CHAR):                    INTEGER "unlink(n)";
+PROCEDURE -chdir     (n: ARRAY OF CHAR):                    INTEGER "chdir(n)";
+PROCEDURE -rename    (o,n: ARRAY OF CHAR):                  INTEGER "rename(o,n)";
 
 PROCEDURE -getcwd(VAR cwd: ARRAY OF CHAR) "getcwd(cwd, cwd__len)";
 
@@ -282,6 +291,10 @@ PROCEDURE -statdev():   LONGINT "(LONGINT)s.st_dev";
 PROCEDURE -statino():   LONGINT "(LONGINT)s.st_ino";
 PROCEDURE -statmtime(): LONGINT "(LONGINT)s.st_mtime";
 PROCEDURE -statsize():  LONGINT "(LONGINT)s.st_size";
+
+PROCEDURE -seekset(): INTEGER "SEEK_SET";
+PROCEDURE -seekcur(): INTEGER "SEEK_CUR";
+PROCEDURE -seekend(): INTEGER "SEEK_END";
 
 
 
@@ -311,7 +324,7 @@ END New;
 PROCEDURE Identify*(h: FileHandle; VAR identity: FileIdentity): ErrorCode;
 BEGIN
   structstats;
-  IF (fstat(h) < 0) THEN RETURN err() END;
+  IF fstat(h) < 0 THEN RETURN err() END;
   identity.volume := statdev();
   identity.index  := statino();
   identity.mtime  := statmtime();
@@ -321,7 +334,7 @@ END Identify;
 PROCEDURE IdentifyByName*(n: ARRAY OF CHAR; VAR identity: FileIdentity): ErrorCode;
 BEGIN
   structstats;
-  IF (stat(n) < 0) THEN RETURN err() END;
+  IF stat(n) < 0 THEN RETURN err() END;
   identity.volume := statdev();
   identity.index  := statino();
   identity.mtime  := statmtime();
@@ -331,7 +344,7 @@ END IdentifyByName;
 PROCEDURE Size*(h: FileHandle; VAR l: LONGINT): ErrorCode;
 BEGIN
   structstats;
-  IF (fstat(h) < 0) THEN RETURN err() END;
+  IF fstat(h) < 0 THEN RETURN err() END;
   l := statsize();
   RETURN 0;
 END Size;
@@ -367,9 +380,9 @@ BEGIN
   IF fsync(h) < 0 THEN RETURN err() ELSE RETURN 0 END
 END Sync;
 
-PROCEDURE Seek*(h: FileHandle; o: LONGINT): ErrorCode;
+PROCEDURE Seek*(h: FileHandle; o: LONGINT; r: INTEGER): ErrorCode;
 BEGIN
-  IF lseek(h, o) < 0 THEN RETURN err() ELSE RETURN 0 END
+  IF lseek(h, o, r) < 0 THEN RETURN err() ELSE RETURN 0 END
 END Seek;
 
 PROCEDURE Truncate*(h: FileHandle; l: LONGINT): ErrorCode;
@@ -415,5 +428,9 @@ BEGIN
   TimeStart   := Time();
   CWD         := "";  getcwd(CWD);
   PID         := getpid();
+
+  SeekSet    := seekset();
+  SeekCur    := seekcur();
+  SeekEnd    := seekend();
 END Platform.
 

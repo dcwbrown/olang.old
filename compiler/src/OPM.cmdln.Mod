@@ -202,7 +202,7 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
       Console.String("  a - don't check ASSERTs at runtime, use this option in tested production code"); Console.Ln;
       Console.String("  p - turn off automatic pointer initialization"); Console.Ln;
       Console.String("  t - don't check type guards (use in rare cases such as low-level modules where every cycle counts)"); Console.Ln;
-      Console.String("  P - use .par file"); Console.Ln;
+      Console.String("  P - use BasicTypeParameters file"); Console.Ln;
       Console.String("  S - don't call external assembler/compiler, only generate C code"); Console.Ln;
       Console.String("  c - don't call linker"); Console.Ln;
       Console.String("  f - don't use color output"); Console.Ln;
@@ -266,15 +266,15 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
     s:=""; Platform.GetArg(S, s);
 
     NEW(T); Texts.Open(T, s);
-    LogWStr(s);
+    (* LogWStr(s); *)
     COPY(s, mname);
     COPY(s, SourceFileName); (* to keep it also in this module -- noch *)
 
     IF T.len = 0 THEN
-      LogWStr(" not found"); LogLn
+      LogWStr(s); LogWStr(" not found"); LogLn
     ELSE
       Texts.OpenReader(inR, T, 0);
-      LogWStr("  translating");
+      (* LogWStr("  translating"); *)
       done := TRUE
     END;
 
@@ -912,7 +912,7 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
   PROCEDURE CloseFiles*;
     VAR FName: ARRAY 32 OF CHAR; res: INTEGER;
   BEGIN
-    IF noerr THEN LogWStr("    "); LogWInt(Files.Pos(R[BodyFile]), 0) END ;
+    (* IF noerr THEN LogWStr("    "); LogWInt(Files.Pos(R[BodyFile]), 0) END; *)
     IF noerr THEN
       IF modName = "SYSTEM" THEN
         IF ~(mainprog IN opt) THEN Files.Register(BFile) END
