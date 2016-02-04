@@ -1,7 +1,7 @@
 # Select (uncomment) one of the following compilers:
 
-CC = clang -fPIC -Wno-pointer-sign -g
-#CC = gcc -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast -g
+#CC = clang -fPIC -Wno-pointer-sign -g
+CC = gcc -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast -g
 
 OLANG_VERSION = 0.5
 OLANG_ROOT    = /opt
