@@ -12,13 +12,13 @@ OLANG_ROOT    = /opt
 # The build variables are writtn to 'make.include' which is then loaded by
 # the following line.
 
-MAKEINCLUDEVARS != $(CC) -D OLANG_CC="$(CC)" -D OLANG_VERSION=$(OLANG_VERSION) -D OLANG_ROOT=$(OLANG_ROOT) -o a.o src/EstablishParameters.c; ./a.o; rm a.o
+MAKEINCLUDEVARS != $(CC) -D OLANG_CC="$(CC)" -D OLANG_VERSION=$(OLANG_VERSION) -D OLANG_ROOT=$(OLANG_ROOT) -o a.o buildtool/EstablishParameters.c; ./a.o; rm a.o
 include ./make.include
 
 
-INCLUDEPATH = -I../src
 
 .phony: all selectplatform translatetoc compilec setnew setbackup restorebackup clean install
+.phony: v4 ooc2 ooc oocX ulm pow32 misc s3
 
 
 all: translatetoc compilec
@@ -51,12 +51,12 @@ translatetoc:
 
 
 compilec:
-	cd $(BUILDDIR) && $(CC) -c $(INCLUDEPATH)                       \
+	cd $(BUILDDIR) && $(CC) -c -I../src                             \
 	Platform.c Heap.c Console.c Modules.c Strings.c Configuration.c \
 	../src/SYSTEM.c Files.c Reals.c Texts.c vt100.c extTools.c      \
 	OPM.c OPS.c OPT.c OPC.c OPV.c OPB.c OPP.c errors.c
 
-	cd $(BUILDDIR) && $(CC) -static $(INCLUDEPATH)                       \
+	cd $(BUILDDIR) && $(CC) -static -I../src                             \
 	olang.c -o ../olang$(BINEXT)  Platform.o Heap.o Console.o Modules.o  \
 	Strings.o Configuration.o Files.o Reals.o Texts.o vt100.o extTools.o \
 	SYSTEM.o OPM.o OPS.o OPT.o OPC.o OPV.o OPB.o OPP.o errors.o
@@ -109,7 +109,7 @@ ooc:
 	cd $(BUILDDIR); MODULES=../libsrc/ooc  ../bin/$(OLANGNAME) -PFs oocJulianDay.Mod
 	cd $(BUILDDIR); MODULES=../libsrc/ooc  ../bin/$(OLANGNAME) -PFs oocFilenames.Mod
 	cd $(BUILDDIR); MODULES=../libsrc/ooc  ../bin/$(OLANGNAME) -PFs oocwrapperlibc.Mod
-	cd $(BUILDDIR); MODULES=../libsrc/ooc  ../bin/$(OLANGNAME) -PFs oocC.Mod
+	cd $(BUILDDIR); MODULES=../libsrc/ooc  ../bin/$(OLANGNAME) -PFs oocC$(CPUARCH).Mod
 
 oocX:
 	cd $(BUILDDIR); MODULES=../libsrc/oocX ../bin/$(OLANGNAME) -PFs oocX11.Mod
