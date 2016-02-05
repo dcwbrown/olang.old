@@ -45,10 +45,11 @@ void computeParameters() {
 
 
 void writeCTypes() {
-  printf("os        cpu     compiler  char  short  int  long  long long\n");
-  printf("%-8.8s  %-6.6s  %-8.8s  %4d  %5d  %3d  %4d  %9d\n",
+  printf("os        cpu     compiler  char  short  int  long  long long  void*\n");
+  printf("%-8.8s  %-6.6s  %-8.8s  %4d  %5d  %3d  %4d  %9d  %5d\n",
     osarch, cpuarch, ccomp,
-    sizeof(char), sizeof(short), sizeof(int), sizeof(long), sizeof(long long));
+    (int)sizeof(char), (int)sizeof(short), (int)sizeof(int),
+		(int)sizeof(long), (int)sizeof(long long), (int)sizeof(void*));
 }
 
 
