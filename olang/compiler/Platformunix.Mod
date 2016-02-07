@@ -274,7 +274,7 @@ PROCEDURE -err(): INTEGER "errno";
 (* Note: Consider also using flags O_SYNC and O_DIRECT as we do buffering *)
 PROCEDURE -openrw (n: ARRAY OF CHAR): INTEGER "open(n, O_RDWR)";
 PROCEDURE -openro (n: ARRAY OF CHAR): INTEGER "open(n, O_RDONLY)";
-PROCEDURE -opennew(n: ARRAY OF CHAR): INTEGER "open(n, O_CREAT | O_TRUNC | O_RDWR, 0660)";
+PROCEDURE -opennew(n: ARRAY OF CHAR): INTEGER "open(n, O_CREAT | O_TRUNC | O_RDWR, 0664)";
 
 PROCEDURE -writefile(fd: LONGINT; p: LONGINT; l: LONGINT): LONGINT "write(fd, (void*)p, l)";
 PROCEDURE -readfile (fd: LONGINT; p: LONGINT; l: LONGINT): LONGINT "read(fd, (void*)p, l)";

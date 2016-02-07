@@ -223,14 +223,13 @@ install:
 	rm -f $(PREFIXLN)
 	ln -fs $(PREFIX) $(PREFIXLN)
 
-	cp compiler/*.h       $(PREFIX)/include/
-	cp $(BUILDDIR)/*.h    $(PREFIX)/include/
-	cp $(BUILDDIR)/*.sym  $(PREFIX)/sym/
-	cp olang$(BINEXT)     $(PREFIX)/bin/
+	cp -p compiler/*.h       $(PREFIX)/include/
+	cp -p $(BUILDDIR)/*.h    $(PREFIX)/include/
+	cp -p $(BUILDDIR)/*.sym  $(PREFIX)/sym/
+	cp -p olang$(BINEXT)     $(PREFIX)/bin/
 
 #	Make the object library
 	ar rcs $(PREFIX)/libolang.a $(BUILDDIR)/*.o
 
 #	Link /usr/bin/olang to the new binary
 	ln -fs $(PREFIX)/bin/olang$(BINEXT) /usr/bin/olang$(BINEXT)
-
