@@ -1,1 +1,1 @@
-make clean && make && make setnew && make clean && make && make setnew && make install && make library && make install
+make clean && make && make setnew && make clean && make && make setnew && sudo make install && make library && sudo make install
