@@ -1,9 +1,8 @@
-if $(command -v sudo 2>nul); then
+if command -v "sudo"; then
   export install="sudo make install"
 else
   export install="make install"
 fi
-echo Install command is: ${install}
 make clean 
 make 
 make setnew 
