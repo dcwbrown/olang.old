@@ -84,11 +84,17 @@ BEGIN RETURN (e = ENOENT()) END Absent;
 
 
 
+(* OS memory allocaton *)
+
+PROCEDURE -allocate(size: LONGINT): LONGINT "(LONGINT)((void*)malloc((size_t)size))";
+PROCEDURE Allocate*(size: LONGINT): LONGINT; BEGIN RETURN allocate(size) END Allocate;
+
+
+
 
 (* Program startup *)
 
 PROCEDURE -HeapInitHeap()       "Heap_InitHeap()";
-PROCEDURE -HeapModuleInit()     "Heap__init()";
 PROCEDURE -PlatformModuleInit() "Platform__init()";
 
 PROCEDURE Init*(argc: INTEGER; argvadr: LONGINT);

@@ -1,36 +1,65 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-//#include <time.h>
-//#include <sys/types.h>
-//#include <sys/stat.h>
-//#include <fcntl.h>
-#include <sys/utsname.h>
+#include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+#ifndef __MINGW32__
+  #include <sys/utsname.h>
+#endif
+
 
 void fail(char *msg) {printf("%s\n", msg); exit(1);}
 
-struct utsname sys;
 
 char* cpuarch  = "unknown";
-char* osarch   = "unknown";
 char* ccomp    = "unknown";
+
+#ifdef __MINGW32__
+char* osarch   = "mingw";
+#else
+char* osarch   = "unknown";
+struct utsname sys;
+#endif
 
 
 void computeParameters() {
-  if (uname(&sys)<0) fail("Couldn't get sys name - uname() failed.");
+  #ifndef __MINGW32__
+    if (uname(&sys)<0) fail("Couldn't get sys name - uname() failed.");
+  
+    if      (strncasecmp(sys.sysname, "cygwin",  6) == 0) {osarch = "cygwin";}
+    else if (strncasecmp(sys.sysname, "linux",   5) == 0) {osarch = "linux";}
+    else if (strncasecmp(sys.sysname, "freebsd", 5) == 0) {osarch = "freebsd";}
+    else fail("Unrecognised OS architecture name returned by uname.");
+  #endif
 
-  // Normalise os and cpu architecture names
-
-  if      (strncasecmp(sys.sysname, "cygwin",  6) == 0) {osarch = "cygwin";}
-  else if (strncasecmp(sys.sysname, "linux",   5) == 0) {osarch = "linux";}
-  else if (strncasecmp(sys.sysname, "freebsd", 5) == 0) {osarch = "freebsd";}
-  else fail("Unrecognised OS architecture name returned by uname.");
-
-  if      (strncasecmp(sys.machine, "i686",   6) == 0) cpuarch = "i686";
-  else if (strncasecmp(sys.machine, "x86",    4) == 0) cpuarch = "i686";
-  else if (strncasecmp(sys.machine, "x86_64", 6) == 0) cpuarch = "amd64";
-  else if (strncasecmp(sys.machine, "amd64",  5) == 0) cpuarch = "amd64";
-  else fail("Unrecognised machine architecture name returned by uname.");
+  // Deermine memory model
+  if (sizeof (void*) == 4) {
+    // 32 bit address space, LP32 or ILP32
+    if (sizeof(long) != 4) fail("long not 32 bits in 32 bit address architecture.");
+    if (sizeof(int) == 2) {
+      cpuarch = "LP32";   // Win 16 (Windows 3.x)
+    } else if (sizeof(int) == 4) {
+      cpuarch = "ILP32";  // Modern 32 bit architectures
+    } else fail("int neither 16 nor 32 bits in 32 bit address architecture.");
+  } else if (sizeof (void*) == 8) {
+    // 64 bit address space
+    if (sizeof(long long) != 8) fail("long long not 64 bits in 64 bit address architecture.");
+    if (sizeof(int) == 4) { // LP64 or LLP64
+      if (sizeof(long) == 4) {
+        cpuarch = "LLP64";
+      } else if (sizeof(long) == 8) {
+        cpuarch = "LP64";
+      } else fail("long neither 32 bits nor 64 bits in 64 bit address architecture.");
+    } else if (sizeof(int) == 8) { // ILP64
+      if (sizeof(long) != 8) fail("long not 64 bits in 64 bit address architecture though int is 64 bits.");
+      cpuarch = "ILP64";
+    } else fail ("int neither 32 nor 64 bits in 64 bit address architecture.");
+  } else {
+    fail("Pointer size neither 32 bits nor 64 bits.");
+  }
 
   #if defined(__clang__)
   ccomp = "clang";

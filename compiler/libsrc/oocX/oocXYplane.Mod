@@ -196,7 +196,7 @@ PROCEDURE Open*;
                   (*X11.XDefaultVisual (display, X11.XDefaultScreen (display)),*)
                   vis,
                   (*1, X11.XYBitmap, 0, SYSTEM.ADR (map^), W, H, sizeSet, 0);*)
-                  1, X11.ZPixmap, 0, SYSTEM.ADR (map^), W, H, (*sizeSet*)32, 0);
+                  1, X11.ZPixmap, 0, SYSTEM.VAL(C.address,SYSTEM.ADR(map^)), W, H, (*sizeSet*)32, 0);
 
         (* wait until the window manager gives its ok to draw things *)
         X11.XMaskEvent(display, X11.ExposureMask, event);

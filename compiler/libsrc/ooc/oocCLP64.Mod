@@ -1,5 +1,8 @@
 (* 	$Id: C.Mod,v 1.9 1999/10/03 11:46:01 ooc-devel Exp $	 *)
 MODULE oocC;
+
+(* LP64 model *)
+
 (*  Basic data types for interfacing to C code.
     Copyright (C) 1997-1998  Michael van Acken
 
@@ -27,27 +30,22 @@ Unix they should be fairly safe.
 *)  
 
 TYPE
-  char*       = CHAR;                  
-  signedchar* = SHORTINT; 
-  (* Oberon does not have a 16 bit integer type.
-    shortint*   = INTEGER;  
-  *)
-  int*        = INTEGER;     
-  (* set is 1 64 bit type in olang
-    set*        = SET; 
-  *)
-  longint*    = INTEGER;  (* Window builds *)
-  (*longset*  = SYSTEM.SET64;  *)                      (* unsigned long, used as set *)
-  longset*    = SET;
-  address*    = INTEGER;  (* 32 bit builds *)
-  float*      = REAL;
-  double*     = LONGREAL;
+  char*       = CHAR;                        (*  8 bits *)             
+  signedchar* = SHORTINT;                    (*  8 bits *)
+  shortint*   = RECORD a,b: SYSTEM.BYTE END; (* 16 bits *)
+  int*        = INTEGER;                     (* 32 bits *)     
+  set*        = INTEGER;                     (* 32 bits *) 
+  longint*    = LONGINT;                     (* 64 bits *)
+  longset*    = SET;                         (* 64 bits *)
+  address*    = LONGINT;                     (* 64 bits *)
+  float*      = REAL;                        (* 32 bits *)
+  double*     = LONGREAL;                    (* 64 bits *)
 
+  enum1* = int;
   (*
-    enum1* = int;
     enum2* = int;
+    enum4* = int;
   *)
-  enum4* = int;
   
   FILE*  = address;  (* this is acually a replacement for `FILE*', i.e., for a pointer type *)
   sizet* = longint;

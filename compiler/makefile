@@ -9,10 +9,10 @@ OLANG_ROOT    = /opt
 # The '!=' assignemnt below compiles and runs 'EstablishParameters.c', which
 # determines all the machine specific build variables and creates the parameter
 # files 'Configuration.Mod' and 'BasicTypeParameters' in the build directory.
-# The build variables are writtn to 'make.include' which is then loaded by
+# The build variables are written to 'make.include' which is then loaded by
 # the following line.
 
-MAKEINCLUDEVARS != $(CC) -D OLANG_CC="$(CC)" -D OLANG_VERSION=$(OLANG_VERSION) -D OLANG_ROOT=$(OLANG_ROOT) -o a.o buildtool/EstablishParameters.c; ./a.o; rm a.o
+MAKEINCLUDEVARS != $(CC) -D OLANG_CC="$(CC)" -D OLANG_VERSION=$(OLANG_VERSION) -D OLANG_ROOT=$(OLANG_ROOT) -I src -o a.o buildtool/EstablishParameters.c; ./a.o; rm a.o
 include ./make.include
 
 
