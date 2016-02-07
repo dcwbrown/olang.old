@@ -1,0 +1,12 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = false
+	logallrefupdates = true
+	ignorecase = true
+	autocrlf = input
+[user]
+	email = dave@brownsmeet.com
+	name = David
+[push]
+	default = simple
