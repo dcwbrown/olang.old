@@ -161,7 +161,7 @@ extern void       Heap_REGTYP();
 extern void       Heap_INCREF();
 
 #define __DEFMOD	          static void *m; if (m!=0) {return m;}
-#define __REGCMD(name, cmd)	  Heap_REGCMD(m, name, cmd)
+#define __REGCMD(name, cmd)	  Heap_REGCMD(m, (CHAR*)name, cmd)
 #define __REGMOD(name, enum)  if (m==0) {m = Heap_REGMOD((CHAR*)name,enum);}
 #define __ENDMOD	          return m
 #define __MODULE_IMPORT(name) Heap_INCREF(name##__init())

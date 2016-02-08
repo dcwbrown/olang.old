@@ -96,13 +96,13 @@ void computeParameters() {
   time_t t = time(0);
   strftime(builddate, sizeof(builddate), "%Y/%m/%d", localtime(&t));
 
-  #ifdef __MINGW32__
+  #if defined(__MINGW32__)
   ccomp = "mingw";
   if (sizeof (void*) == 4) {
     cc = "i686-w64-mingw32-gcc -g"; 
   else 
     cc = "x86_64-w64-mingw32-gcc -g";
-  #elsif defined(__clang__)
+  #elif defined(__clang__)
   ccomp = "clang";
   cc    = "clang -g";
   #elif defined(__GNUC__)

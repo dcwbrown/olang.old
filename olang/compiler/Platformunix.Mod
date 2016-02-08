@@ -118,7 +118,7 @@ END Init;
 
 (* Program arguments and environmet access *)
 
-PROCEDURE -getenv(var: ARRAY OF CHAR): EnvPtr "(Platform_EnvPtr)getenv(var)";
+PROCEDURE -getenv(var: ARRAY OF CHAR): EnvPtr "(Platform_EnvPtr)getenv((char*)var)";
 
 PROCEDURE getEnv*(var: ARRAY OF CHAR; VAR val: ARRAY OF CHAR): BOOLEAN;
   VAR p: EnvPtr;
@@ -259,7 +259,7 @@ END Delay;
 
 (* System call *)
 
-PROCEDURE -system(str: ARRAY OF CHAR): INTEGER "system(str)";
+PROCEDURE -system(str: ARRAY OF CHAR): INTEGER "system((char*)str)";
 
 PROCEDURE System*(cmd : ARRAY OF CHAR): INTEGER;
 BEGIN RETURN system(cmd); END System;
@@ -272,9 +272,9 @@ BEGIN RETURN system(cmd); END System;
 PROCEDURE -err(): INTEGER "errno";
 
 (* Note: Consider also using flags O_SYNC and O_DIRECT as we do buffering *)
-PROCEDURE -openrw (n: ARRAY OF CHAR): INTEGER "open(n, O_RDWR)";
-PROCEDURE -openro (n: ARRAY OF CHAR): INTEGER "open(n, O_RDONLY)";
-PROCEDURE -opennew(n: ARRAY OF CHAR): INTEGER "open(n, O_CREAT | O_TRUNC | O_RDWR, 0664)";
+PROCEDURE -openrw (n: ARRAY OF CHAR): INTEGER "open((char*)n, O_RDWR)";
+PROCEDURE -openro (n: ARRAY OF CHAR): INTEGER "open((char*)n, O_RDONLY)";
+PROCEDURE -opennew(n: ARRAY OF CHAR): INTEGER "open((char*)n, O_CREAT | O_TRUNC | O_RDWR, 0664)";
 
 PROCEDURE -writefile(fd: LONGINT; p: LONGINT; l: LONGINT): LONGINT "write(fd, (void*)(uintptr_t)(p), l)";
 PROCEDURE -readfile (fd: LONGINT; p: LONGINT; l: LONGINT): LONGINT "read(fd, (void*)(uintptr_t)(p), l)";
@@ -285,12 +285,12 @@ PROCEDURE -lseek     (fd: LONGINT; o: LONGINT; r: INTEGER): INTEGER "lseek(fd, o
 PROCEDURE -ftruncate (fd: LONGINT; l: LONGINT):             INTEGER "ftruncate(fd, l)";
 PROCEDURE -fstat     (fd: LONGINT):                         INTEGER "fstat(fd, &s)";
 
-PROCEDURE -stat      (n: ARRAY OF CHAR):                    INTEGER "stat(n, &s)";
-PROCEDURE -unlink    (n: ARRAY OF CHAR):                    INTEGER "unlink(n)";
-PROCEDURE -chdir     (n: ARRAY OF CHAR):                    INTEGER "chdir(n)";
-PROCEDURE -rename    (o,n: ARRAY OF CHAR):                  INTEGER "rename(o,n)";
+PROCEDURE -stat      (n: ARRAY OF CHAR):                    INTEGER "stat((char*)n, &s)";
+PROCEDURE -unlink    (n: ARRAY OF CHAR):                    INTEGER "unlink((char*)n)";
+PROCEDURE -chdir     (n: ARRAY OF CHAR):                    INTEGER "chdir((char*)n)";
+PROCEDURE -rename    (o,n: ARRAY OF CHAR):                  INTEGER "rename((char*)o, (char*)n)";
 
-PROCEDURE -getcwd(VAR cwd: ARRAY OF CHAR) "getcwd(cwd, cwd__len)";
+PROCEDURE -getcwd(VAR cwd: ARRAY OF CHAR) "getcwd((char*)cwd, cwd__len)";
 
 PROCEDURE -structstats          "struct stat s";
 PROCEDURE -statdev():   LONGINT "(LONGINT)s.st_dev";

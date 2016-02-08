@@ -2025,7 +2025,7 @@ PROCEDURE XGetSubImage* (
  * X function declarations.
  *)
  *)
-PROCEDURE -XOpenDisplay* (name: ARRAY OF C.char): DisplayPtr "(oocX11_DisplayPtr)XOpenDisplay(name)";
+PROCEDURE -XOpenDisplay* (name: ARRAY OF C.char): DisplayPtr "(oocX11_DisplayPtr)XOpenDisplay((char*)name)";
 
 PROCEDURE OpenDisplay* (name: ARRAY OF C.char): DisplayPtr;
 BEGIN
@@ -3448,7 +3448,7 @@ PROCEDURE -XStoreName* (
     display: DisplayPtr;
     window: Window;
     name: ARRAY OF C.char)
-    "XStoreName((struct _XDisplay*)display, window, name)";
+    "XStoreName((struct _XDisplay*)display, window, (char*)name)";
 (*
 PROCEDURE XStoreNamedColor* (
     display: DisplayPtr;

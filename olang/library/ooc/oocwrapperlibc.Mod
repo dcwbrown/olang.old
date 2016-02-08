@@ -12,7 +12,7 @@ END system;
 
 
 PROCEDURE -sprntf(s, t0, t1, t2: ARRAY OF CHAR): INTEGER
-   "sprintf(s, t0, t1, t2)";
+   "sprintf((char*)s, (char*)t0, (char*)t1, (char*)t2)";
 
 PROCEDURE sprintf*(VAR s: ARRAY OF CHAR; template0: ARRAY OF CHAR; template1: ARRAY OF CHAR; template2: ARRAY OF CHAR);
 VAR r : INTEGER;

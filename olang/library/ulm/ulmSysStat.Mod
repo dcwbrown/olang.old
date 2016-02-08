@@ -130,7 +130,7 @@ MODULE ulmSysStat;
    PROCEDURE -statctime():   LONGINT "(LONGINT)s.st_ctime";
 
    PROCEDURE -fstat(fd: LONGINT):      INTEGER "fstat(fd, &s)";
-   PROCEDURE -stat (n: ARRAY OF CHAR): INTEGER "stat(n, &s)";
+   PROCEDURE -stat (n: ARRAY OF CHAR): INTEGER "stat((char*)n, &s)";
 
    PROCEDURE -err(): INTEGER "errno";
 
