@@ -169,7 +169,7 @@ MODULE Heap;
      correctly regardless of the size of an address. Specifically on 32 bit address
      architectures with 64 bit LONGINT, it loads 32 bits and extends it to LONGINT 
      rather than loading 64 bits. *)
-  PROCEDURE -FetchAddress(pointer: LONGINT): LONGINT "(LONGINT)(*((void**)(pointer)))";
+  PROCEDURE -FetchAddress(pointer: LONGINT): LONGINT "(LONGINT)(uintptr_t)(*((void**)((uintptr_t)pointer)))";
 
   PROCEDURE ExtendHeap(blksz: LONGINT);
     VAR size, chnk, j, next: LONGINT;
@@ -552,7 +552,8 @@ MODULE Heap;
   END RegisterFinalizer;
 
 
-  PROCEDURE -HeapModuleInit 'Heap__init()';
+PROCEDURE -ExternHeapInit "extern void *Heap__init();";
+PROCEDURE -HeapModuleInit 'Heap__init()';
 
   PROCEDURE InitHeap*;
   (* InitHeap is called by Platform.init before any module bodies have been

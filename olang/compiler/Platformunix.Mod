@@ -84,9 +84,10 @@ BEGIN RETURN (e = ENOENT()) END Absent;
 
 
 
+
 (* OS memory allocaton *)
 
-PROCEDURE -allocate(size: LONGINT): LONGINT "(LONGINT)((void*)malloc((size_t)size))";
+PROCEDURE -allocate(size: LONGINT): LONGINT "(LONGINT)(uintptr_t)((void*)malloc((size_t)size))";
 PROCEDURE Allocate*(size: LONGINT): LONGINT; BEGIN RETURN allocate(size) END Allocate;
 
 
@@ -94,8 +95,8 @@ PROCEDURE Allocate*(size: LONGINT): LONGINT; BEGIN RETURN allocate(size) END All
 
 (* Program startup *)
 
-PROCEDURE -HeapInitHeap()       "Heap_InitHeap()";
-PROCEDURE -PlatformModuleInit() "Platform__init()";
+PROCEDURE -ExternInitHeap  "extern void Heap_InitHeap();";
+PROCEDURE -HeapInitHeap()  "Heap_InitHeap()";
 
 PROCEDURE Init*(argc: INTEGER; argvadr: LONGINT);
 VAR  av: ArgVecPtr;
@@ -107,10 +108,9 @@ BEGIN
   HaltCode       := -128;
 
   (* This function (Platform.Init) is called at program startup BEFORE any
-     modules have been initalised. In turn we must initialise first the heap
-     itself, then the platform module. *)
+     modules have been initalised. In turn we must initialise the heap
+     before module startup (xxx__init) code is run. *)
   HeapInitHeap();
-  PlatformModuleInit();
 END Init;
 
 
@@ -276,8 +276,8 @@ PROCEDURE -openrw (n: ARRAY OF CHAR): INTEGER "open(n, O_RDWR)";
 PROCEDURE -openro (n: ARRAY OF CHAR): INTEGER "open(n, O_RDONLY)";
 PROCEDURE -opennew(n: ARRAY OF CHAR): INTEGER "open(n, O_CREAT | O_TRUNC | O_RDWR, 0664)";
 
-PROCEDURE -writefile(fd: LONGINT; p: LONGINT; l: LONGINT): LONGINT "write(fd, (void*)p, l)";
-PROCEDURE -readfile (fd: LONGINT; p: LONGINT; l: LONGINT): LONGINT "read(fd, (void*)p, l)";
+PROCEDURE -writefile(fd: LONGINT; p: LONGINT; l: LONGINT): LONGINT "write(fd, (void*)(uintptr_t)(p), l)";
+PROCEDURE -readfile (fd: LONGINT; p: LONGINT; l: LONGINT): LONGINT "read(fd, (void*)(uintptr_t)(p), l)";
 
 PROCEDURE -fsync     (fd: LONGINT):                         INTEGER "fsync(fd)";
 PROCEDURE -closefile (fd: LONGINT):                         INTEGER "close(fd)";

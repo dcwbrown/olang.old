@@ -46,7 +46,7 @@ char* prefixln = macrotostring(OLANG_ROOT) "/olang";
 char* version  = macrotostring(OLANG_VERSION);
 char* cpuarch  = "unknown";
 char* ccomp    = "unknown";
-char* cc       = macrotostring(OLANG_CC);
+char* cc       = "unknown";
 char* binext   = "";
 
 #ifdef __MINGW32__
@@ -96,14 +96,21 @@ void computeParameters() {
   time_t t = time(0);
   strftime(builddate, sizeof(builddate), "%Y/%m/%d", localtime(&t));
 
-  #if defined(__clang__)
+  #ifdef __MINGW32__
+  ccomp = "mingw";
+  if (sizeof (void*) == 4) {
+    cc = "i686-w64-mingw32-gcc -g"; 
+  else 
+    cc = "x86_64-w64-mingw32-gcc -g";
+  #elsif defined(__clang__)
   ccomp = "clang";
+  cc    = "clang -g";
   #elif defined(__GNUC__)
   ccomp = "gcc";
+  cc    = "gcc -g";
   #elif defined(_MSC_VER)
   ccomp = "msc";
-  #else
-  ccomp = "unknown";
+  cc    = "cl";
   #endif
 
   sprintf(flavour,   "%s.%s.%s",   ccomp, osarch, cpuarch);
@@ -137,10 +144,7 @@ struct {CHAR ch; LONGREAL x;} rec1;
 struct {char x[65];} rec2;
 
 void writeBasicTypeParameters() {
-  char fn[256];
-  strcpy(fn, builddir); 
-  strcat(fn, "/BasicTypeParameters");
-  FILE *fd = fopen(fn, "w");
+  FILE *fd = fopen("BasicTypeParameters", "w");
   if (fd == NULL) fail("Couldn't create BasicTypeParameters.");
 
   /* get size and alignment of standard types */
@@ -212,6 +216,7 @@ void writeMakeParameters() {
   fprintf(fd, "BUILDDIR  = %s\n", builddir);
   fprintf(fd, "OLANGNAME = %s\n", olangname);
   fprintf(fd, "BINEXT    = %s\n", binext);
+  fprintf(fd, "CC        = %s\n", cc);
 
   fclose(fd);
 }
@@ -220,10 +225,7 @@ void writeMakeParameters() {
 
 
 void writeConfigurationMod() {
-  char fn[256];
-  strcpy(fn, builddir); 
-  strcat(fn, "/Configuration.Mod");
-  FILE *fd = fopen(fn, "w");
+  FILE *fd = fopen("Configuration.Mod", "w");
   if (fd == NULL) fail("Couldn't create Configuration.Mod.");
 
   fprintf(fd, "MODULE Configuration;\n");

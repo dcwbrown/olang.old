@@ -101,7 +101,7 @@ SYSTEM_PTR SYSTEM_NEWARR(LONGINT *typ, LONGINT elemsz, int elemalgn, int nofdim,
 	else if (typ == (LONGINT*)POINTER__typ) {
 		/* element type is a pointer */
 		x = Heap_NEWBLK(size + nofelems * sizeof(LONGINT));
-		p = (LONGINT*)x[-1];
+		p = (LONGINT*)(uintptr_t)x[-1];
 		p[-nofelems] = *p;	/* build new type desc in situ: 1. copy block size; 2. setup ptr tab; 3. set sentinel; 4. patch tag */
 		p -= nofelems - 1; n = 1;	/* n =1 for skipping the size field */
 		while (n <= nofelems) {*p = n*sizeof(LONGINT); p++; n++;}
@@ -114,7 +114,7 @@ SYSTEM_PTR SYSTEM_NEWARR(LONGINT *typ, LONGINT elemsz, int elemalgn, int nofdim,
 		while (ptab[nofptrs] >= 0) {nofptrs++;}	/* number of pointers per element */
 		nptr = nofelems * nofptrs;	/* total number of pointers */
 		x = Heap_NEWBLK(size + nptr * sizeof(LONGINT));
-		p = (LONGINT*)x[- 1];
+		p = (LONGINT*)(uintptr_t)x[- 1];
 		p[-nptr] = *p;	/* build new type desc in situ; 1. copy block size; 2. setup ptr tab; 3. set sentinel; 4. patch tag */
 		p -= nptr - 1; n = 0; off = dataoff;
 		while (n < nofelems) {i = 0;

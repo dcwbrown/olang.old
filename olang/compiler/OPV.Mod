@@ -642,7 +642,7 @@ MODULE OPV;  (* J. Templ 16.2.95 / 3.7.96
           |  odd:
                 OPM.WriteString("__ODD("); expr(l, MinPrec); OPM.Write(CloseParen)
           |  adr: (*SYSTEM*)
-                OPM.WriteString("(LONGINT)");
+                OPM.WriteString("(LONGINT)(uintptr_t)");
                 IF l^.class = Nvarpar THEN OPC.CompleteIdent(l^.obj)
                 ELSE
                   IF (l^.typ^.form # String) & ~(l^.typ^.comp IN {Array, DynArr}) THEN OPM.Write("&") END ;
@@ -652,9 +652,17 @@ MODULE OPV;  (* J. Templ 16.2.95 / 3.7.96
                 IF (n^.typ^.form IN {LInt, Pointer, Set, ProcTyp}) & (l^.typ^.form IN {LInt, Pointer, Set, ProcTyp})
                 & (n^.typ^.size = l^.typ^.size) OR ~(l^.class IN {Nvar, Nvarpar, Nfield, Nindex}) THEN
                   OPM.Write(OpenParen); OPC.Ident(n^.typ^.strobj); OPM.Write(CloseParen);
+                  IF (n^.typ^.form IN {Pointer, ProcTyp}) OR (l^.typ^.form IN {Pointer, ProcTyp}) THEN
+                    OPM.WriteString("(uintptr_t)")
+                  END;
                   expr(l, exprPrec)
                 ELSE
-                  OPM.WriteString("__VAL("); OPC.Ident(n^.typ^.strobj); OPM.WriteString(Comma);
+                  IF (n^.typ^.form IN {Pointer, ProcTyp}) OR (l^.typ^.form IN {Pointer, ProcTyp}) THEN
+                    OPM.WriteString("__VALP("); 
+                  ELSE
+                    OPM.WriteString("__VAL("); 
+                  END;
+                  OPC.Ident(n^.typ^.strobj); OPM.WriteString(Comma);
                   expr(l, MinPrec); OPM.Write(CloseParen)
                 END
           ELSE OPM.err(200)

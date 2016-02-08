@@ -1,7 +1,7 @@
 # Select (uncomment) one of the following compilers:
 
 #CC = clang -fPIC -Wno-pointer-sign -g
-CC = gcc -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast -g
+#CC = gcc -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast -g
 
 OLANG_VERSION = 0.5
 OLANG_ROOT    = /opt
@@ -12,7 +12,7 @@ OLANG_ROOT    = /opt
 # The build variables are written to 'make.include' which is then loaded by
 # the following line.
 
-MAKEINCLUDEVARS != $(CC) -D OLANG_CC="$(CC)" -D OLANG_VERSION=$(OLANG_VERSION) -D OLANG_ROOT=$(OLANG_ROOT) -I compiler -o a.o buildtool/EstablishParameters.c; ./a.o; rm a.o
+#MAKEINCLUDEVARS != clang -D OLANG_CC="$(CC)" -D OLANG_VERSION=$(OLANG_VERSION) -D OLANG_ROOT=$(OLANG_ROOT) -I compiler -o a.o buildtool/EstablishParameters.c; ./a.o; rm a.o
 include ./make.include
 
 
@@ -24,11 +24,26 @@ include ./make.include
 all: translatetoc compilec
 
 
-translatetoc:
-#	The following line is temporary, while master binaries still need voc.par
-	cp $(BUILDDIR)/BasicTypeParameters $(BUILDDIR)/voc.par
+nothing:
+	@echo "BUILDDATE = $(BUILDDATE)"
+	@echo "CCOMP     = $(CCOMP)"
+	@echo "OSARCH    = $(OSARCH)"
+	@echo "CPUARCH   = $(CPUARCH)"
+	@echo "PLATFORM  = $(PLATFORM)"
+	@echo "PREFIX    = $(PREFIX)"
+	@echo "PREFIXLN  = $(PREFIXLN)"
+	@echo "FLAVOUR   = $(FLAVOUR)"
+	@echo "BUILDDIR  = $(BUILDDIR)"
+	@echo "OLANGNAME = $(OLANGNAME)"
+	@echo "BINEXT    = $(BINEXT)"
+	@echo "CC        = $(CC)"
 
-	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFs    Configuration.Mod
+
+translatetoc:
+	mkdir -p $(BUILDDIR)
+	cp BasicTypeParameters $(BUILDDIR)
+
+	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFs    ../Configuration.Mod
 	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFs    Platform$(PLATFORM).Mod
 	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSsiapx Heap.Mod
 	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFs    Console.Mod
@@ -203,7 +218,7 @@ s3:
 
 
 clean:
-	rm -f *.c *.h *.o *.Mod *.sym *.exe *.par *.stackdump olang$(BINEXT) make.include $(BUILDDIR)/*
+	rm -f *.c *.h *.o *.sym *.exe *.par *.stackdump olang$(BINEXT) $(BUILDDIR)/*
 
 
 setnew:

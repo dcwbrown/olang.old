@@ -1323,7 +1323,6 @@ MODULE OPC;	(* copyright (c) J. Templ 12.7.95 / 3.7.96 *)
 					OPM.WriteInt(con^.intval)
 (*		|	Int8, Int16, Int32, Int64:
 					OPM.WriteInt(con^.intval)*)
-
 		|	Real:
 					OPM.WriteReal(con^.realval, "f")
 		|	LReal:

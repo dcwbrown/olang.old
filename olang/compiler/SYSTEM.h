@@ -7,7 +7,7 @@
 
 
 // The compiler uses 'import' and 'export' which translate to 'extern' and
-// nothing repectively.
+// nothing respectively.
 
 #define import extern
 #define export
@@ -47,12 +47,7 @@
 
 #define SET unsigned LONGINT
 
-// Expose heap initialisation to main proram so it can
-// be called in the correct order.
 
-extern void Heap_InitHeap();
-extern void *Heap__init();
-extern void *Platform__init();
 
 
 
@@ -74,7 +69,7 @@ extern LONGINT SYSTEM_ENTIER (double x);
 
 // String comparison
 
-static int __STRCMP(CHAR *x, CHAR *y){
+static int __str_cmp(CHAR *x, CHAR *y){
   LONGINT i = 0;
   CHAR ch1, ch2;
   do {ch1 = x[i]; ch2 = y[i]; i++;
@@ -82,6 +77,7 @@ static int __STRCMP(CHAR *x, CHAR *y){
   } while (ch1==ch2);
   return (int)ch1 - (int)ch2;
 }
+#define __STRCMP(a,b) __str_cmp((CHAR*)(a), (CHAR*)(b))
 
 
 
@@ -98,9 +94,10 @@ static int __STRCMP(CHAR *x, CHAR *y){
 
 // #define __VAL(t, x)	    (*(t*)&(x))
 #define __VAL(t, x)	    ((t)(x))
+#define __VALP(t, x)    ((t)(uintptr_t)(x))
 
-#define __GET(a, x, t)	x= *(t*)(a)
-#define __PUT(a, x, t)	*(t*)(a)=x
+#define __GET(a, x, t)	x= *(t*)(uintptr_t)(a)
+#define __PUT(a, x, t)	*(t*)(uintptr_t)(a)=x
 #define __LSHL(x, n, t)	((t)((unsigned t)(x)<<(n)))
 #define __LSHR(x, n, t)	((t)((unsigned t)(x)>>(n)))
 #define __LSH(x, n, t)	((n)>=0? __LSHL(x, n, t): __LSHR(x, -(n), t))
@@ -112,7 +109,7 @@ static int __STRCMP(CHAR *x, CHAR *y){
 #define __ROTR(x, n, t)	((t)((unsigned t)(x)>>(n)|(unsigned t)(x)<<(8*sizeof(t)-(n))))
 #define __ROT(x, n, t)	((n)>=0? __ROTL(x, n, t): __ROTR(x, -(n), t))
 #define __BIT(x, n)	    (*(unsigned LONGINT*)(x)>>(n)&1)
-#define __MOVE(s, d, n)	memcpy((char*)(d),(char*)(s),n)
+#define __MOVE(s, d, n)	memcpy((char*)(uintptr_t)(d),(char*)(uintptr_t)(s),n)
 #define __ASHL(x, n)	((LONGINT)(x)<<(n))
 #define __ASHR(x, n)	((LONGINT)(x)>>(n))
 #define __ASH(x, n)	    ((n)>=0?__ASHL(x,n):__ASHR(x,-(n)))
@@ -177,7 +174,7 @@ extern void Platform_Init(INTEGER argc, LONGINT argv);
 extern void *Platform_MainModule;
 extern void Heap_FINALL();
 
-#define __INIT(argc, argv)    static void *m; Platform_Init((INTEGER)argc, (LONGINT)&argv);
+#define __INIT(argc, argv)    static void *m; Platform_Init((INTEGER)argc, (LONGINT)(uintptr_t)&argv);
 #define __REGMAIN(name, enum) m = Heap_REGMOD((CHAR*)name,enum)
 #define __FINI	              Heap_FINALL(); return 0
 
@@ -198,7 +195,7 @@ extern SYSTEM_PTR Heap_NEWREC (LONGINT tag);
 extern SYSTEM_PTR SYSTEM_NEWARR(LONGINT*, LONGINT, int, int, int, ...);
 
 #define __SYSNEW(p, len) p = Heap_NEWBLK((LONGINT)(len))
-#define __NEW(p, t)	     p = Heap_NEWREC((LONGINT)t##__typ)
+#define __NEW(p, t)	     p = Heap_NEWREC((LONGINT)(uintptr_t)t##__typ)
 #define __NEWARR	     SYSTEM_NEWARR
 
 
@@ -229,20 +226,20 @@ extern SYSTEM_PTR SYSTEM_NEWARR(LONGINT*, LONGINT, int, int, int, ...);
 #define __INITYP(t, t0, level) \
 	t##__typ               = (LONGINT*)&t##__desc.blksz;                                                    \
 	memcpy(t##__desc.basep, t0##__typ - __BASEOFF, level*sizeof(LONGINT));                                  \
-	t##__desc.basep[level] = (LONGINT)t##__typ;                                                             \
-	t##__desc.module       = (LONGINT)m;                                                                    \
+	t##__desc.basep[level] = (LONGINT)(uintptr_t)t##__typ;                                                  \
+	t##__desc.module       = (LONGINT)(uintptr_t)m;                                                         \
 	if(t##__desc.blksz!=sizeof(struct t)) __HALT(-15);                                                      \
 	t##__desc.blksz        = (t##__desc.blksz+5*sizeof(LONGINT)-1)/(4*sizeof(LONGINT))*(4*sizeof(LONGINT)); \
-	Heap_REGTYP(m, (LONGINT)&t##__desc.next);                                                               \
+	Heap_REGTYP(m, (LONGINT)(uintptr_t)&t##__desc.next);                                                    \
 	SYSTEM_INHERIT(t##__typ, t0##__typ)
 
-#define __IS(tag, typ, level)	(*(tag-(__BASEOFF-level))==(LONGINT)typ##__typ)
-#define __TYPEOF(p)	            ((LONGINT*)(*(((LONGINT*)(p))-1)))
+#define __IS(tag, typ, level)	(*(tag-(__BASEOFF-level))==(LONGINT)(uintptr_t)typ##__typ)
+#define __TYPEOF(p)	            ((LONGINT*)(uintptr_t)(*(((LONGINT*)(p))-1)))
 #define __ISP(p, typ, level)	__IS(__TYPEOF(p),typ,level)
 
 // Oberon-2 type bound procedures support
-#define __INITBP(t, proc, num)	*(t##__typ-(__TPROC0OFF+num))=(LONGINT)proc
-#define __SEND(typ, num, funtyp, parlist)	((funtyp)(*(typ-(__TPROC0OFF+num))))parlist
+#define __INITBP(t, proc, num)	*(t##__typ-(__TPROC0OFF+num))=(LONGINT)(uintptr_t)proc
+#define __SEND(typ, num, funtyp, parlist)	((funtyp)((uintptr_t)*(typ-(__TPROC0OFF+num))))parlist
 
 
 

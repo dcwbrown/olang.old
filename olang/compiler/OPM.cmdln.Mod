@@ -843,7 +843,12 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
   PROCEDURE WriteInt* (i: LONGINT);
     VAR s: ARRAY 20 OF CHAR; i1, k: LONGINT;
   BEGIN
-    IF i = MinLInt THEN Write("("); WriteInt(i+1); WriteString("-1)")  (* requires special bootstrap for 64 bit *)
+    IF (i = MinInt) OR (i = MinLInt) THEN 
+      (* abs(minint) is one more than maxint, causing problems representing the value as a minus sign 
+         followed by absoute value. Therefore represent as -maxint - 1. For INTEGER this avoids a
+         compiler warning 'this decimal constant is unsigned only in ISO C90', for LONGINT it is the 
+         only way to represent MinLInt. *)
+      Write("("); WriteInt(i+1); WriteString("-1)")
     ELSE i1 := ABS(i);
       s[0] := CHR(i1 MOD 10 + ORD("0")); i1 := i1 DIV 10; k := 1;
       WHILE i1 > 0 DO s[k] := CHR(i1 MOD 10 + ORD("0")); i1 := i1 DIV 10; INC(k) END ;
