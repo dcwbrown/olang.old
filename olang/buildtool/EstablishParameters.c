@@ -41,13 +41,14 @@ char  builddir[256];
 char  flavour[256];
 char  prefix[256];
 
-char* platform = "unknown";
-char* prefixln = macrotostring(OLANG_ROOT) "/olang";
-char* version  = macrotostring(OLANG_VERSION);
-char* cpuarch  = "unknown";
-char* ccomp    = "unknown";
-char* cc       = "unknown";
-char* binext   = "";
+char* prefixln   = macrotostring(OLANG_ROOT) "/olang";
+char* version    = macrotostring(OLANG_VERSION);
+char* platform   = "unknown";
+char* cpuarch    = "unknown";
+char* ccomp      = "unknown";
+char* cc         = "unknown";
+char* binext     = "";
+char* staticlink = "-static";  // Static compilation option - disabled on darwin.
 
 #ifdef __MINGW32__
 char* osarch   = "mingw";
@@ -64,7 +65,11 @@ void computeParameters() {
     if      (strncasecmp(sys.sysname, "cygwin",  6) == 0) {osarch = "cygwin";  platform = "unix"; binext = ".exe";}
     else if (strncasecmp(sys.sysname, "linux",   5) == 0) {osarch = "linux";   platform = "unix";}
     else if (strncasecmp(sys.sysname, "freebsd", 5) == 0) {osarch = "freebsd"; platform = "unix";}
-    else fail("Unrecognised OS architecture name returned by uname.");
+    else if (strncasecmp(sys.sysname, "darwin",  5) == 0) {osarch = "darwin";  platform = "unix"; staticlink = "";}
+    else {
+      printf("sysname: '%s'\n", sys.sysname);
+      fail("Unrecognised OS architecture name (sysname) returned by uname.");
+    }
   #endif
 
   // Deermine memory model
@@ -217,6 +222,7 @@ void writeMakeParameters() {
   fprintf(fd, "OLANGNAME = %s\n", olangname);
   fprintf(fd, "BINEXT    = %s\n", binext);
   fprintf(fd, "CC        = %s\n", cc);
+  fprintf(fd, "STATIC    = %s\n", staticlink);
 
   fclose(fd);
 }

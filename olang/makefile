@@ -37,6 +37,7 @@ nothing:
 	@echo "OLANGNAME = $(OLANGNAME)"
 	@echo "BINEXT    = $(BINEXT)"
 	@echo "CC        = $(CC)"
+	@echo "STATIC    = $(STATIC)"
 
 
 translatetoc:
@@ -71,7 +72,7 @@ compilec:
 	../compiler/SYSTEM.c Files.c Reals.c Texts.c vt100.c extTools.c \
 	OPM.c OPS.c OPT.c OPC.c OPV.c OPB.c OPP.c errors.c
 
-	cd $(BUILDDIR) && $(CC) -static -I../compiler                        \
+	cd $(BUILDDIR) && $(CC) $(STATIC) -I../compiler                      \
 	olang.c -o ../olang$(BINEXT)  Platform.o Heap.o Console.o Modules.o  \
 	Strings.o Configuration.o Files.o Reals.o Texts.o vt100.o extTools.o \
 	SYSTEM.o OPM.o OPS.o OPT.o OPC.o OPV.o OPB.o OPP.o errors.o
