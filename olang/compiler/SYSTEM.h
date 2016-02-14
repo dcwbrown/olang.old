@@ -1,6 +1,10 @@
 #ifndef SYSTEM__h
 #define SYSTEM__h
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  #include <windows.h>
+#endif
+
 #include <stdlib.h>  // For malloc, exit ...
 #include <string.h>  // For memcpy ...
 

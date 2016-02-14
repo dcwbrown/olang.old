@@ -374,7 +374,7 @@ BEGIN
   IF written < 0 THEN RETURN err() ELSE RETURN 0 END
 END Write;
 
-PROCEDURE WriteBuf*(h: FileHandle; b: ARRAY OF SYSTEM.BYTE; l: LONGINT): ErrorCode;
+PROCEDURE WriteBuf*(h: FileHandle; b: ARRAY OF SYSTEM.BYTE): ErrorCode;
   VAR written: LONGINT;
 BEGIN
   written := writefile(h, SYSTEM.ADR(b), LEN(b));

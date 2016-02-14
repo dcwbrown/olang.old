@@ -4,19 +4,18 @@
 // Also tests validity of SYSTEM.h macros on this platform.
 // from vocparam.c originally by J. Templ 23.6.95
 
+#include "SYSTEM.h"  // SYSTEM.h includes windows.h on win platforms, and includes stdlib.h and string.h
 
-#include "SYSTEM.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
-#ifndef __MINGW32__
+#if !(defined(__MINGW32__) || defined(_MSC_VER))
+  #include <sys/types.h>
+  #include <sys/stat.h>
+  #include <fcntl.h>
   #include <sys/utsname.h>
 #endif
+
+#include <stdio.h>
+#include <time.h>
+
 
 
 #ifndef OLANG_VERSION
@@ -43,23 +42,25 @@ char  prefix[256];
 
 char* prefixln   = macrotostring(OLANG_ROOT) "/olang";
 char* version    = macrotostring(OLANG_VERSION);
-char* platform   = "unknown";
 char* cpuarch    = "unknown";
 char* ccomp      = "unknown";
 char* cc         = "unknown";
-char* binext     = "";
 char* staticlink = "-static";  // Static compilation option - disabled on darwin.
 
 #ifdef __MINGW32__
-char* osarch   = "mingw";
+char* osarch   = "windows";
+char* platform = "windows";
+char* binext   = ".exe";
 #else
 char* osarch   = "unknown";
+char* platform = "unknown";
+char* binext   = "";
 struct utsname sys;
 #endif
 
 
 void computeParameters() {
-  #ifndef __MINGW32__
+  #if !(defined(__MINGW32__) || defined(_MSC_VER))
     if (uname(&sys)<0) fail("Couldn't get sys name - uname() failed.");
   
     if      (strncasecmp(sys.sysname, "cygwin",  6) == 0) {osarch = "cygwin";  platform = "unix"; binext = ".exe";}
@@ -103,7 +104,7 @@ void computeParameters() {
 
   #if defined(__MINGW32__)
   ccomp = "mingw";
-  if (sizeof (void*) == 4) {
+  if (sizeof (void*) == 4)
     cc = "i686-w64-mingw32-gcc -g"; 
   else 
     cc = "x86_64-w64-mingw32-gcc -g";

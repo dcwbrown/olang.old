@@ -353,9 +353,9 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
       i : INTEGER;
       ch : CHAR;
   BEGIN
+    (* Console.String("OPM.ShowLine pos = "); Console.Int(pos,1); Console.Ln; *)
     localpos := pos;
     f := Files.Old(SourceFileName);
-
     (*
       Console.Ln; Console.String("-- source file is "); Console.String(SourceFileName); Console.Ln;
       Console.String("-- pos is "); Console.Int(pos, 0); Console.Ln;
@@ -433,6 +433,7 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
       i,j : LONGINT;
       ch :      CHAR;
   BEGIN
+    (* Console.String("OPM.ShowLineErr pos = "); Console.Int(posnum,1); Console.Ln; *)
     f := Files.Old(SourceFileName);
     Files.Set(r, f, 0);
 
@@ -749,7 +750,9 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
 
   PROCEDURE OldSym*(VAR modName: ARRAY OF CHAR; VAR done: BOOLEAN);
     VAR ch: CHAR; fileName: FileName;
-  BEGIN MakeFileName(modName, fileName, SFext);
+  BEGIN 
+    (* Console.String("OPM.OldSym modName = "); Console.String(modName); Console.Ln; *)
+    MakeFileName(modName, fileName, SFext);
     oldSFile := Files.Old(fileName); done := oldSFile # NIL;
     IF done THEN
       Files.Set(oldSF, oldSFile, 0); Files.Read(oldSF, ch);

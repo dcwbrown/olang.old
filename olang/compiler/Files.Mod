@@ -19,18 +19,23 @@ MODULE Files;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files 
   CONST
     nofbufs = 4;
     bufsize = 4096;
-    fileTabSize = 64;
+    fileTabSize = (* 64 *) 256;  (* 256 *may* be enough for Windows? *)
     noDesc = -1;
     notDone = -1;
 
     (* file states *)
-    open = 0; create = 1; close = 2;
+    open   = 0;    (* OS File has been opened *)
+    create = 1;    (* OS file needs to be created *)
+    close  = 2;    (* Register telling Create to use registerName directly:
+                      i.e. since we're closing and all data is still in 
+                      buffers bypass writing to temp file and then renaming
+                      and just write directly to fianl register name *)
 
 
   TYPE
     FileName = ARRAY 101 OF CHAR;
-    File* = POINTER TO Handle;
-    Buffer = POINTER TO BufDesc;
+    File*    = POINTER TO Handle;
+    Buffer   = POINTER TO BufDesc;
 
     Handle = RECORD
       workName, registerName: FileName;
@@ -71,16 +76,18 @@ MODULE Files;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files 
   PROCEDURE -IdxTrap "__HALT(-1)";
 
   PROCEDURE^ Finalize(o: SYSTEM.PTR);
-
-  PROCEDURE Err(s: ARRAY OF CHAR; f: File; errno: LONGINT);
+    
+  PROCEDURE Err(s: ARRAY OF CHAR; f: File; errcode: Platform.ErrorCode);
   BEGIN
     Console.Ln; Console.String("-- "); Console.String(s); Console.String(": ");
     IF f # NIL THEN
-      IF f.registerName # "" THEN Console.String(f.registerName) ELSE Console.String(f.workName) END
+      IF f.registerName # "" THEN Console.String(f.registerName) ELSE Console.String(f.workName) END;
+      IF f.fd # 0 THEN Console.String("f.fd = "); Console.Int(f.fd,1) END
     END;
-    IF errno # 0 THEN Console.String(" errno = "); Console.Int(errno, 1) END;
+    IF errcode # 0 THEN Console.String(" errcode = "); Console.Int(errcode, 1) END;
     Console.Ln;
-    HALT(99)
+    (* HALT(99) *)
+    Platform.Exit(99);
   END Err;
 
   PROCEDURE MakeFileName(dir, name: ARRAY OF CHAR; VAR dest: ARRAY OF CHAR);
@@ -118,6 +125,13 @@ MODULE Files;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files 
       error: Platform.ErrorCode;
       err:   ARRAY 32 OF CHAR;
   BEGIN
+    (*
+    Console.String("Files.Create fd = "); Console.Int(f.fd,1);
+    Console.String(", registerName = ");  Console.String(f.registerName); 
+    Console.String(", workName = ");      Console.String(f.workName); 
+    Console.String(", state = ");         Console.Int(f.state,1); 
+    Console.Ln;
+    *)
     IF f.fd = noDesc THEN
       IF f.state = create THEN
         GetTempName(f.registerName, f.workName); f.tempFile := TRUE
@@ -136,7 +150,9 @@ MODULE Files;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files 
         done  := f.fd = 0
       END;
       IF done THEN
-        IF f.fd >= fileTabSize THEN error := Platform.Close(f.fd); Err("too many files open", f, 0)
+        IF f.fd >= fileTabSize THEN 
+          (* Console.String("f.fd = "); Console.Int(f.fd,1); Console.Ln; *)
+          error := Platform.Close(f.fd); Err("too many files open", f, 0)
         ELSE
           fileTab[f.fd] := SYSTEM.VAL(LONGINT, f);
           INC(Heap.FileCount);
@@ -147,7 +163,9 @@ MODULE Files;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files 
         END
       ELSE
         IF    Platform.NoSuchDirectory(error) THEN err := "no such directory"
-        ELSIF Platform.TooManyFiles(error)    THEN err := "too many files open"
+        ELSIF Platform.TooManyFiles(error)    THEN 
+          (* Console.String("f.fd = "); Console.Int(f.fd,1); Console.Ln; *)
+          err := "too many files open"
         ELSE  err := "file not created"
         END;
         Err(err, f, error)
@@ -162,8 +180,10 @@ MODULE Files;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files 
       (* identity:  Platform.FileIdentity; *)
   BEGIN
     (*
-      Console.String("Flush buffer at $"); Console.Hex(SYSTEM.ADR(buf.data));
-      Console.String(", size "); Console.Int(buf.size,1); Console.Ln;
+    Console.String("Files.Flush buf.f.registername = "); Console.String(buf.f.registerName);
+    Console.String(", buf.f.fd = "); Console.Int(buf.f.fd,1);
+    Console.String(", buffer at $"); Console.Hex(SYSTEM.ADR(buf.data));
+    Console.String(", size "); Console.Int(buf.size,1); Console.Ln;
     *)
     IF buf.chg THEN f := buf.f; Create(f);
       IF buf.org # f.pos THEN
@@ -174,10 +194,11 @@ MODULE Files;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files 
         *)
       END;
       error := Platform.Write(f.fd, SYSTEM.ADR(buf.data), buf.size);
-      IF error # 0 THEN Err("error in writing file", f, error) END;
+      IF error # 0 THEN Err("error writing file", f, error) END;
       f.pos := buf.org + buf.size;
       buf.chg := FALSE;
       error := Platform.Identify(f.fd, f.identity);
+      IF error # 0 THEN Err("error identifying file", f, error) END;
       (*
         error := Platform.Identify(f.fd, identity);
         f.identity.mtime := identity.mtime;
@@ -190,11 +211,25 @@ MODULE Files;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files 
       i:     LONGINT;
       error: Platform.ErrorCode;
   BEGIN
+    (*
+    Console.String("Files.Close f.fd = "); Console.Int(f.fd,1);
+    Console.String(" f.registername = "); Console.String(f.registerName); 
+    Console.String(", f.workName = "); Console.String(f.workName); Console.Ln;
+    *)
     IF (f.state # create) OR (f.registerName # "") THEN
       Create(f); i := 0;
       WHILE (i < nofbufs) & (f.bufs[i] # NIL) DO Flush(f.bufs[i]); INC(i) END;
       error := Platform.Sync(f.fd);
-      IF error # 0 THEN Err("error in writing file", f, error) END
+      (*
+      Console.String("Syncing closed file. fd = "); Console.Int(f.fd, 1);
+      Console.String(" error = "); Console.Int(error,1); Console.Ln;
+      *)
+      IF error # 0 THEN Err("error writing file", f, error) END;
+      (* Windows needs us to actually cose the file so that subsequent rename
+         will not encounter a sharing error. *)
+      fileTab[f.fd] := 0;
+      error := Platform.Close(f.fd); 
+      f.fd := noDesc; f.state := create; DEC(Heap.FileCount);
     END
   END Close;
 
@@ -264,6 +299,7 @@ MODULE Files;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files 
       error:     Platform.ErrorCode;
       identity:  Platform.FileIdentity;
   BEGIN
+    (* Console.String("Files.Old "); Console.String(name); Console.Ln; *)
     IF name # "" THEN
       IF HasDir(name) THEN dir := ""; COPY(name, path)
       ELSE pos := 0; ScanPath(pos, dir); MakeFileName(dir, name, path); ScanPath(pos, dir)
@@ -274,20 +310,27 @@ MODULE Files;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files 
           IF done & (fd >= fileTabSize) THEN error := Platform.Close(fd) END;
           Heap.GC(TRUE);
           error := Platform.OldRW(path, fd); done := error = 0;
-          IF ~done & Platform.TooManyFiles(error) THEN Err("too many files open", f, error) END
+          IF ~done & Platform.TooManyFiles(error) THEN 
+            (* Console.String("fd = "); Console.Int(fd,1); Console.Ln; *)
+            Err("too many files open", f, error) 
+          END
         END;
         IF ~done & Platform.Inaccessible(error) THEN
           error := Platform.OldRO(path, fd); done := error = 0;
         END;
         IF (~done) & (~Platform.Absent(error)) THEN
-          Console.String("warning Files0.Old "); Console.String(name);
+          Console.String("Warning: Files.Old "); Console.String(name);
           Console.String(" error = "); Console.Int(error, 0); Console.Ln;
         END;
         IF done THEN
+          (* Console.String("  fd = "); Console.Int(fd,1); Console.Ln; *)
           error := Platform.Identify(fd, identity);
           f := CacheEntry(identity);
           IF f # NIL THEN error := Platform.Close(fd); RETURN f
-          ELSIF fd >= fileTabSize THEN error := Platform.Close(fd); Err("too many files open", f, 0)
+          ELSIF fd >= fileTabSize THEN 
+            (* Console.String("fd = "); Console.Int(fd,1); Console.Ln; *)
+            error := Platform.Close(fd); 
+            Err("too many files open", f, 0)
           ELSE NEW(f); fileTab[fd] := SYSTEM.VAL(LONGINT, f); INC(Heap.FileCount); Heap.RegisterFinalizer(f, Finalize);
             f.fd := fd; f.state := open; f.pos := 0; f.swapper := -1; (*all f.buf[i] = NIL*)
             error := Platform.Size(fd, f.len);
@@ -334,6 +377,13 @@ MODULE Files;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files 
     VAR org, offset, i, n: LONGINT;  buf: Buffer;  error: Platform.ErrorCode;
   BEGIN
     IF f # NIL THEN
+      (*
+      Console.String("Files.Set rider on fd = "); Console.Int(f.fd,1);
+      Console.String(", registerName = ");  Console.String(f.registerName); 
+      Console.String(", workName = ");      Console.String(f.workName); 
+      Console.String(", state = ");         Console.Int(f.state,1); 
+      Console.Ln;
+      *)
       IF pos > f.len THEN pos := f.len ELSIF pos < 0 THEN pos := 0 END;
       offset := pos MOD bufsize; org := pos - offset; i := 0;
       WHILE (i < nofbufs) & (f.bufs[i] # NIL) & (org # f.bufs[i].org) DO INC(i) END;
@@ -485,6 +535,10 @@ Especially Length would become fairly complex.
       oldidentity, newidentity: Platform.FileIdentity;
       buf: ARRAY 4096 OF CHAR;
   BEGIN
+    (*
+    Console.String("Files.Rename old = "); Console.String(old);
+    Console.String(", new = "); Console.String(new); Console.Ln;
+    *)
     error := Platform.IdentifyByName(old, oldidentity);
     IF error = 0 THEN
       error := Platform.IdentifyByName(new, newidentity);
@@ -493,6 +547,7 @@ Especially Length would become fairly complex.
         Delete(new, error);  (* work around stale nfs handles *)
       END;
       error := Platform.Rename(old, new);
+      (* Console.String("Platform.Rename error code "); Console.Int(error,1); Console.Ln; *)
       IF ~Platform.DifferentFilesystems(error) THEN
         res := error; RETURN
       ELSE
@@ -525,13 +580,23 @@ Especially Length would become fairly complex.
   END Rename;
 
   PROCEDURE Register* (f: File);
-    VAR idx, errno: INTEGER; f1: File; file: ARRAY 104 OF CHAR;
+    VAR idx, errcode: INTEGER; f1: File; file: ARRAY 104 OF CHAR;
   BEGIN
+    (*
+    Console.String("Files.Register f.registerName = "); Console.String(f.registerName);
+    Console.String(", fd = "); Console.Int(f.fd,1); Console.Ln;
+    *)
     IF (f.state = create) & (f.registerName # "") THEN f.state := close (* shortcut renaming *) END;
     Close(f);
     IF f.registerName # "" THEN
-      Rename(f.workName, f.registerName, errno);
-      IF errno # 0 THEN COPY(f.registerName, file); HALT(99) END;
+      Rename(f.workName, f.registerName, errcode);
+      (*
+      Console.String("Renamed (for register) f.fd = "); Console.Int(f.fd,1);
+      Console.String(" from workname ");                Console.String(f.workName);
+      Console.String(" to registerName ");              Console.String(f.registerName);
+      Console.String(" errorcode = ");                  Console.Int(errcode,1); Console.Ln;
+      *)
+      IF errcode # 0 THEN COPY(f.registerName, file); HALT(99) END;
       f.workName := f.registerName; f.registerName := ""; f.tempFile := FALSE
     END
   END Register;
@@ -668,6 +733,11 @@ Especially Length would become fairly complex.
     VAR f: File; res: LONGINT;
   BEGIN
     f := SYSTEM.VAL(File, o);
+    (*
+    Console.String("Files.Finalize f.fd = "); Console.Int(f.fd,1); 
+    Console.String(", f.registername = "); Console.String(f.registerName); 
+    Console.String(", f.workName = "); Console.String(f.workName); Console.Ln;
+    *)
     IF f.fd >= 0 THEN
       fileTab[f.fd] := 0; res := Platform.Close(f.fd); f.fd := -1; DEC(Heap.FileCount);
       IF f.tempFile THEN res := Platform.Unlink(f.workName) END

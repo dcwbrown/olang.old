@@ -458,26 +458,26 @@ BEGIN
    END
 END FPrintObj;
 
-PROCEDURE FPrintErr*(obj: Object; errno: INTEGER);
+PROCEDURE FPrintErr*(obj: Object; errcode: INTEGER);
 VAR i, j: INTEGER; ch: CHAR;
 BEGIN
-IF obj^.mnolev # 0 THEN
-COPY(GlbMod[-obj^.mnolev]^.name, OPM.objname); i := 0;
-WHILE OPM.objname[i] # 0X DO INC(i) END ;
-OPM.objname[i] := "."; j := 0; INC(i);
-REPEAT ch := obj^.name[j]; OPM.objname[i] := ch; INC(j); INC(i) UNTIL ch = 0X;
-ELSE
-COPY(obj^.name, OPM.objname)
-END ;
-IF errno = 249 THEN
-IF OPM.noerr THEN err(errno) END
-ELSIF errno = 253 THEN  (* extension *)
-IF ~symNew & ~symExtended & ~extsf THEN err(errno) END ;
-symExtended := TRUE
-ELSE
-IF ~symNew & ~newsf THEN err(errno) END ;
-symNew := TRUE
-END
+  IF obj^.mnolev # 0 THEN
+    COPY(GlbMod[-obj^.mnolev]^.name, OPM.objname); i := 0;
+    WHILE OPM.objname[i] # 0X DO INC(i) END ;
+    OPM.objname[i] := "."; j := 0; INC(i);
+    REPEAT ch := obj^.name[j]; OPM.objname[i] := ch; INC(j); INC(i) UNTIL ch = 0X;
+  ELSE
+    COPY(obj^.name, OPM.objname)
+  END ;
+  IF errcode = 249 THEN
+    IF OPM.noerr THEN err(errcode) END
+  ELSIF errcode = 253 THEN  (* extension *)
+    IF ~symNew & ~symExtended & ~extsf THEN err(errcode) END ;
+    symExtended := TRUE
+  ELSE
+    IF ~symNew & ~newsf THEN err(errcode) END ;
+    symNew := TRUE
+  END
 END FPrintErr;
 
 (*-------------------------- Import --------------------------*)
