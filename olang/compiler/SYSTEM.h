@@ -1,12 +1,21 @@
 #ifndef SYSTEM__h
 #define SYSTEM__h
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  #include <windows.h>
+#ifdef _WIN32   // (_WIN32 is defined for both win32 and win64)
+  #ifdef _WIN64
+    typedef unsigned long long size_t;
+    typedef unsigned long long uintptr_t;
+  #else
+    typedef unsigned int size_t;
+    typedef unsigned int uintptr_t;
+  #endif /* _WIN64 */
+  typedef unsigned int     uint32_t;
+  void * __cdecl memcpy(void * dest, const void * source, size_t size);
+#else
+  #include <stdlib.h>  // For malloc, exit ...
+  #include <string.h>  // For memcpy ...
+  #include <stdint.h>  // For uintptr_t ...
 #endif
-
-#include <stdlib.h>  // For malloc, exit ...
-#include <string.h>  // For memcpy ...
 
 
 
@@ -27,7 +36,6 @@
 
 // Oberon types
 
-#include <stdint.h>
 #define BOOLEAN      char
 #define SYSTEM_BYTE  unsigned char
 #define CHAR         unsigned char
@@ -35,10 +43,6 @@
 #define INTEGER      int
 #define REAL         float
 #define LONGREAL     double
-#define SYSTEM_INT8  int8_t
-#define SYSTEM_INT16 int16_t
-#define SYSTEM_INT32 int32_t
-#define SYSTEM_INT64 int64_t
 #define SYSTEM_PTR   void*
 
 // Ensure LONGINT and SET are 64 bits even on 32 bit Windows.
@@ -53,6 +57,10 @@
 
 
 
+// OS Memory allocation interfaces are in PlatformXXX.Mod
+
+extern LONGINT Platform_OSAllocate (LONGINT size);
+extern void    Platform_OSFree     (LONGINT addr);
 
 
 /* Run time system routines in SYSTEM.c */
@@ -87,10 +95,13 @@ static int __str_cmp(CHAR *x, CHAR *y){
 
 // Inline string, record and array copy
 
-#define __COPY(s, d, n)	{char*_a=(void*)s,*_b=(void*)d; LONGINT _i=0,_t=n-1; while(_i<_t&&((_b[_i]=_a[_i])!=0)){_i++;};_b[_i]=0;}
-#define __DUP(x, l, t)  x=(void*)memcpy(malloc(l*sizeof(t)),x,l*sizeof(t))
-#define __DUPARR(v, t)	v=(void*)memcpy(v##__copy,v,sizeof(t))
-#define __DEL(x)        free(x)
+
+#define __COPY(s, d, n) {char*_a=(void*)s,*_b=(void*)d; LONGINT _i=0,_t=n-1; \
+                         while(_i<_t&&((_b[_i]=_a[_i])!=0)){_i++;};_b[_i]=0;}
+#define __DUP(x, l, t)  x=(void*)memcpy((void*)(uintptr_t)Platform_OSAllocate(l*sizeof(t)),x,l*sizeof(t))
+#define __DUPARR(v, t)  v=(void*)memcpy(v##__copy,v,sizeof(t))
+#define __DEL(x)        Platform_OSFree((LONGINT)(uintptr_t)x)
+
 
 
 
@@ -245,94 +256,4 @@ extern SYSTEM_PTR SYSTEM_NEWARR(LONGINT*, LONGINT, int, int, int, ...);
 #define __INITBP(t, proc, num)	*(t##__typ-(__TPROC0OFF+num))=(LONGINT)(uintptr_t)proc
 #define __SEND(typ, num, funtyp, parlist)	((funtyp)((uintptr_t)*(typ-(__TPROC0OFF+num))))parlist
 
-
-
 #endif
-
-
-//
-//
-//
-//  #include <alloca.h>
-//  #include <stdint.h> /* for type sizes -- noch */
-//  #include <unistd.h>
-//  #include <sys/time.h>
-//  #include <signal.h>
-//  #include <fcntl.h>
-//  #include <stdio.h>
-//  #include <signal.h>
-//  #include <stdlib.h>
-//  #include <sys/ioctl.h>
-//
-//
-//
-//
-//
-//
-//
-//
-//  extern void *memcpy(void *dest, const void *src, unsigned LONGINT n);
-//  extern void *malloc(size_t size);
-//  extern void exit(int status);
-//
-//  /* constants */
-//
-//  /* basic types */
-//
-//  //extern void SYSTEM_GC (BOOLEAN markStack);
-//
-//
-//
-//
-//
-//
-//  /* std procs and operator mappings */
-//  static int __STRCMP(x, y)
-//  	CHAR *x, *y;
-//  {LONGINT i = 0; CHAR ch1, ch2;
-//  	do {ch1 = x[i]; ch2 = y[i]; i++;
-//  		if (!ch1) return -(int)ch2;
-//  	} while (ch1==ch2);
-//  	return (int)ch1 - (int)ch2;
-//  }
-//  // commented out to use malloc -- noch
-//  //#define __DUP(x, l, t)	x=(void*)memcpy(alloca(l*sizeof(t)),x,l*sizeof(t))
-//  //#define __DEL(x)	/* DUP with alloca frees storage automatically */
-//
-//
-//
-//  /* Oberon-2 type bound procedures support */
-//  #define __INITBP(t, proc, num)	*(t##__typ-(__TPROC0OFF+num))=(long)proc
-//  #define __SEND(typ, num, funtyp, parlist)	((funtyp)(*(typ-(__TPROC0OFF+num))))parlist
-//
-//  /* runtime system variables */
-//  extern LONGINT SYSTEM_argc;
-//  extern LONGINT SYSTEM_argv;
-//  extern void (*SYSTEM_Halt)();
-//  extern LONGINT SYSTEM_halt;
-//  extern LONGINT SYSTEM_assert;
-//  extern SYSTEM_PTR SYSTEM_modules;
-//  extern LONGINT SYSTEM_heapsize;
-//  extern LONGINT SYSTEM_allocated;
-//  extern LONGINT SYSTEM_lock;
-//  extern SHORTINT SYSTEM_gclock;
-//  extern BOOLEAN SYSTEM_interrupted;
-//
-//  /* ANSI prototypes; not used so far
-//  static int __STRCMP(CHAR *x, CHAR *y);
-//  void SYSTEM_INIT(int argc, long argvadr);
-//  void SYSTEM_FINI(void);
-//  long SYSTEM_XCHK(long i, long ub);
-//  long SYSTEM_RCHK(long i, long ub);
-//  long SYSTEM_ASH(long i, long n);
-//  long SYSTEM_ABS(long i);
-//  double SYSTEM_ABSD(double i);
-//  void SYSTEM_INHERIT(long *t, long *t0);
-//  void SYSTEM_ENUMP(long *adr, long n, void (*P)(void*));
-//  void SYSTEM_ENUMR(char *adr, long *typ, long size, long n, void (*P)(void*));
-//  long SYSTEM_ENTIER(double x);
-//  void SYSTEM_HALT(int n);
-//  */
-//
-//
-//

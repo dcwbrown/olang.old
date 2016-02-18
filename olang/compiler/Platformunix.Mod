@@ -1,6 +1,10 @@
 MODULE Platform;
 IMPORT SYSTEM;
 
+CONST  
+  StdIn-  = 0;
+  StdOut- = 1;
+
 TYPE
   HaltProcedure = PROCEDURE(n: LONGINT);
   SignalHandler = PROCEDURE(signal: INTEGER);
@@ -88,7 +92,10 @@ BEGIN RETURN (e = ENOENT()) END Absent;
 (* OS memory allocaton *)
 
 PROCEDURE -allocate(size: LONGINT): LONGINT "(LONGINT)(uintptr_t)((void*)malloc((size_t)size))";
-PROCEDURE Allocate*(size: LONGINT): LONGINT; BEGIN RETURN allocate(size) END Allocate;
+PROCEDURE OSAllocate*(size: LONGINT): LONGINT; BEGIN RETURN allocate(size) END OSAllocate;
+
+PROCEDURE -free(address: LONGINT) "free((void*)(uintptr_t)address)";
+PROCEDURE OSFree*(address: LONGINT); BEGIN free(address) END OSFree;
 
 
 
@@ -116,7 +123,7 @@ END Init;
 
 
 
-(* Program arguments and environmet access *)
+(* Program arguments and environment access *)
 
 PROCEDURE -getenv(var: ARRAY OF CHAR): EnvPtr "(Platform_EnvPtr)getenv((char*)var)";
 
@@ -167,14 +174,16 @@ END ArgPos;
 
 (* Process termination *)
 
-PROCEDURE -getpid(): INTEGER    "(INTEGER)getpid()";
-PROCEDURE -Exit*(code: INTEGER) "exit(code)";
+PROCEDURE -exit(code: INTEGER) "exit(code)";
+PROCEDURE Exit*(code: INTEGER); 
+BEGIN exit(code) END Exit;
+
 
 PROCEDURE Halt*(code: LONGINT);
 BEGIN
   HaltCode := code;
   IF HaltHandler # NIL THEN HaltHandler(code) END;
-  Exit(SYSTEM.VAL(INTEGER,code));
+  exit(SYSTEM.VAL(INTEGER,code));
 END Halt;
 
 PROCEDURE AssertFail*(code: LONGINT);
@@ -234,6 +243,10 @@ END SecondsToClock;
 PROCEDURE GetClock*(VAR t, d: LONGINT);
 BEGIN gettimeval; SecondsToClock(tvsec(), t, d) END GetClock;
 
+PROCEDURE GetTimeOfDay*(VAR sec, usec: LONGINT);
+BEGIN 
+  gettimeval; sec := tvsec(); usec := tvusec();
+END GetTimeOfDay;
 
 PROCEDURE Time*(): LONGINT;
 VAR ms: LONGINT;
@@ -276,34 +289,6 @@ PROCEDURE -openrw (n: ARRAY OF CHAR): INTEGER "open((char*)n, O_RDWR)";
 PROCEDURE -openro (n: ARRAY OF CHAR): INTEGER "open((char*)n, O_RDONLY)";
 PROCEDURE -opennew(n: ARRAY OF CHAR): INTEGER "open((char*)n, O_CREAT | O_TRUNC | O_RDWR, 0664)";
 
-PROCEDURE -writefile(fd: LONGINT; p: LONGINT; l: LONGINT): LONGINT "write(fd, (void*)(uintptr_t)(p), l)";
-PROCEDURE -readfile (fd: LONGINT; p: LONGINT; l: LONGINT): LONGINT "read(fd, (void*)(uintptr_t)(p), l)";
-
-PROCEDURE -fsync     (fd: LONGINT):                         INTEGER "fsync(fd)";
-PROCEDURE -closefile (fd: LONGINT):                         INTEGER "close(fd)";
-PROCEDURE -lseek     (fd: LONGINT; o: LONGINT; r: INTEGER): INTEGER "lseek(fd, o, r)";
-PROCEDURE -ftruncate (fd: LONGINT; l: LONGINT):             INTEGER "ftruncate(fd, l)";
-PROCEDURE -fstat     (fd: LONGINT):                         INTEGER "fstat(fd, &s)";
-
-PROCEDURE -stat      (n: ARRAY OF CHAR):                    INTEGER "stat((char*)n, &s)";
-PROCEDURE -unlink    (n: ARRAY OF CHAR):                    INTEGER "unlink((char*)n)";
-PROCEDURE -chdir     (n: ARRAY OF CHAR):                    INTEGER "chdir((char*)n)";
-PROCEDURE -rename    (o,n: ARRAY OF CHAR):                  INTEGER "rename((char*)o, (char*)n)";
-
-PROCEDURE -getcwd(VAR cwd: ARRAY OF CHAR) "getcwd((char*)cwd, cwd__len)";
-
-PROCEDURE -structstats          "struct stat s";
-PROCEDURE -statdev():   LONGINT "(LONGINT)s.st_dev";
-PROCEDURE -statino():   LONGINT "(LONGINT)s.st_ino";
-PROCEDURE -statmtime(): LONGINT "(LONGINT)s.st_mtime";
-PROCEDURE -statsize():  LONGINT "(LONGINT)s.st_size";
-
-PROCEDURE -seekset(): INTEGER "SEEK_SET";
-PROCEDURE -seekcur(): INTEGER "SEEK_CUR";
-PROCEDURE -seekend(): INTEGER "SEEK_END";
-
-
-
 (* File APIs *)
 
 PROCEDURE OldRO*(VAR n: ARRAY OF CHAR; VAR h: FileHandle): ErrorCode;
@@ -327,6 +312,25 @@ BEGIN
   IF (fd < 0) THEN RETURN err() ELSE h := fd; RETURN 0 END;
 END New;
 
+
+
+PROCEDURE -closefile (fd: LONGINT): INTEGER "close(fd)";
+
+PROCEDURE Close*(h: FileHandle): ErrorCode;
+BEGIN
+  IF closefile(h) < 0 THEN RETURN err() ELSE RETURN 0 END
+END Close;
+
+
+
+PROCEDURE -fstat(fd: LONGINT):     INTEGER "fstat(fd, &s)";
+PROCEDURE -stat(n: ARRAY OF CHAR): INTEGER "stat((char*)n, &s)";
+PROCEDURE -structstats                     "struct stat s";
+PROCEDURE -statdev():              LONGINT "(LONGINT)s.st_dev";
+PROCEDURE -statino():              LONGINT "(LONGINT)s.st_ino";
+PROCEDURE -statmtime():            LONGINT "(LONGINT)s.st_mtime";
+PROCEDURE -statsize():             LONGINT "(LONGINT)s.st_size";
+
 PROCEDURE Identify*(h: FileHandle; VAR identity: FileIdentity): ErrorCode;
 BEGIN
   structstats;
@@ -347,6 +351,8 @@ BEGIN
   RETURN 0
 END IdentifyByName;
 
+
+
 PROCEDURE Size*(h: FileHandle; VAR l: LONGINT): ErrorCode;
 BEGIN
   structstats;
@@ -354,6 +360,11 @@ BEGIN
   l := statsize();
   RETURN 0;
 END Size;
+
+
+
+PROCEDURE -readfile (fd: LONGINT; p: LONGINT; l: LONGINT): LONGINT 
+"read(fd, (void*)(uintptr_t)(p), l)";
 
 PROCEDURE Read*(h: FileHandle; p: LONGINT; l: LONGINT; VAR n: LONGINT): ErrorCode;
 BEGIN
@@ -366,6 +377,11 @@ BEGIN
   n := readfile(h, SYSTEM.ADR(b), LEN(b));
   IF n < 0 THEN n := 0; RETURN err() ELSE RETURN 0 END
 END ReadBuf;
+
+
+
+PROCEDURE -writefile(fd: LONGINT; p: LONGINT; l: LONGINT): LONGINT 
+"write(fd, (void*)(uintptr_t)(p), l)";
 
 PROCEDURE Write*(h: FileHandle; p: LONGINT; l: LONGINT): ErrorCode;
   VAR written: LONGINT;
@@ -381,30 +397,49 @@ BEGIN
   IF written < 0 THEN RETURN err() ELSE RETURN 0 END
 END WriteBuf;
 
+
+
+PROCEDURE -fsync(fd: LONGINT): INTEGER "fsync(fd)";
+
 PROCEDURE Sync*(h: FileHandle): ErrorCode;
 BEGIN
   IF fsync(h) < 0 THEN RETURN err() ELSE RETURN 0 END
 END Sync;
+
+
+
+PROCEDURE -lseek(fd: LONGINT; o: LONGINT; r: INTEGER): INTEGER "lseek(fd, o, r)";
+PROCEDURE -seekset(): INTEGER "SEEK_SET";
+PROCEDURE -seekcur(): INTEGER "SEEK_CUR";
+PROCEDURE -seekend(): INTEGER "SEEK_END";
 
 PROCEDURE Seek*(h: FileHandle; o: LONGINT; r: INTEGER): ErrorCode;
 BEGIN
   IF lseek(h, o, r) < 0 THEN RETURN err() ELSE RETURN 0 END
 END Seek;
 
+
+
+PROCEDURE -ftruncate(fd: LONGINT; l: LONGINT): INTEGER "ftruncate(fd, l)";
+
 PROCEDURE Truncate*(h: FileHandle; l: LONGINT): ErrorCode;
 BEGIN
   IF (ftruncate(h, l) < 0) THEN RETURN err() ELSE RETURN 0 END;
 END Truncate;
 
-PROCEDURE Close*(h: FileHandle): ErrorCode;
-BEGIN
-  IF closefile(h) < 0 THEN RETURN err() ELSE RETURN 0 END
-END Close;
+
+
+PROCEDURE -unlink(n: ARRAY OF CHAR): INTEGER "unlink((char*)n)";
 
 PROCEDURE Unlink*(VAR n: ARRAY OF CHAR): ErrorCode;
 BEGIN
   IF unlink(n) < 0 THEN RETURN err() ELSE RETURN 0 END
 END Unlink;
+
+
+
+PROCEDURE -chdir(n: ARRAY OF CHAR): INTEGER "chdir((char*)n)";
+PROCEDURE -getcwd(VAR cwd: ARRAY OF CHAR) "getcwd((char*)cwd, cwd__len)";
 
 PROCEDURE Chdir*(VAR n: ARRAY OF CHAR): ErrorCode;
   VAR r: INTEGER;
@@ -413,10 +448,16 @@ BEGIN
   IF r < 0 THEN RETURN err() ELSE RETURN 0 END
 END Chdir;
 
+
+
+PROCEDURE -rename(o,n: ARRAY OF CHAR): INTEGER "rename((char*)o, (char*)n)";
+
 PROCEDURE Rename*(VAR o,n: ARRAY OF CHAR): ErrorCode;
 BEGIN
   IF rename(o,n) < 0 THEN RETURN err() ELSE RETURN 0 END
 END Rename;
+
+
 
 
 PROCEDURE TestLittleEndian;
@@ -424,6 +465,7 @@ PROCEDURE TestLittleEndian;
  BEGIN i := 1; SYSTEM.GET(SYSTEM.ADR(i), LittleEndian); END TestLittleEndian;
 
 
+PROCEDURE -getpid(): INTEGER   "(INTEGER)getpid()";
 
 BEGIN
   TestLittleEndian;
@@ -435,8 +477,8 @@ BEGIN
   CWD         := "";  getcwd(CWD);
   PID         := getpid();
 
-  SeekSet    := seekset();
-  SeekCur    := seekcur();
-  SeekEnd    := seekend();
+  SeekSet := seekset();
+  SeekCur := seekcur();
+  SeekEnd := seekend();
 END Platform.
 

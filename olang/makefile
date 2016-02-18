@@ -1,18 +1,6 @@
-# Select (uncomment) one of the following compilers:
+# Before running make, run selectcompiler.sh to generate configuration files for 
+# the current platform and chosen compiler.
 
-#CC = clang -fPIC -Wno-pointer-sign -g
-#CC = gcc -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast -g
-
-OLANG_VERSION = 0.5
-OLANG_ROOT    = /opt
-
-# The '!=' assignemnt below compiles and runs 'EstablishParameters.c', which
-# determines all the machine specific build variables and creates the parameter
-# files 'Configuration.Mod' and 'BasicTypeParameters' in the build directory.
-# The build variables are written to 'make.include' which is then loaded by
-# the following line.
-
-#MAKEINCLUDEVARS != clang -D OLANG_CC="$(CC)" -D OLANG_VERSION=$(OLANG_VERSION) -D OLANG_ROOT=$(OLANG_ROOT) -I compiler -o a.o buildtool/EstablishParameters.c; ./a.o; rm a.o
 include ./make.include
 
 
@@ -55,8 +43,8 @@ translatetoc:
 	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFs    Texts.Mod
 	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFs    vt100.Mod
 	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFs    errors.Mod
-	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFs    extTools.Mod
 	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFs    OPM.cmdln.Mod
+	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFs    extTools.Mod
 	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFsx   OPS.Mod
 	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFs    OPT.Mod
 	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFs    OPC.Mod
@@ -233,19 +221,17 @@ restorebackup:
 
 
 install:
-	mkdir -p $(PREFIX)/bin
-	mkdir -p $(PREFIX)/include
-	mkdir -p $(PREFIX)/sym
-	rm -f $(PREFIXLN)
-	ln -fs $(PREFIX) $(PREFIXLN)
+	mkdir -p "$(PREFIX)/bin" "$(PREFIX)/include" "$(PREFIX)/sym" "$(PREFIX)/lib"
+	rm -f "$(PREFIXLN)"
+	ln -fs "$(PREFIX)" "$(PREFIXLN)"
 
-	cp -p compiler/*.h       $(PREFIX)/include/
-	cp -p $(BUILDDIR)/*.h    $(PREFIX)/include/
-	cp -p $(BUILDDIR)/*.sym  $(PREFIX)/sym/
-	cp -p olang$(BINEXT)     $(PREFIX)/bin/
+	cp -p compiler/*.h       "$(PREFIX)/include/"
+	cp -p $(BUILDDIR)/*.h    "$(PREFIX)/include/"
+	cp -p $(BUILDDIR)/*.sym  "$(PREFIX)/sym/"
+	cp -p olang$(BINEXT)     "$(PREFIX)/bin/"
 
 #	Make the object library
-	ar rcs $(PREFIX)/libolang.a $(BUILDDIR)/*.o
+	ar rcs "$(PREFIX)/lib/libolang.a" $(BUILDDIR)/*.o
 
 #	Link /usr/bin/olang to the new binary
-	ln -fs $(PREFIX)/bin/olang$(BINEXT) /usr/bin/olang$(BINEXT)
+	ln -fs "$(PREFIX)/bin/olang$(BINEXT)" /usr/bin/olang$(BINEXT)

@@ -1,18 +1,20 @@
 // Generate platform specific files:
 //   BasicTypeParameters - Oberon compiler type sizes and alignments
 //   Configuration.Mod   - version and directory information to build into the compiler
+//   make.include        - make variable settings for this configuration
 // Also tests validity of SYSTEM.h macros on this platform.
 // from vocparam.c originally by J. Templ 23.6.95
 
-#include "SYSTEM.h"  // SYSTEM.h includes windows.h on win platforms, and includes stdlib.h and string.h
+#include "SYSTEM.h"  
 
-#if !(defined(__MINGW32__) || defined(_MSC_VER))
+#ifndef _WIN32
   #include <sys/types.h>
   #include <sys/stat.h>
   #include <fcntl.h>
   #include <sys/utsname.h>
 #endif
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
 
@@ -34,33 +36,35 @@
 void fail(char *msg) {printf("%s\n", msg); exit(1);}
 
 
-char  builddate[256];
-char  olangname[256];
-char  builddir[256];
-char  flavour[256];
-char  prefix[256];
+char builddate[256];
+char olangname[256];
+char builddir[256];
+char flavour[256];
+char prefix[256];
 
-char* prefixln   = macrotostring(OLANG_ROOT) "/olang";
-char* version    = macrotostring(OLANG_VERSION);
-char* cpuarch    = "unknown";
-char* ccomp      = "unknown";
-char* cc         = "unknown";
-char* staticlink = "-static";  // Static compilation option - disabled on darwin.
+char* version = macrotostring(OLANG_VERSION);
+char* cpuarch = "unknown";
+char* ccomp   = "unknown";
+char* cc      = "unknown";
 
-#ifdef __MINGW32__
-char* osarch   = "windows";
-char* platform = "windows";
-char* binext   = ".exe";
+#ifdef _WIN32
+  char  prefixln[256];
+  char* osarch     = "windows";
+  char* platform   = "windows";
+  char* binext     = ".exe";
+  char* staticlink = ""; // No static link on Windows
 #else
-char* osarch   = "unknown";
-char* platform = "unknown";
-char* binext   = "";
-struct utsname sys;
+  char* prefixln   = macrotostring(OLANG_ROOT);
+  char* osarch     = "unknown";
+  char* platform   = "unknown";
+  char* binext     = "";
+  char* staticlink = "-static";  // Static compilation option - though disabled on darwin.
+  struct utsname sys;
 #endif
 
 
 void computeParameters() {
-  #if !(defined(__MINGW32__) || defined(_MSC_VER))
+  #ifndef _WIN32
     if (uname(&sys)<0) fail("Couldn't get sys name - uname() failed.");
   
     if      (strncasecmp(sys.sysname, "cygwin",  6) == 0) {osarch = "cygwin";  platform = "unix"; binext = ".exe";}
@@ -110,13 +114,21 @@ void computeParameters() {
     cc = "x86_64-w64-mingw32-gcc -g";
   #elif defined(__clang__)
   ccomp = "clang";
-  cc    = "clang -g";
+  cc    = "clang -fPIC -g";
   #elif defined(__GNUC__)
   ccomp = "gcc";
   cc    = "gcc -g";
   #elif defined(_MSC_VER)
   ccomp = "msc";
-  cc    = "cl";
+  cc    = "cl /nologo";
+  #endif
+
+  #ifdef _WIN32
+    #ifdef _WIN64
+      sprintf(prefixln, "%s\\olang", getenv("ProgramFiles"));
+    #else
+      sprintf(prefixln, "%s\\olang", getenv("ProgramFiles(x86)"));
+    #endif
   #endif
 
   sprintf(flavour,   "%s.%s.%s",   ccomp, osarch, cpuarch);
@@ -130,24 +142,20 @@ void computeParameters() {
 
 // Determination of basic type parameters - size, alignment and endianness.
 
-struct {CHAR ch; CHAR x;} c;
-struct {CHAR ch; BOOLEAN x;} b;
-struct {CHAR ch; SHORTINT x;} si;
-struct {CHAR ch; INTEGER x;} i;
-struct {CHAR ch; LONGINT x;} li;
-struct {CHAR ch; SYSTEM_INT8 x;} i8;
-struct {CHAR ch; SYSTEM_INT16 x;} i16;
-struct {CHAR ch; SYSTEM_INT32 x;} i32;
-struct {CHAR ch; SYSTEM_INT64 x;} i64;
-struct {CHAR ch; SET x;} s;
-struct {CHAR ch; REAL x;} r;
-struct {CHAR ch; LONGREAL x;} lr;
-struct {CHAR ch; void *x;} p;
-struct {CHAR ch; void (*x)();} f;
+struct {CHAR ch; CHAR     x;}    c;
+struct {CHAR ch; BOOLEAN  x;}    b;
+struct {CHAR ch; SHORTINT x;}    si;
+struct {CHAR ch; INTEGER  x;}    i;
+struct {CHAR ch; LONGINT  x;}    li;
+struct {CHAR ch; SET      x;}    s;
+struct {CHAR ch; REAL     x;}    r;
+struct {CHAR ch; LONGREAL x;}    lr;
+struct {CHAR ch; void*    x;}    p;
+struct {CHAR ch; void   (*x)();} f;
 
-struct {CHAR ch;} rec0;
-struct {CHAR ch; LONGREAL x;} rec1;
-struct {char x[65];} rec2;
+struct {CHAR ch;}             rec0;
+//struct {CHAR ch; LONGREAL x;} rec1;
+struct {char x[65];}          rec2;
 
 void writeBasicTypeParameters() {
   FILE *fd = fopen("BasicTypeParameters", "w");
@@ -211,19 +219,19 @@ void writeMakeParameters() {
   FILE *fd = fopen("make.include", "w");
   if (fd == NULL) fail("Couldn't create make.include.");
 
-  fprintf(fd, "BUILDDATE = %s\n", builddate);
-  fprintf(fd, "CCOMP     = %s\n", ccomp);
-  fprintf(fd, "OSARCH    = %s\n", osarch);
-  fprintf(fd, "CPUARCH   = %s\n", cpuarch);
-  fprintf(fd, "PLATFORM  = %s\n", platform);
-  fprintf(fd, "PREFIX    = %s\n", prefix);
-  fprintf(fd, "PREFIXLN  = %s\n", prefixln);
-  fprintf(fd, "FLAVOUR   = %s\n", flavour);
-  fprintf(fd, "BUILDDIR  = %s\n", builddir);
-  fprintf(fd, "OLANGNAME = %s\n", olangname);
-  fprintf(fd, "BINEXT    = %s\n", binext);
-  fprintf(fd, "CC        = %s\n", cc);
-  fprintf(fd, "STATIC    = %s\n", staticlink);
+  fprintf(fd, "BUILDDATE=%s\n",  builddate);
+  fprintf(fd, "CCOMP=%s\n",      ccomp);
+  fprintf(fd, "OSARCH=%s\n",     osarch);
+  fprintf(fd, "CPUARCH=%s\n",    cpuarch);
+  fprintf(fd, "PLATFORM=%s\n",   platform);
+  fprintf(fd, "PREFIX=%s\n",     prefix);
+  fprintf(fd, "PREFIXLN=%s\n",   prefixln);
+  fprintf(fd, "FLAVOUR=%s\n",    flavour);
+  fprintf(fd, "BUILDDIR=%s\n",   builddir);
+  fprintf(fd, "OLANGNAME=%s\n",  olangname);
+  fprintf(fd, "BINEXT=%s\n",     binext);
+  fprintf(fd, "CC=%s\n",         cc);
+  fprintf(fd, "STATICLINK=%s\n", staticlink);
 
   fclose(fd);
 }
@@ -244,6 +252,7 @@ void writeConfigurationMod() {
   fprintf(fd, "  cc*          = '%s';\n",   cc);
   fprintf(fd, "  compiler*    = '%s';\n",   ccomp);
   fprintf(fd, "  version*     = '%s';\n",   version);
+  fprintf(fd, "  staticlink*  = '%s';\n",   staticlink); 
   fprintf(fd, "  versionLong* = 'Oberon compiler olang %s [%s] for %s %s using %s in %s';\n\n",
     version, builddate, osarch, cpuarch, ccomp, prefix);
 

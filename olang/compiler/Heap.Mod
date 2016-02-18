@@ -145,13 +145,13 @@ MODULE Heap;
   END INCREF;
 
 
-  PROCEDURE -ExternPlatformAllocate           "extern LONGINT Platform_Allocate(LONGINT size);";
-  PROCEDURE -Allocate(size: LONGINT): LONGINT "Platform_Allocate(size)";
+  PROCEDURE -ExternPlatformOSAllocate           "extern LONGINT Platform_OSAllocate(LONGINT size);";
+  PROCEDURE -OSAllocate(size: LONGINT): LONGINT "Platform_OSAllocate(size)";
 
   PROCEDURE NewChunk(blksz: LONGINT): LONGINT;
     VAR chnk: LONGINT;
   BEGIN
-    chnk := Allocate(blksz + blkOff);
+    chnk := OSAllocate(blksz + blkOff);
     IF chnk # 0 THEN
       SYSTEM.PUT(chnk + endOff,             SYSTEM.VAL(LONGINT, chnk + (blkOff + blksz)));
       SYSTEM.PUT(chnk + blkOff,             SYSTEM.VAL(LONGINT, chnk + (blkOff + sizeOff)));

@@ -103,8 +103,12 @@ MODULE ulmSysStat;
         rdev*:    SysTypes.Device; (* ID of device. this entry is defined only for
                                       character special or block special files *)
         size*:    SysTypes.Offset; (* file size in bytes *)
+        
+        (* Blocks and blksize are not available on all platforms.
         blksize*: LONGINT;         (* preferred blocksize *)
         blocks*:  LONGINT;         (* # of blocks allocated *)
+        *)
+        
         atime*:   SysTypes.Time;   (* time of last access *)
         mtime*:   SysTypes.Time;   (* time of last data modification *)
         ctime*:   SysTypes.Time;   (* time of last file status change *)
@@ -123,11 +127,14 @@ MODULE ulmSysStat;
    PROCEDURE -statgid():     LONGINT "(LONGINT)s.st_gid";
    PROCEDURE -statrdev():    LONGINT "(LONGINT)s.st_rdev";
    PROCEDURE -statsize():    LONGINT "(LONGINT)s.st_size";
-   PROCEDURE -statblksize(): LONGINT "(LONGINT)s.st_blksize";
-   PROCEDURE -statblocks():  LONGINT "(LONGINT)s.st_blocks";
    PROCEDURE -statatime():   LONGINT "(LONGINT)s.st_atime";
    PROCEDURE -statmtime():   LONGINT "(LONGINT)s.st_mtime";
    PROCEDURE -statctime():   LONGINT "(LONGINT)s.st_ctime";
+   
+   (* Blocks and blksize are not available on all platforms.
+   PROCEDURE -statblksize(): LONGINT "(LONGINT)s.st_blksize";
+   PROCEDURE -statblocks():  LONGINT "(LONGINT)s.st_blocks";
+   *)
 
    PROCEDURE -fstat(fd: LONGINT):      INTEGER "fstat(fd, &s)";
    PROCEDURE -stat (n: ARRAY OF CHAR): INTEGER "stat((char*)n, &s)";
@@ -146,8 +153,10 @@ MODULE ulmSysStat;
       buf.gid     := statgid();
       buf.rdev    := SYS.VAL(SysTypes.Device, statrdev());
       buf.size    := SYS.VAL(SysTypes.Offset, statsize());
+      (* Blocks and blksize are not available on all platforms.
       buf.blksize := statblksize();
       buf.blocks  := statblocks();
+      *)
       buf.atime   := SYS.VAL(SysTypes.Time, statatime());
       buf.mtime   := SYS.VAL(SysTypes.Time, statmtime());
       buf.ctime   := SYS.VAL(SysTypes.Time, statctime());
@@ -166,8 +175,10 @@ MODULE ulmSysStat;
       buf.gid     := statgid();
       buf.rdev    := SYS.VAL(SysTypes.Device, statrdev());
       buf.size    := SYS.VAL(SysTypes.Offset, statsize());
+      (* Blocks and blksize are not available on all platforms.
       buf.blksize := statblksize();
       buf.blocks  := statblocks();
+      *)
       buf.atime   := SYS.VAL(SysTypes.Time, statatime());
       buf.mtime   := SYS.VAL(SysTypes.Time, statmtime());
       buf.ctime   := SYS.VAL(SysTypes.Time, statctime());

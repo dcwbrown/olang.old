@@ -30,9 +30,14 @@ void SYSTEM_INHERIT(LONGINT *t, LONGINT *t0)
 	while (*t0 != __EOM) {*t = *t0; t--; t0--;}
 }
 
+
 void SYSTEM_ENUMP(void *adr, LONGINT n, void (*P)())
 {
-	while (n > 0) {P(*((LONGINT*)adr)); adr++; n--;}
+    while (n > 0) {
+        P((LONGINT)(uintptr_t)(*((void**)(adr))));
+    	adr = ((void**)adr) + 1; 
+    	n--;
+    }
 }
 
 void SYSTEM_ENUMR(void *adr, LONGINT *typ, LONGINT size, LONGINT n, void (*P)())
@@ -43,7 +48,8 @@ void SYSTEM_ENUMR(void *adr, LONGINT *typ, LONGINT size, LONGINT n, void (*P)())
 		t = typ;
 		off = *t;
 		while (off >= 0) {P(*(LONGINT*)((char*)adr+off)); t++; off = *t;}
-		adr += size; n--;
+		adr = ((char*)adr) + size; 
+		n--;
 	}
 }
 

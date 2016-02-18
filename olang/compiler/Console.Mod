@@ -2,18 +2,16 @@ MODULE Console;  (* J. Templ, 29-June-96 *)
 
   (* output to Unix standard output device based Write system call *)
 
-  IMPORT SYSTEM;
+  IMPORT SYSTEM, Platform;
 
   VAR line: ARRAY 128 OF CHAR;
     pos: INTEGER;
 
-  PROCEDURE -includeUnistd()              "#include <unistd.h>";
-  PROCEDURE -Write(adr, n: LONGINT)       "write(1/*stdout*/, (void*)adr, n)";
-  PROCEDURE -read(VAR ch: CHAR): LONGINT  "read(0/*stdin*/, ch, 1)";
-
   PROCEDURE Flush*;
+  VAR error: Platform.ErrorCode;
   BEGIN
-    Write(SYSTEM.ADR(line), pos); pos := 0;
+    error := Platform.Write(Platform.StdOut, SYSTEM.ADR(line), pos); 
+    pos := 0;
   END Flush;
 
   PROCEDURE Char*(ch: CHAR);
@@ -66,9 +64,9 @@ MODULE Console;  (* J. Templ, 29-June-96 *)
   END Hex;
 
   PROCEDURE Read*(VAR ch: CHAR);
-    VAR n: LONGINT;
+    VAR n: LONGINT; error: Platform.ErrorCode;
   BEGIN Flush();
-    n := read(ch);
+    error := Platform.ReadBuf(Platform.StdIn, ch, n);
     IF n # 1 THEN ch := 0X END
   END Read;
 

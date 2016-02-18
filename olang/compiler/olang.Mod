@@ -1,7 +1,7 @@
 MODULE olang;  (* J. Templ 3.2.95 *)
 
   IMPORT
-    SYSTEM, Heap, Platform,
+    SYSTEM, Heap, Platform, Configuration,
     OPP, OPB, OPT,
     OPV, OPC, OPM,
     extTools, Strings, vt100;
@@ -98,7 +98,11 @@ MODULE olang;  (* J. Templ 3.2.95 *)
           IF ~(OPM.mainProg OR OPM.mainLinkStat) THEN
             Strings.Append(" ",modulesobj);
             Strings.Append(OPM.modName, modulesobj);
-            Strings.Append(".o ", modulesobj)
+            IF Configuration.compiler # "msc" THEN
+              Strings.Append(".o ", modulesobj)
+            ELSE
+              Strings.Append(".obj ", modulesobj)
+            END
           END;
           IF ~OPM.dontLink & (OPM.mainProg OR OPM.mainLinkStat) THEN
             extTools.LinkMain (OPM.modName, OPM.mainLinkStat, modulesobj);
