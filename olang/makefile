@@ -5,8 +5,8 @@ include ./make.include
 
 
 
-.phony: all selectplatform translatetoc compilec setnew setbackup restorebackup clean install
-.phony: v4 ooc2 ooc oocX ulm pow32 misc s3
+# .phony: all translatetoc compilec setnew setbackup restorebackup clean install
+# .phony: v4 ooc2 ooc oocX ulm pow32 misc s3
 
 
 all: translatetoc compilec
