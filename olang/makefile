@@ -5,27 +5,10 @@ include ./make.include
 
 
 
-# .phony: all translatetoc compilec setnew setbackup restorebackup clean install
-# .phony: v4 ooc2 ooc oocX ulm pow32 misc s3
-
 
 all: translatetoc compilec
 
 
-nothing:
-	@echo "BUILDDATE = $(BUILDDATE)"
-	@echo "CCOMP     = $(CCOMP)"
-	@echo "OSARCH    = $(OSARCH)"
-	@echo "CPUARCH   = $(CPUARCH)"
-	@echo "PLATFORM  = $(PLATFORM)"
-	@echo "PREFIX    = $(PREFIX)"
-	@echo "PREFIXLN  = $(PREFIXLN)"
-	@echo "FLAVOUR   = $(FLAVOUR)"
-	@echo "BUILDDIR  = $(BUILDDIR)"
-	@echo "OLANGNAME = $(OLANGNAME)"
-	@echo "BINEXT    = $(BINEXT)"
-	@echo "CC        = $(CC)"
-	@echo "STATIC    = $(STATIC)"
 
 
 translatetoc:
@@ -67,6 +50,7 @@ compilec:
 
 
 library: v4 ooc2 ooc oocX ulm pow32 misc s3
+
 
 v4:
 	cd $(BUILDDIR); MODULES=../library/v4   ../bin/$(OLANGNAME) -PFs Args.Mod
@@ -206,9 +190,10 @@ s3:
 	cd $(BUILDDIR); MODULES=../library/s3   ../bin/$(OLANGNAME) -PFs ethStrings.Mod
 
 
+
+
 clean:
 	rm -f *.c *.h *.o *.sym *.exe *.par *.stackdump olang$(BINEXT) $(BUILDDIR)/*
-
 
 setnew:
 	cp olang$(BINEXT) bin/$(OLANGNAME)
@@ -218,6 +203,8 @@ setbackup:
 
 restorebackup:
 	cp bin/$(OLANGNAME).bak bin/$(OLANGNAME)
+
+
 
 
 install:
