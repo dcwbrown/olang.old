@@ -297,4 +297,6 @@ int main()
 
   writeConfigurationMod();
   writeMakeParameters();
+
+  printf("%s\n", versionstring);
 }

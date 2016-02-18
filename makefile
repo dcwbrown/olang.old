@@ -58,15 +58,15 @@
 
 
 
-config != $(CC) -D O_VER=0.5 -I src/compiler -o a.o src/buildtools/configure.c; ./a.o; rm a.o
+config!=$(CC) -D O_VER=0.5 -I src/compiler -o a.o src/buildtools/configure.c; ./a.o; rm a.o
 include ./Configuration.Make
 
 FLAVOUR    = $(OS).$(DATAMODEL).$(COMPILER)
 BUILDDIR   = build/$(FLAVOUR)
 SAVEDOLANG = bin/olang.$(FLAVOUR)$(BINEXT)
-SOURCE     = $(CURDIR)/src
+SOURCE     = $(.CURDIR)/src
 OLANG      = olang$(BINEXT)
-CSOURCEDIR = $(CURDIR)/c-source/$(SIZEALIGN)
+CSOURCEDIR = $(.CURDIR)/c-source/$(SIZEALIGN)
 
 
 
@@ -111,11 +111,17 @@ library: v4 ooc2 ooc ulm pow32 misc s3 libolang
 
 
 
-preparecommit:
+savecompilerbinary:
 	@mkdir -p bin
 	@cp $(OLANG) $(SAVEDOLANG)
+
+
+preparecsources:
 	@rm -rf c-source/*
 	@for SA in 44 48 88; do make -s translate SIZEALIGN=$$SA BUILDDIR=c-source/$$SA; done
+
+
+preparecommit: savecompilerbinary preparecsources
 
 
 
@@ -150,7 +156,7 @@ assemble:
 	cd $(BUILDDIR) && $(COMPILE) -c OPM.c     extTools.c      OPS.c      OPT.c 
 	cd $(BUILDDIR) && $(COMPILE) -c OPC.c     OPV.c           OPB.c      OPP.c
 
-	cd $(BUILDDIR) && $(COMPILE) $(STATICLINK) olang.c -o $(CURDIR)/$(OLANG) \
+	cd $(BUILDDIR) && $(COMPILE) $(STATICLINK) olang.c -o $(.CURDIR)/$(OLANG) \
 	SYSTEM.o  Configuration.o Platform.o Heap.o    Console.o Strings.o       Modules.o  Files.o \
 	Reals.o   Texts.o         vt100.o    errors.o  OPM.o     extTools.o      OPS.o      OPT.o \
 	OPC.o     OPV.o           OPB.o      OPP.o
@@ -181,26 +187,26 @@ translate:
 	@printf "  SIZEALIGN: %s\n" $(SIZEALIGN)
 	@mkdir -p $(BUILDDIR)
 
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../Configuration.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/Platform$(PLATFORM).Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFsapx -T$(SIZEALIGN) ../../src/compiler/Heap.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/Console.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/library/v4/Strings.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/library/v4/Modules.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFsx   -T$(SIZEALIGN) ../../src/compiler/Files.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/library/v4/Reals.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/library/v4/Texts.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/vt100.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/errors.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/OPM.cmdln.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/extTools.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFsx   -T$(SIZEALIGN) ../../src/compiler/OPS.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/OPT.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/OPC.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/OPV.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/OPB.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/OPP.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Ssm    -T$(SIZEALIGN) ../../src/compiler/olang.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../Configuration.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/Platform$(PLATFORM).Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -SFsapx -T$(SIZEALIGN) ../../src/compiler/Heap.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/Console.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/library/v4/Strings.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/library/v4/Modules.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -SFsx   -T$(SIZEALIGN) ../../src/compiler/Files.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/library/v4/Reals.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/library/v4/Texts.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/vt100.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/errors.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/OPM.cmdln.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/extTools.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -SFsx   -T$(SIZEALIGN) ../../src/compiler/OPS.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/OPT.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/OPC.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/OPV.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/OPB.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/OPP.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Ssm    -T$(SIZEALIGN) ../../src/compiler/olang.Mod
 
 	cp src/compiler/*.[ch] $(BUILDDIR)
 
@@ -224,154 +230,154 @@ install:
 	cp -p $(SAVEDOLANG)          "$(INSTALLDIR)/bin/olang$(BINEXT)"
 	cp -p $(BUILDDIR)/libolang.a "$(INSTALLDIR)/lib/"
 #	Optional: Link /usr/bin/olang to the new binary
-#	ln -fs "$(INSTALLDIR)/bin/$(CURDIR)/$(OLANG)" /usr/bin/$(CURDIR)/$(OLANG)
+#	ln -fs "$(INSTALLDIR)/bin/$(.CURDIR)/$(OLANG)" /usr/bin/$(.CURDIR)/$(OLANG)
 
 
 
 v4:
 	@printf "\nMaking v4 library\n"
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/v4/Args.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/v4/Printer.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/v4/Sets.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/v4/Args.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/v4/Printer.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/v4/Sets.Mod
 
 ooc2:
 	@printf "Making ooc2 library\n"
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc2/ooc2Strings.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc2/ooc2Ascii.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc2/ooc2CharClass.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc2/ooc2ConvTypes.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc2/ooc2IntConv.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc2/ooc2IntStr.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc2/ooc2Real0.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc2/ooc2Strings.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc2/ooc2Ascii.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc2/ooc2CharClass.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc2/ooc2ConvTypes.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc2/ooc2IntConv.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc2/ooc2IntStr.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc2/ooc2Real0.Mod
 
 ooc:
 	@printf "Making ooc library\n"
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocLowReal.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocLowLReal.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocRealMath.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocOakMath.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocLRealMath.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocLongInts.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocComplexMath.Mod 
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocLComplexMath.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocAscii.Mod 
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocCharClass.Mod 
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocStrings.Mod 
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocConvTypes.Mod 
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocLRealConv.Mod 
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocLRealStr.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocRealConv.Mod 
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocRealStr.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocIntConv.Mod 
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocIntStr.Mod 
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocMsg.Mod 
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocSysClock.Mod 
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocTime.Mod 
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocChannel.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocStrings2.Mod 
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocRts.Mod 
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocFilenames.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocTextRider.Mod 
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocBinaryRider.Mod 
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocJulianDay.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocFilenames.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocwrapperlibc.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocC$(DATAMODEL).Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocLowReal.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocLowLReal.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocRealMath.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocOakMath.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocLRealMath.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocLongInts.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocComplexMath.Mod 
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocLComplexMath.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocAscii.Mod 
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocCharClass.Mod 
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocStrings.Mod 
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocConvTypes.Mod 
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocLRealConv.Mod 
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocLRealStr.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocRealConv.Mod 
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocRealStr.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocIntConv.Mod 
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocIntStr.Mod 
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocMsg.Mod 
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocSysClock.Mod 
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocTime.Mod 
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocChannel.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocStrings2.Mod 
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocRts.Mod 
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocFilenames.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocTextRider.Mod 
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocBinaryRider.Mod 
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocJulianDay.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocFilenames.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocwrapperlibc.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ooc/oocC$(DATAMODEL).Mod
 
 oocX:
 	@printf "Making oocX11 library\n"
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/oocX/oocX11.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/oocX/oocXutil.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/oocX/oocXYplane.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/oocX/oocX11.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/oocX/oocXutil.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/oocX/oocXYplane.Mod
 
 ulm:
 	@printf "Making ulm library\n"
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmObjects.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmPriorities.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmDisciplines.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmServices.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmSys.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmSYSTEM.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmEvents.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmProcess.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmResources.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmForwarders.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmRelatedEvents.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmTypes.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmStreams.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmStrings.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmSysTypes.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmTexts.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmSysConversions.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmErrors.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmSysErrors.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmSysStat.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmASCII.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmSets.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmIO.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmAssertions.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmIndirectDisciplines.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmStreamDisciplines.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmIEEE.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmMC68881.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmReals.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmPrint.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmWrite.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmConstStrings.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmPlotters.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmSysIO.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmLoader.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmNetIO.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmPersistentObjects.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmPersistentDisciplines.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmOperations.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmScales.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmTimes.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmClocks.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmTimers.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmConditions.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmStreamConditions.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmTimeConditions.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmCiphers.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmCipherOps.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmBlockCiphers.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmAsymmetricCiphers.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmConclusions.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmRandomGenerators.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmTCrypt.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmIntOperations.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmObjects.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmPriorities.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmDisciplines.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmServices.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmSys.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmSYSTEM.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmEvents.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmProcess.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmResources.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmForwarders.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmRelatedEvents.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmTypes.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmStreams.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmStrings.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmSysTypes.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmTexts.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmSysConversions.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmErrors.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmSysErrors.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmSysStat.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmASCII.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmSets.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmIO.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmAssertions.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmIndirectDisciplines.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmStreamDisciplines.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmIEEE.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmMC68881.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmReals.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmPrint.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmWrite.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmConstStrings.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmPlotters.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmSysIO.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmLoader.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmNetIO.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmPersistentObjects.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmPersistentDisciplines.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmOperations.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmScales.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmTimes.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmClocks.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmTimers.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmConditions.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmStreamConditions.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmTimeConditions.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmCiphers.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmCipherOps.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmBlockCiphers.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmAsymmetricCiphers.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmConclusions.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmRandomGenerators.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmTCrypt.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/ulm/ulmIntOperations.Mod
 
 pow32:
 	@printf "Making pow library\n"
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/pow/powStrings.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/pow/powStrings.Mod
 
 misc:
 	@printf "Making misc library\n"
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/misc/crt.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/misc/Listen.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/misc/MersenneTwister.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/misc/MultiArrays.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/misc/MultiArrayRiders.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/misc/crt.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/misc/Listen.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/misc/MersenneTwister.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/misc/MultiArrays.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/misc/MultiArrayRiders.Mod
 
 s3:
 	@printf "Making s3 library\n"
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethBTrees.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethMD5.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethSets.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethZlib.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethZlibBuffers.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethZlibInflate.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethZlibDeflate.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethZlibReaders.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethZlibWriters.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethZip.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethRandomNumbers.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethGZReaders.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethGZWriters.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethUnicode.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethDates.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethReals.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethStrings.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethBTrees.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethMD5.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethSets.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethZlib.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethZlibBuffers.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethZlibInflate.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethZlibDeflate.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethZlibReaders.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethZlibWriters.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethZip.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethRandomNumbers.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethGZReaders.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethGZWriters.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethUnicode.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethDates.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethReals.Mod
+	cd $(BUILDDIR); $(.CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethStrings.Mod
 
 libolang:
 	@printf "\nMaking libolang\n"
