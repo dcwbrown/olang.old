@@ -30,7 +30,6 @@ VAR
   LittleEndian-:   BOOLEAN;
   MainStackFrame-: LONGINT;
   HaltCode-:       LONGINT;
-  AssertCode-:     LONGINT;
   PID-:            INTEGER;    (* Note: Must be updated by Fork implementation *)
   CWD-:            ARRAY 4096 OF CHAR;
   ArgCount-:       INTEGER;
@@ -45,6 +44,8 @@ VAR
 
   StdIn-:          FileHandle;
   StdOut-:         FileHandle;
+
+  InterruptHandler: SignalHandler;
 
 
 
@@ -157,7 +158,7 @@ BEGIN
   IF s[0] = "-" THEN i := 1 END ;
   k := 0; d := ORD(s[i]) - ORD("0");
   WHILE (d >= 0 ) & (d <= 9) DO k := k*10 + d; INC(i); d := ORD(s[i]) - ORD("0") END ;
-  IF s[0] = "-" THEN d := -d; DEC(i) END ;
+  IF s[0] = "-" THEN k := -k; DEC(i) END ;
   IF i > 0 THEN val := k END
 END GetIntArg;
 
@@ -173,48 +174,16 @@ END ArgPos;
 
 
 
-(* Process termination *)
-
-PROCEDURE -exit(code: INTEGER) "ExitProcess((UINT)code)";
-PROCEDURE Exit*(code: INTEGER); 
-BEGIN exit(code) END Exit;
-
-
-PROCEDURE Halt*(code: LONGINT);
-BEGIN
-  HaltCode := code;
-  IF HaltHandler # NIL THEN HaltHandler(code) END;
-  Exit(SYSTEM.VAL(INTEGER,code));
-END Halt;
-
-PROCEDURE AssertFail*(code: LONGINT);
-BEGIN
-  AssertCode := code;
-  Halt(-1);
-END AssertFail;
-
-PROCEDURE -killself() "TerminateProcess(GetCurrentProcess(), 4);";  (* 4 is SIGILL: Illegal instruction *)
-
-PROCEDURE Suicide(n: LONGINT);
-BEGIN killself; END Suicide;
-
-PROCEDURE SetHalt*(p: HaltProcedure);
-BEGIN HaltHandler := p; END SetHalt;
-
-
-
-
 (* Signals and traps *)
 
 (* PROCEDURE -signal(sig: LONGINT; func: SignalHandler) "signal(sig, func)"; *)
 
 (* TODO *)
 
-PROCEDURE SetInterruptHandler*(handler: SignalHandler);
-BEGIN (* signal(2, handler); *) END SetInterruptHandler;
+(* Ctrl/c handling *)
 
-PROCEDURE SetQuitHandler*(handler: SignalHandler);
-BEGIN (* signal(3, handler); *) END SetQuitHandler;
+PROCEDURE -SetInterruptHandler*(handler: SignalHandler) "SystemSetInterruptHandler(handler)";
+PROCEDURE -SetQuitHandler*     (handler: SignalHandler) "SystemSetQuitHandler(handler)";
 
 PROCEDURE SetBadInstructionHandler*(handler: SignalHandler);
 BEGIN (* signal(4, handler); *) END SetBadInstructionHandler;
@@ -292,12 +261,13 @@ PROCEDURE System*(cmd : ARRAY OF CHAR): INTEGER;
 VAR 
   result: INTEGER;
 BEGIN 
-  result := 2;
+  result := 127;
   startupInfo; processInfo;
-  IF createProcess(cmd) = 0 THEN RETURN 2 END;  
-  IF waitForProcess() = 0 THEN getExitCodeProcess(result) END;
-  cleanupProcess;
-  RETURN result;
+  IF createProcess(cmd) # 0 THEN
+    IF waitForProcess() = 0 THEN getExitCodeProcess(result) END;
+    cleanupProcess;
+  END;
+  RETURN result * 256;
 END System;
 
 
@@ -436,10 +406,7 @@ PROCEDURE -flushFileBuffers(h: FileHandle): INTEGER "(INTEGER)FlushFileBuffers((
 
 PROCEDURE Sync*(h: FileHandle): ErrorCode;
 BEGIN
-  (* Leave windows to manage its own buffer flushing, as calling FlushFileBuffers can
-     return with the file busy. *)
   IF flushFileBuffers(h) = 0 THEN RETURN err() ELSE RETURN 0 END
-  (* *)
 END Sync;
 
 
@@ -514,6 +481,68 @@ END Rename;
 
 
 
+(* Process termination *)
+
+PROCEDURE -exit(code: INTEGER) "ExitProcess((UINT)code)";
+PROCEDURE Exit*(code: INTEGER); 
+BEGIN exit(code) END Exit;
+
+
+PROCEDURE -errstring(s: ARRAY OF CHAR) 'WriteFile((HANDLE)(uintptr_t)Platform_StdOut, s, s__len-1, 0,0)';
+PROCEDURE -errc     (c: CHAR)          'WriteFile((HANDLE)(uintptr_t)Platform_StdOut, &c, 1, 0,0)';
+PROCEDURE errch(c: CHAR); BEGIN errc(c) END errch;
+PROCEDURE errln; BEGIN errch(0DX); errch(0AX) END errln;
+
+PROCEDURE errposint(l: LONGINT);
+BEGIN IF l>10 THEN errposint(l DIV 10) END; errch(CHR(ORD('0') + (l MOD 10))) END errposint;
+
+PROCEDURE errint(l: LONGINT);
+BEGIN IF l<0 THEN errch('-'); l := -l END; errposint(l) END errint;
+
+PROCEDURE DisplayHaltCode(code: LONGINT);
+BEGIN
+  CASE code OF
+  | -1: errstring("Rider ReadBuf/WriteBuf transfer size longer than buffer.")
+  | -2: errstring("Index out of range.")
+  | -3: errstring("Reached end of function without reaching RETURN.")
+  | -4: errstring("CASE statement: no matching label and no ELSE.")
+  | -5: errstring("Type guard failed.")
+  | -6: errstring("Type equality failed.")
+  | -7: errstring("WITH statement type guard failed.")
+  | -8: errstring("SHORT: Value too large for shorter type.")
+  | -9: errstring("Heap interrupted while locked, but lockdepth = 0 at unlock.")
+  |-15: errstring("Type descriptor size mismatch.")
+  |-20: errstring("Too many, or negative number of, elements in dynamic array.")
+  ELSE
+  END
+END DisplayHaltCode;
+
+PROCEDURE Halt*(code: LONGINT);
+VAR e: ErrorCode;
+BEGIN
+  HaltCode := code;
+  IF HaltHandler # NIL THEN HaltHandler(code) END;
+  errstring("Terminated by Halt("); errint(code); errstring("). "); 
+  IF code < 0 THEN DisplayHaltCode(code) END;
+  errln;
+  exit(SYSTEM.VAL(INTEGER,code));
+END Halt;
+
+PROCEDURE AssertFail*(code: LONGINT);
+VAR e: ErrorCode;
+BEGIN
+  errstring("Assertion failure.");
+  IF code # 0 THEN errstring(" ASSERT code "); errint(code); errstring("."); END;
+  errln;
+  exit(SYSTEM.VAL(INTEGER,code));
+END AssertFail;
+
+PROCEDURE SetHalt*(p: HaltProcedure);
+BEGIN HaltHandler := p; END SetHalt;
+
+
+
+
 PROCEDURE TestLittleEndian;
   VAR i: INTEGER;
  BEGIN i := 1; SYSTEM.GET(SYSTEM.ADR(i), LittleEndian); END TestLittleEndian;
@@ -527,8 +556,7 @@ BEGIN
   TestLittleEndian;
 
   HaltCode    := -128;
-  HaltHandler := Suicide;
-  AssertCode  := 0;
+  HaltHandler := NIL;
   TimeStart   := Time();
   CWD         := "";  getCurrentDirectory(CWD);
   PID         := getpid();

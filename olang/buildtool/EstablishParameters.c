@@ -219,16 +219,16 @@ void writeMakeParameters() {
   FILE *fd = fopen("make.include", "w");
   if (fd == NULL) fail("Couldn't create make.include.");
 
-  fprintf(fd, "BUILDDATE=%s\n",  builddate);
-  fprintf(fd, "CCOMP=%s\n",      ccomp);
-  fprintf(fd, "OSARCH=%s\n",     osarch);
+//fprintf(fd, "BUILDDATE=%s\n",  builddate);
+//fprintf(fd, "CCOMP=%s\n",      ccomp);
+//fprintf(fd, "OSARCH=%s\n",     osarch);
+//fprintf(fd, "FLAVOUR=%s\n",    flavour);
   fprintf(fd, "CPUARCH=%s\n",    cpuarch);
-  fprintf(fd, "PLATFORM=%s\n",   platform);
   fprintf(fd, "PREFIX=%s\n",     prefix);
   fprintf(fd, "PREFIXLN=%s\n",   prefixln);
-  fprintf(fd, "FLAVOUR=%s\n",    flavour);
   fprintf(fd, "BUILDDIR=%s\n",   builddir);
   fprintf(fd, "OLANGNAME=%s\n",  olangname);
+  fprintf(fd, "PLATFORM=%s\n",   platform);
   fprintf(fd, "BINEXT=%s\n",     binext);
   fprintf(fd, "CC=%s\n",         cc);
   fprintf(fd, "STATICLINK=%s\n", staticlink);

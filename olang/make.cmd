@@ -39,13 +39,6 @@ goto :eof
 
 
 
-:splurd
-echo PREFIXLN = '%PREFIXLN%'
-echo PREFIX   = '%PREFIX%'
-echo FLAVOUR  = '%FLAVOUR%'
-goto :eof
-
-
 
 :all
 call :translatetoc
@@ -85,13 +78,16 @@ set MODULES=../compiler
 cd ..
 goto :eof
 
+
 :: Compile translated compiler source files
 :compilec
 cd %BUILDDIR%
 cl -nologo -c -I..\compiler Platform.c Heap.c Console.c Modules.c Strings.c Configuration.c ..\compiler\SYSTEM.c Files.c Reals.c Texts.c vt100.c extTools.c	OPM.c OPS.c OPT.c OPC.c OPV.c OPB.c OPP.c errors.c
-cl -nologo -I..\compiler olang.c /Fe..\olang%BINEXT% Platform.obj Heap.obj Console.obj Modules.obj Strings.obj Configuration.obj Files.obj Reals.obj Texts.obj vt100.obj extTools.obj SYSTEM.obj OPM.obj OPS.obj OPT.obj OPC.obj OPV.obj OPB.obj OPP.obj errors.obj
+cl -nologo -I..\compiler olang.c /Fe..\olang%BINEXT% Platform.obj Heap.obj Console.obj Modules.obj Strings.obj Configuration.obj Files.obj Reals.obj Texts.obj vt100.obj extTools.obj SYSTEM.obj OPM.obj OPS.obj OPT.obj OPC.obj OPV.obj OPB.obj OPP.obj errors.obj -link -map
 cd ..
 goto :eof
+
+
 
 
 :library
@@ -103,6 +99,7 @@ call :pow32
 call :misc
 call :s3
 goto :eof
+
 
 
 

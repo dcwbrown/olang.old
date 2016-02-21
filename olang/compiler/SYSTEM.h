@@ -256,4 +256,13 @@ extern SYSTEM_PTR SYSTEM_NEWARR(LONGINT*, LONGINT, int, int, int, ...);
 #define __INITBP(t, proc, num)	*(t##__typ-(__TPROC0OFF+num))=(LONGINT)(uintptr_t)proc
 #define __SEND(typ, num, funtyp, parlist)	((funtyp)((uintptr_t)*(typ-(__TPROC0OFF+num))))parlist
 
+
+#ifdef _WIN32
+  typedef void (*SystemSignalHandler)(INTEGER);
+  extern void SystemSetInterruptHandler(SystemSignalHandler handler);
+  extern void SystemSetQuitHandler     (SystemSignalHandler handler);
+#endif
+
+
+
 #endif

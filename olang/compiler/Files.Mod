@@ -86,8 +86,7 @@ MODULE Files;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files 
     END;
     IF errcode # 0 THEN Console.String(" errcode = "); Console.Int(errcode, 1) END;
     Console.Ln;
-    (* HALT(99) *)
-    Platform.Exit(99);
+    HALT(99)
   END Err;
 
   PROCEDURE MakeFileName(dir, name: ARRAY OF CHAR; VAR dest: ARRAY OF CHAR);

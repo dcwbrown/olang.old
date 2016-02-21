@@ -6,15 +6,24 @@ VAR compilationOptions, CFLAGS: ARRAY 1023 OF CHAR;
 
 
 PROCEDURE execute(title: ARRAY OF CHAR; cmd: ARRAY OF CHAR);
-  VAR r: INTEGER;
+  VAR r, status, exitcode: INTEGER;
 BEGIN
   IF OPM.Verbose THEN Console.String(title); Console.String(cmd); Console.Ln END;
   r := Platform.System(cmd);
-  IF (r < 0) OR (r = 127) THEN
-    Console.String(title);
-    Console.String(" failed with termination status ");
-    Console.Int(r,1); Console.Ln;
-    Platform.Exit(r);
+  status := r MOD 128;
+  exitcode := r DIV 256;
+  IF exitcode > 127 THEN exitcode := exitcode - 256 END; (* Handle signed exit code *)
+
+  (* IF (r < 0) OR (r = 127) THEN *)
+  IF r # 0 THEN
+    Console.String(title); Console.String(cmd); Console.Ln;
+    Console.String("-- failed: status "); Console.Int(status,1);
+    Console.String(", exitcode ");        Console.Int(exitcode,1);
+    Console.String("."); Console.Ln;
+    IF (status = 0) & (exitcode = 127) THEN 
+      Console.String("Is the C compiler in the current command path?"); Console.Ln 
+    END;
+    IF status # 0 THEN Platform.Halt(status) ELSE Platform.Halt(exitcode) END
   END;
 END execute;
 
