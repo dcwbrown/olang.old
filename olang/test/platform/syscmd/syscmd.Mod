@@ -26,7 +26,7 @@ END TestCommand;
 PROCEDURE -splurd "splurgle ploop crunge";
 
 BEGIN
-   splurd;
+   (*splurd;*)
    TestCommand("splurgle");
    TestCommand("cmd /c echo hello");
    TestCommand("cmd /c type splunge");

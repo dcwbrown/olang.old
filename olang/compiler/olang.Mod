@@ -71,20 +71,24 @@ MODULE olang;  (* J. Templ 3.2.95 *)
 
 
   PROCEDURE Translate*;
-    VAR done: BOOLEAN;
-    VAR modulesobj: ARRAY 2048 OF CHAR; (* here we hold all modules name given on the command line, to add corresponding .o files to the external compiler options *)
+    VAR 
+      done:       BOOLEAN;
+      modulesobj: ARRAY 2048 OF CHAR; (* here we hold all modules name given on the command line, to add corresponding .o files to the external compiler options *)
+      objext:     ARRAY 32 OF CHAR;   (* file name extension for oject files *)
   BEGIN
     modulesobj := "";
+    IF Configuration.compiler = "msc" THEN objext := ".obj " ELSE objext := ".o " END;
     IF OPM.OpenPar() THEN
-      (* gclock();   slightly faste rtranslation but may lead to opening "too many files" *)
+      (* gclock();   slightly faster translation but may lead to opening "too many files" *)
 
       LOOP
-        OPM.Init(done, mname);
+        OPM.Init(done, mname); (* Get next module name from command line *)
         IF ~done THEN RETURN END ;
 
-        OPM.InitOptions;
+        OPM.InitOptions; (* Get options ofr this module *)
         PropagateElementaryTypeSizes;
 
+        (* Compile source to .c and .h files *)
         Heap.GC(FALSE);
         Module(done);
         IF ~done THEN
@@ -92,21 +96,23 @@ MODULE olang;  (* J. Templ 3.2.95 *)
           Platform.Exit(1)
         END;
 
+        (* 'assemble' (i.e. c compile) .c to object or executable. *)
         IF ~OPM.dontAsm THEN
-  	      extTools.Assemble(OPM.modName);
-
-          IF ~(OPM.mainProg OR OPM.mainLinkStat) THEN
-            Strings.Append(" ",modulesobj);
-            Strings.Append(OPM.modName, modulesobj);
-            IF Configuration.compiler # "msc" THEN
-              Strings.Append(".o ", modulesobj)
+          IF OPM.dontLink THEN
+            (* If not linking, just assemble each module. *)
+            extTools.Assemble(OPM.modName)
+          ELSE
+            IF ~(OPM.mainProg OR OPM.mainLinkStat) THEN
+              (* Assemble non main rogram and add object name to link list *)
+              extTools.Assemble(OPM.modName);
+              Strings.Append(" ",         modulesobj);
+              Strings.Append(OPM.modName, modulesobj);
+              Strings.Append(objext,      modulesobj)
             ELSE
-              Strings.Append(".obj ", modulesobj)
+              (* Assemble and link main program *)
+              extTools.LinkMain (OPM.modName, OPM.mainLinkStat, modulesobj)
             END
-          END;
-          IF ~OPM.dontLink & (OPM.mainProg OR OPM.mainLinkStat) THEN
-            extTools.LinkMain (OPM.modName, OPM.mainLinkStat, modulesobj);
-  	      END
+          END
   	    END
       END (* loop *)
     END

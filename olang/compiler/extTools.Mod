@@ -2,7 +2,7 @@ MODULE extTools;
 
 IMPORT Strings, Console, Configuration, Platform, OPM;
 
-VAR compilationOptions, CFLAGS: ARRAY 1023 OF CHAR;
+VAR compilationOptions, CFLAGS, objflag, linkflags, libspec: ARRAY 1023 OF CHAR;
 
 
 PROCEDURE execute(title: ARRAY OF CHAR; cmd: ARRAY OF CHAR);
@@ -37,7 +37,7 @@ PROCEDURE Assemble*(moduleName: ARRAY OF CHAR);
     Strings.Append("-c ",              cmd);
     Strings.Append(moduleName,         cmd);
     Strings.Append(".c",               cmd);
-    execute("Compile: ", cmd);
+    execute("Assemble: ", cmd);
   END Assemble;
 
 
@@ -46,36 +46,24 @@ PROCEDURE LinkMain*(VAR moduleName: ARRAY OF CHAR; statically: BOOLEAN; addition
     cmd: ARRAY 1023 OF CHAR;
   BEGIN
     cmd := Configuration.cc;
-    Strings.Append(" ",                   cmd);
-    Strings.Append(compilationOptions,    cmd);
-    Strings.Append(moduleName,            cmd);
-    Strings.Append(".c ",                 cmd);
-    Strings.Append(additionalopts,        cmd);
-    IF statically THEN Strings.Append(Configuration.staticlink, cmd) END;
-
-    IF Configuration.compiler # "msc" THEN
-      Strings.Append(" -o ",              cmd)
-    ELSE 
-      Strings.Append(" -Fe",              cmd)
-    END;    
-    Strings.Append(moduleName,            cmd);
-
-    IF Configuration.compiler # "msc" THEN
-      Strings.Append(' -L"',              cmd)
-    ELSE
-      Strings.Append(' -link -libpath:"', cmd)
+    Strings.Append(" ",                        cmd);
+    Strings.Append(compilationOptions,         cmd);
+    Strings.Append(moduleName,                 cmd);
+    Strings.Append(".c ",                      cmd);
+    Strings.Append(additionalopts,             cmd);
+    IF statically THEN 
+      Strings.Append(Configuration.staticlink, cmd) 
     END;
-    Strings.Append(Configuration.prefix,  cmd);
-    Strings.Append('/lib"',               cmd);
-    
-    IF Configuration.compiler # "msc" THEN
-      Strings.Append(" -lolang",          cmd)
-    ELSE
-      Strings.Append(" libolang.lib",     cmd)
-    END;
+    Strings.Append(objflag,                    cmd);
+    Strings.Append(moduleName,                 cmd);
+    Strings.Append(linkflags,                  cmd);
+    Strings.Append(Configuration.prefix,       cmd);
+    Strings.Append('/lib"',                    cmd);
+    Strings.Append(libspec,                    cmd);
 
-    execute("Link: ", cmd);
+    execute("Assemble and link: ", cmd);
   END LinkMain;
+
 
 BEGIN
   Strings.Append(' -I "',                 compilationOptions);
@@ -84,4 +72,9 @@ BEGIN
   Platform.GetEnv("CFLAGS", CFLAGS);
   Strings.Append (CFLAGS,                 compilationOptions);
   Strings.Append (" ",                    compilationOptions);
+  IF Configuration.compiler = "msc" THEN 
+    objflag := " -Fe"; linkflags := ' -link -libpath:"'; libspec := " libolang.lib"
+  ELSE 
+    objflag := " -o "; linkflags := ' -L"';              libspec := " -lolang"
+  END
 END extTools.
