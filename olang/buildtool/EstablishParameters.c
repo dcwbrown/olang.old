@@ -41,6 +41,8 @@ char olangname[256];
 char builddir[256];
 char flavour[256];
 char prefix[256];
+char prefixln[256] = macrotostring(OLANG_ROOT);
+char versionstring[256];
 
 char* version = macrotostring(OLANG_VERSION);
 char* cpuarch = "unknown";
@@ -48,13 +50,11 @@ char* ccomp   = "unknown";
 char* cc      = "unknown";
 
 #ifdef _WIN32
-  char  prefixln[256];
   char* osarch     = "windows";
   char* platform   = "windows";
   char* binext     = ".exe";
   char* staticlink = ""; // No static link on Windows
 #else
-  char* prefixln   = macrotostring(OLANG_ROOT);
   char* osarch     = "unknown";
   char* platform   = "unknown";
   char* binext     = "";
@@ -113,17 +113,14 @@ void computeParameters() {
   else 
     cc = "x86_64-w64-mingw32-gcc -g";
   #elif defined(__clang__)
-  ccomp = "clang";
-  cc    = "clang -fPIC -g";
+    ccomp = "clang";
+    cc    = "clang -fPIC -g";
   #elif defined(__GNUC__)
-  ccomp = "gcc";
-  cc    = "gcc -g";
+    ccomp = "gcc";
+    cc    = "gcc -g";
   #elif defined(_MSC_VER)
-  ccomp = "msc";
-  cc    = "cl /nologo";
-  #endif
-
-  #ifdef _WIN32
+    ccomp = "msc";
+    cc    = "cl /nologo";
     #ifdef _WIN64
       sprintf(prefixln, "%s\\olang", getenv("ProgramFiles"));
     #else
@@ -131,10 +128,12 @@ void computeParameters() {
     #endif
   #endif
 
-  sprintf(flavour,   "%s.%s.%s",   ccomp, osarch, cpuarch);
-  sprintf(builddir,  "build.%s",   flavour);
-  sprintf(olangname, "olang.%s%s", flavour, binext);
-  sprintf(prefix,    "%s-%s",      prefixln, version);
+  sprintf(flavour,       "%s.%s.%s",   ccomp, osarch, cpuarch);
+  sprintf(builddir,      "build.%s",   flavour);
+  sprintf(olangname,     "olang.%s%s", flavour, binext);
+  sprintf(prefix,        "%s-%s",      prefixln, version);
+  sprintf(versionstring, "Oberon compiler olang %s [%s] for %s %s using %s in %s",
+                         version, builddate, osarch, cpuarch, ccomp, prefix);
 }
 
 
@@ -239,6 +238,16 @@ void writeMakeParameters() {
 
 
 
+void displayParameters() {
+  printf("\n");
+  printf("C compiler command:  %s\n", cc);
+  printf("Build subdirectory:  %s\n", builddir);
+  printf("Version string:      %s\n", versionstring);
+}
+
+
+
+
 void writeConfigurationMod() {
   FILE *fd = fopen("Configuration.Mod", "w");
   if (fd == NULL) fail("Couldn't create Configuration.Mod.");
@@ -253,8 +262,7 @@ void writeConfigurationMod() {
   fprintf(fd, "  compiler*    = '%s';\n",   ccomp);
   fprintf(fd, "  version*     = '%s';\n",   version);
   fprintf(fd, "  staticlink*  = '%s';\n",   staticlink); 
-  fprintf(fd, "  versionLong* = 'Oberon compiler olang %s [%s] for %s %s using %s in %s';\n\n",
-    version, builddate, osarch, cpuarch, ccomp, prefix);
+  fprintf(fd, "  versionLong* = '%s';\n\n", versionstring);
 
   fprintf(fd, "  CharSize*    = %1lu;  CharAlign*    = %lu;\n", (long)sizeof(CHAR),         (long)((char*)&c.x  - (char*)&c));
   fprintf(fd, "  BoolSize*    = %1lu;  BoolAlign*    = %lu;\n", (long)sizeof(BOOLEAN),      (long)((char*)&b.x  - (char*)&b));
@@ -286,4 +294,5 @@ int main()
   writeBasicTypeParameters();
   writeConfigurationMod();
   writeMakeParameters();
+  displayParameters();
 }

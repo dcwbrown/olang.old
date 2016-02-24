@@ -6,7 +6,7 @@ MODULE olang;  (* J. Templ 3.2.95 *)
     OPV, OPC, OPM,
     extTools, Strings, vt100;
 
-  VAR mname : ARRAY 256 OF CHAR; (* noch *)
+  VAR mname :  ARRAY 256 OF CHAR; (* noch *)
 
 
   PROCEDURE Module*(VAR done: BOOLEAN);

@@ -4,7 +4,7 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
   31.1.2007 jt synchronized with BlackBox version, in particular PromoteIntConstToLInt added
 *)
 
-  IMPORT SYSTEM, Texts, Files, Platform, Console, errors, Configuration, vt100;
+  IMPORT SYSTEM, Texts, Files, Platform, Console, errors, Configuration, vt100, Strings;
 
   CONST
     OptionChar* = "-";
@@ -124,6 +124,9 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
     useLineNo, useParFile : BOOLEAN;
 
     dontAsm-, dontLink-, mainProg-, mainLinkStat-, notColorOutput-, forceNewSym-, Verbose-: BOOLEAN;
+
+    OBERON:  ARRAY 1024 OF CHAR;
+    MODULES: ARRAY 1024 OF CHAR;
 
 
   (* ------------------------- Log Output ------------------------- *)
@@ -939,5 +942,16 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
 
 
 BEGIN
-  Texts.OpenWriter(W)
+  Texts.OpenWriter(W);
+
+  OBERON  := "."; Platform.GetEnv("OBERON", OBERON);
+  MODULES := "";  Platform.GetEnv("MODULES", MODULES);
+
+  Strings.Append(";.;",                OBERON);
+  Strings.Append(MODULES,              OBERON);
+  Strings.Append(";",                  OBERON);
+  Strings.Append(Configuration.prefix, OBERON);
+  Strings.Append("/sym;",              OBERON);
+
+  Files.SetSearchPath(OBERON);
 END OPM.

@@ -64,11 +64,10 @@ MODULE Files;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files 
 
 
   VAR
-    fileTab: ARRAY fileTabSize OF LONGINT (*=File*);
-    tempno:  INTEGER;
-    OBERON:  ARRAY 1024 OF CHAR;
-    HOME:    ARRAY 1024 OF CHAR;
-    MODULES: ARRAY 1024 OF CHAR;
+    fileTab:    ARRAY fileTabSize OF LONGINT (*=File*);
+    tempno:     INTEGER;
+    HOME:       ARRAY 1024 OF CHAR;
+    SearchPath: POINTER TO ARRAY OF CHAR;
 
 
 
@@ -243,20 +242,26 @@ MODULE Files;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files 
     RETURN f
   END New;
 
-  PROCEDURE ScanPath(VAR pos: INTEGER; VAR dir: ARRAY OF CHAR);  (* supports ~, ~user and blanks inside path *)
-    VAR i: INTEGER; ch: CHAR;
+  PROCEDURE ScanPath(VAR pos: INTEGER; VAR dir: ARRAY OF CHAR);  
+  (* Extract next individual directory from searchpath starting at pos, 
+     updating pos and returning dir. 
+     Supports ~, ~user and blanks inside path *)
+  VAR i: INTEGER; ch: CHAR;
   BEGIN
-    i := 0; ch := OBERON[pos];
-    WHILE (ch = " ") OR (ch = ":") DO INC(pos); ch := OBERON[pos] END;
-    IF ch = "~" THEN
-      INC(pos); ch := OBERON[pos];
-      WHILE HOME[i] # 0X DO dir[i] := HOME[i]; INC(i) END;
-      IF (ch # "/") & (ch # 0X) & (ch # ":") & (ch # " ") THEN
-        WHILE (i > 0) & (dir[i-1] # "/") DO DEC(i) END
-      END
+    i := 0; 
+    IF SearchPath # NIL THEN
+      ch := SearchPath[pos];
+      WHILE (ch = " ") OR (ch = ";") DO INC(pos); ch := SearchPath[pos] END;
+      IF ch = "~" THEN
+        INC(pos); ch := SearchPath[pos];
+        WHILE HOME[i] # 0X DO dir[i] := HOME[i]; INC(i) END;
+        IF (ch # "/") & (ch # 0X) & (ch # ";") & (ch # " ") THEN
+          WHILE (i > 0) & (dir[i-1] # "/") DO DEC(i) END
+        END
+      END;
+      WHILE (ch # 0X) & (ch # ";") DO dir[i] := ch; INC(i); INC(pos); ch := SearchPath[pos] END;
+      WHILE (i > 0) & (dir[i-1] = " ") DO DEC(i) END
     END;
-    WHILE (ch # 0X) & (ch # ":") DO dir[i] := ch; INC(i); INC(pos); ch := OBERON[pos] END;
-    WHILE (i > 0) & (dir[i-1] = " ") DO DEC(i) END;
     dir[i] := 0X
   END ScanPath;
 
@@ -288,7 +293,7 @@ MODULE Files;  (* J. Templ 1.12. 89/12.4.95 Oberon files mapped onto Unix files 
     RETURN NIL
   END CacheEntry;
 
-  PROCEDURE Old* (name: ARRAY OF CHAR): File;
+  PROCEDURE Old*(name: ARRAY OF CHAR): File;
     VAR
       f:         File;
       fd:        Platform.FileHandle;
@@ -743,22 +748,24 @@ Especially Length would become fairly complex.
     END
   END Finalize;
 
+  PROCEDURE SetSearchPath*(path: ARRAY OF CHAR);
+  BEGIN
+    IF Strings.Length(path) # 0 THEN
+      NEW(SearchPath, Strings.Length(path)+1);
+      COPY(path, SearchPath^)
+    ELSE
+      SearchPath := NIL
+    END
+  END SetSearchPath;
+
   PROCEDURE Init;
     VAR i: LONGINT;
   BEGIN
     i := 0; WHILE i < fileTabSize DO fileTab[i] := 0; INC(i) END;
     tempno := -1;
     Heap.FileCount := 0;
-
-    MODULES := "";  Platform.GetEnv("MODULES", MODULES);
-    HOME    := "";  Platform.GetEnv("HOME", HOME);
-    OBERON  := "."; Platform.GetEnv("OBERON", OBERON);
-
-    Strings.Append(":.:",                OBERON);
-    Strings.Append(MODULES,              OBERON);
-    Strings.Append(":",                  OBERON);
-    Strings.Append(Configuration.prefix, OBERON);
-    Strings.Append("/sym:",              OBERON);
+    SearchPath := NIL;
+    HOME := "";  Platform.GetEnv("HOME", HOME);
   END Init;
 
 BEGIN Init

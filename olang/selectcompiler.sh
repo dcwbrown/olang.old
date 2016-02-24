@@ -40,7 +40,27 @@
 # Windows command prompt with no unix shell or make dependencies - instead
 # run fullmake.cmd for the full bootstrap build, and make.cmd for parts.
 
-echo Selecting compiler $1
-$1 -I compiler -D OLANG_VERSION=0.5 -D OLANG_ROOT=/opt/olang -o a.o buildtool/EstablishParameters.c
+
+
+
+# Mingw running under cygwin builds binaries that are independent
+# of cygwin.dll. For convenience map 'mingw' to the actual compiler
+# binary names based on whether this is 32 or 64 bit cygwin.
+
+if [ "$1" = "mingw" ]; then
+  cc="$(uname -m)-w64-mingw32-gcc"
+else
+  cc=$1
+fi
+
+
+if ! which $cc >/dev/null; then
+  echo "Cannot find compiler $1"
+  exit
+fi
+
+
+$cc -I compiler -D OLANG_VERSION=0.5 -D OLANG_ROOT=/opt/olang -o a.o buildtool/EstablishParameters.c
 ./a.o
 rm a.o
+

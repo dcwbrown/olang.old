@@ -49,7 +49,7 @@ compilec:
 	SYSTEM.o OPM.o OPS.o OPT.o OPC.o OPV.o OPB.o OPP.o errors.o
 
 
-library: v4 ooc2 ooc oocX ulm pow32 misc s3
+library: v4 ooc2 ooc ulm pow32 misc s3
 
 
 v4:
@@ -217,8 +217,22 @@ install:
 	cp -p $(BUILDDIR)/*.sym  "$(PREFIX)/sym/"
 	cp -p olang$(BINEXT)     "$(PREFIX)/bin/"
 
-#	Make the object library
+#	Remove objects that should not be part of the library
+	rm -f $(BUILDDIR)/olang.o $(BUILDDIR)/errors.o $(BUILDDIR)/extTools.o
+	rm -f $(BUILDDIR)/OPM.o   $(BUILDDIR)/OPS.o    $(BUILDDIR)/OPT.o      $(BUILDDIR)/OPP.o 
+	rm -f $(BUILDDIR)/OPC.o   $(BUILDDIR)/OPV.o    $(BUILDDIR)/OPB.o
+
+#	Make static library
 	ar rcs "$(PREFIX)/lib/libolang.a" $(BUILDDIR)/*.o
 
 #	Link /usr/bin/olang to the new binary
 	ln -fs "$(PREFIX)/bin/olang$(BINEXT)" /usr/bin/olang$(BINEXT)
+
+
+
+
+# Shared library (for real unix systems only, don't use on cygwin)
+sharedlibrary:
+	cd $(BUILDDIR) && $(CC) -shared -o "$(PREFIX)/lib/libolang.so" *.o
+	echo "$(PREFIX)/lib" >/etc/ld.so.conf.d
+	ldconfig
