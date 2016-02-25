@@ -41,6 +41,19 @@
 # run fullmake.cmd for the full bootstrap build, and make.cmd for parts.
 
 
+if [ "$1" = "" ]; then
+  echo ""
+  echo ""
+  echo "Please run:"
+  echo ""
+  echo "  ./selectcompiler.sh compiler"
+  echo ""
+  echo "Where compiler is 'clang', 'gcc' or 'mingw'."
+  echo ""
+  echo ""
+  exit 1
+fi
+
 
 
 # Mingw running under cygwin builds binaries that are independent

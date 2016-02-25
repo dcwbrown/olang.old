@@ -1,13 +1,14 @@
 # Before running make, run selectcompiler.sh to generate configuration files for 
 # the current platform and chosen compiler.
 
-include ./make.include
-
-
-
-
 all: translatetoc compilec
 
+
+make.include:
+	@./selectcompiler.sh
+	@exit 1
+
+include ./make.include
 
 
 
