@@ -70,6 +70,7 @@ void computeParameters() {
     if      (strncasecmp(sys.sysname, "cygwin",  6) == 0) {osarch = "cygwin";  platform = "unix"; binext = ".exe";}
     else if (strncasecmp(sys.sysname, "linux",   5) == 0) {osarch = "linux";   platform = "unix";}
     else if (strncasecmp(sys.sysname, "freebsd", 5) == 0) {osarch = "freebsd"; platform = "unix";}
+    else if (strncasecmp(sys.sysname, "openbsd", 5) == 0) {osarch = "openbsd"; platform = "unix";}
     else if (strncasecmp(sys.sysname, "darwin",  5) == 0) {osarch = "darwin";  platform = "unix"; staticlink = "";}
     else {
       printf("sysname: '%s'\n", sys.sysname);
