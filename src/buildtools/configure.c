@@ -131,7 +131,7 @@ void determineInstallDirectory() {
       sprintf(installdir, "%s\\olang", getenv("ProgramFiles(x86)"));
     #endif
   #else
-    sprintf(installdir, "/opt/olang");
+    strncpy(installdir, "/opt/olang", sizeof(installdir));
   #endif
 }
 
@@ -292,8 +292,9 @@ int main()
 
   testSystemH();
 
-  sprintf(versionstring, "Oberon compiler olang %s [%s] for %s %s using %s",
-                         version, builddate, os, dataModel, compiler);
+  snprintf(versionstring, sizeof(versionstring), 
+           "Oberon compiler olang %s [%s] for %s %s using %s",
+           version, builddate, os, dataModel, compiler);
 
   writeConfigurationMod();
   writeMakeParameters();
