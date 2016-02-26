@@ -1,12 +1,12 @@
 MODULE Unix;  (* Josef Templ, 5.3.90  Linux system calls *)
-(* ported to gnu x86_64 and added system function, noch *)
+(* ported to gnu x86_64 and added system(), sleep() functions, noch *)
 (* Module Unix provides a system call interface to Linux.
   Naming conventions:
     Procedure and Type-names always start with a capital letter.
     error numbers as defined in Unix
     other constants start with lower case letters *)
 
-IMPORT SYSTEM;
+IMPORT SYSTEM(*, Console*);
 
 CONST
 
@@ -154,34 +154,49 @@ CONST sigsetarrlength = 1024 / 8 * SIZE(LONGINT);
 
 
 TYPE
+ (* cpp /usr/include/setjmp.h
+    struct __jmp_buf_tag
+  {
+    __jmp_buf __jmpbuf;
+    int __mask_was_saved;
+    __sigset_t __saved_mask;
+  };
 
+   typedef struct __jmp_buf_tag jmp_buf[1];
+
+   __sigset_t is 128 byte long in glibc on arm, x86, x86_64
+   __jmp_buf is 24 bytes long  in glibc on x86
+                256 bytes long in glibc on armv6
+                64 bytes long in glibc on x86_64
+
+ *)
+  (* on openbsd
+     typedef long sigjmp_buf[11 + 1];
+     typedef long jmp_buf[11];
+     it seems we need sigjmp_buf
+  *)
   JmpBuf* = RECORD
-    (* macosx darwin 64bit, cpp /usr/include/setjmp.h
-       typedef int jmp_buf[((9 * 2) + 3 + 16)];
-       typedef int sigjmp_buf[((9 * 2) + 3 + 16) + 1];
-    *)
-
-   jmpbuf: ARRAY 38 OF INTEGER;
- END ;
+    jmpbuf: ARRAY 12 OF LONGINT; (* 8 * 8 = 64 *)
+  END ;
 
   Status* = RECORD (* struct stat *)
+    mode* : INTEGER; (* mode_t *)
     dev* : INTEGER; (* dev_t 4 *)
-    mode*: SHORTINT; mode1*: SHORTINT; (* mode_t 2 *)
-    nlink* : SHORTINT; nlink1*: SHORTINT; (* nlink_t 2 *)
-    ino* : LONGINT; (* __darwin_ino64_t 8 *)
-    uid*, gid*: INTEGER; (* uid_t, gid_t 4 *)
-    rdev*: INTEGER; (* dev_t 4 *)
-    atime* : LONGINT; atimences* : LONGINT; (* struct timespec 16 *)
-    mtime* : LONGINT; mtimences* : LONGINT; (* struct timespec 16 *)
-    ctime* : LONGINT; ctimences* : LONGINT; (* struct timespec 16 *)
-    birthtime* : LONGINT; birthtimences* : LONGINT; (* struct timespec 16 *)
-    size*: LONGINT; (* off_t 8 *) 
-    blocks* : LONGINT;
-    blksize* : INTEGER;
-    flags* : INTEGER;
-    gen* : INTEGER;
-    lspare* : INTEGER;
-    qspare*, qspare1*: LONGINT;
+    ino* : LONGINT; (* ino_t 8 *)
+    nlink* : INTEGER; (* nlink_t *)
+    uid*, gid*: INTEGER; (* uid_t, gid_t *)
+    rdev* : INTEGER; (* dev_t *)
+    atime* : LONGINT;
+    atimences* : LONGINT;
+    mtime* : LONGINT;
+    mtimensec* : LONGINT;
+    ctime* : LONGINT;
+    ctimensec* : LONGINT; 
+    size* : LONGINT; (* off_t *)
+    blocks* : LONGINT; (* int64_t *)
+    blksize* : INTEGER; (* u_int32_t *)
+    flags, gen*: INTEGER; (* u_int32_t *)
+    birthtim: ARRAY 2 OF LONGINT;
   END ;
  
 (* from /usr/include/bits/time.h
@@ -194,10 +209,9 @@ struct timeval
 
 
 *)
-
+(* from sys/time.h on OpenBSD *)
   Timeval* = RECORD
-    sec*: LONGINT;
-    usec*: INTEGER
+    sec*, usec*: LONGINT
   END ;
 
 
@@ -220,7 +234,7 @@ from man gettimeofday
     interval*, value*: Timeval
   END ;
 
-  FdSet* = ARRAY 8 OF SET;
+  FdSet* = ARRAY 16 OF SET;
 
   SigCtxPtr* = POINTER TO SigContext;
   SigContext* = RECORD
@@ -228,12 +242,16 @@ from man gettimeofday
 
   SignalHandler* = PROCEDURE (sig, code: LONGINT; scp: SigCtxPtr);
 
+(* From sys/dirent.h on OpenBSD 5.6 *)
   Dirent* = RECORD
     ino, off: LONGINT;
-    reclen: INTEGER;
-    name: ARRAY 256 OF CHAR;
+    reclen: ARRAY 2 OF CHAR;
+    type, namlen : CHAR;
+	padding : ARRAY 4 OF CHAR;
+    name : ARRAY 256 OF CHAR;
   END ;
 
+(* from sys/resource.h on OpenBSD *)
   Rusage* = RECORD
     utime*, stime*: Timeval;
     maxrss*, ixrss*, idrss*, isrss*,
@@ -242,28 +260,38 @@ from man gettimeofday
     nvcsw*, nivcsw*: LONGINT
   END ;
 
+(* from sys/uio.h on OpenBSD 5.6 -- antranigv*)
   Iovec* = RECORD
     base*, len*: LONGINT
   END ;
 
+(* TOBEDONE *)
   SocketPair* = ARRAY 2 OF LONGINT;
 
+(* from sys/poll.h on OpenBSD 5.6 -- antranigv *)
   Pollfd* = RECORD
-    fd*: LONGINT;
-    events*, revents*: INTEGER
+    fd*: INTEGER;
+    events*, revents*: ARRAY 2 OF CHAR;
   END ;
 
+(* different from linux, written new for OpenBSD from sys/socket.h -- antranigv *)
   Sockaddr* = RECORD
-    family*: INTEGER;
-    port*: INTEGER;
-    internetAddr*: LONGINT;
-    pad*: ARRAY 8 OF CHAR;
+    (*family0*, family1*: SHORTINT;
+    pad0, pad1: SHORTINT;
+    pad2 : INTEGER;
+    (*port*: INTEGER;
+    internetAddr*: LONGINT;*)
+    pad*: ARRAY 14 OF CHAR;*)
+	len* : CHAR;
+	family* : CHAR;
+	data* : ARRAY 14 OF CHAR;
   END ;
   
+  (* identical to linux. OpenBSD 5.6 -- antranigv *)
   HostEntry* = POINTER [1] TO Hostent;
   Hostent* = RECORD
     name*, aliases*: LONGINT;
-    addrtype*, length*: LONGINT;
+    addrtype*, length*: INTEGER;
     addrlist*: LONGINT; (*POINTER TO POINTER TO LONGINT, network byte order*)
   END;
 
@@ -271,37 +299,40 @@ from man gettimeofday
 
   PROCEDURE -includeStat()
     "#include <sys/stat.h>";
+  (* for jmp_buf *)
+  PROCEDURE -includeSetjmp()
+    "#include <setjmp.h>";
 
-    (* for select() *)
-  PROCEDURE -includeSelect()
-    "#include <sys/select.h>";
+ (* for dirent *)
+  PROCEDURE -includeDirent()
+    "#include <sys/dirent.h>";
 
-     (* for kill() *)
-  PROCEDURE -includeSignal()
-     "#include <signal.h>";
+ (* for rusage *)
+  PROCEDURE -includeResource()
+    "#include <sys/resource.h>";
 
-     (* for read() also *)
-     PROCEDURE -includeTypes()
-        "#include <sys/types.h>";
-
-	PROCEDURE -includeUio()
-	 "#include <sys/uio.h>";
-
-    (* for getpid(), lseek(), close(), fsync(), ftruncate(), read(), sleep() *)
-  PROCEDURE -includeUnistd()
-     "#include <unistd.h>";
-
-
-     (* for rename() *)
-  PROCEDURE -includeStdio()
-     "#include <stdio.h>";
+ (* for iovec *)
+  PROCEDURE -includeIovec()
+  "#include <sys/uio.h>";
 
   PROCEDURE -includeErrno()
     "#include <errno.h>";
 
-      (* for open() *)
-  PROCEDURE -includeFcntl()
-     "#include <fcntl.h>";
+  (* for read(), write() and sleep(), and fd_set *)
+  PROCEDURE -includeUnistd()
+    "#include <unistd.h>";
+
+  (* for system() *)
+  PROCEDURE -includeStdlib()
+    "#include <stdlib.h>";
+
+  (* for nanosleep() *)
+   PROCEDURE -includeTime()
+     "#include <time.h>";
+
+   (* for select() *)
+   PROCEDURE -includeSelect()
+     "#include <sys/select.h>";
 
   PROCEDURE -err(): INTEGER
     "errno";
@@ -353,7 +384,7 @@ from man gettimeofday
   PROCEDURE -Getuid*(): INTEGER
     "getuid()";
 
-  PROCEDURE -Geteuid*(): INTEGER
+  PROCEDURE -Geteuid*(): INTEGER 
     "geteuid()";
 
   PROCEDURE -Getgid*(): INTEGER
@@ -401,7 +432,7 @@ from man gettimeofday
   PROCEDURE -Fchmod*(fd, mode: INTEGER): INTEGER
     "fchmod(fd, mode)";
 
-  PROCEDURE -Chmod*(path: Name; mode: INTEGER): INTEGER 
+  PROCEDURE -Chmod*(path: Name; mode: INTEGER): INTEGER
     "chmod(path, mode)";
 
   PROCEDURE -Lseek*(fd: INTEGER; offset: LONGINT; origin: INTEGER): LONGINT
@@ -428,7 +459,7 @@ from man gettimeofday
   PROCEDURE -Chdir*(path: Name): INTEGER
     "chdir(path)";
 
-  PROCEDURE -Ioctl*(fd: INTEGER; request, arg: LONGINT): LONGINT
+  PROCEDURE -Ioctl*(fd: INTEGER; request, arg: LONGINT): INTEGER
     "ioctl(fd, request, arg)";
 
   PROCEDURE -Kill*(pid, sig: INTEGER): INTEGER
@@ -438,10 +469,10 @@ from man gettimeofday
     "sigsetmask(mask)";
 
   PROCEDURE -Sleep*(ms : INTEGER): INTEGER
-      "sleep(ms)";
+      "(INTEGER)sleep(ms)";
 
   PROCEDURE -Nanosleep*(VAR req : Timeval; VAR rem : Timeval): INTEGER
-    "nanosleep(req, rem)";
+    "(INTEGER)nanosleep(req, rem)";
 
   (* TCP/IP networking *)
 
@@ -497,6 +528,30 @@ from man gettimeofday
   PROCEDURE -SizeofStat(): INTEGER
     "sizeof(struct stat)";
 
+  PROCEDURE -SizeofJmpBuf(): INTEGER
+    "sizeof(jmp_buf)";
+
+  PROCEDURE -SizeofSigJmpBuf(): INTEGER
+    "sizeof(sigjmp_buf)";
+
+  PROCEDURE -SizeofTimeval(): INTEGER
+    "sizeof(struct timeval)";
+
+  PROCEDURE -SizeofTimezone(): INTEGER
+    "sizeof(struct timezone)";
+
+  PROCEDURE -SizeofRusage(): INTEGER
+    "sizeof(struct rusage)";
+
+  PROCEDURE -SizeofFdSet(): INTEGER
+    "sizeof(fd_set)";
+
+  PROCEDURE -SizeofDirent(): INTEGER
+    "sizeof(struct dirent)";
+
+  PROCEDURE -SizeofIovec(): INTEGER
+    "sizeof(struct iovec)";
+
   PROCEDURE -Error(msg: ARRAY OF CHAR; len: INTEGER)
     "write(1/*stdout*/, msg, len); char ch = 0xa; write(1, &ch, 1)";
 
@@ -505,14 +560,36 @@ from man gettimeofday
   BEGIN
     x := SizeofUnixStat();
     y := SizeofStat();
-    IF x # y THEN
+    IF x # y THEN 
       Error("Unix.StatCheck: inconsistent usage of struct stat", 49);
-      Exit(1);
+     Exit(1);
     END
   END StatCheck;
-
+(*
+  PROCEDURE Check;
+  BEGIN
+      Console.String("struct stat size: "); Console.Int(SizeofStat(), 0); Console.Ln;
+      Console.String("Unix.Stat size: "); Console.Int(SIZE(Status), 0); Console.Ln;
+      Console.String("Unix.JmpBuf size: "); Console.Int(SIZE(JmpBuf), 0); Console.Ln;
+      Console.String("sigjmp_buf size: "); Console.Int(SizeofSigJmpBuf(), 0); Console.Ln;
+      Console.String("Unix.Timeval size: "); Console.Int(SIZE(Timeval), 0); Console.Ln;
+      Console.String("struct timeval size: "); Console.Int(SizeofTimeval(), 0); Console.Ln;
+       Console.String("Unix.Timezone size: "); Console.Int(SIZE(Timezone), 0); Console.Ln;
+      Console.String("struct timezone size: "); Console.Int(SizeofTimezone(), 0); Console.Ln;
+       Console.String("Unix.Rusage size: "); Console.Int(SIZE(Rusage), 0); Console.Ln;
+      Console.String("struct rusage size: "); Console.Int(SizeofRusage(), 0); Console.Ln;
+       Console.String("Unix.FdSet size: "); Console.Int(SIZE(FdSet), 0); Console.Ln;
+      Console.String("fdset size: "); Console.Int(SizeofFdSet(), 0); Console.Ln;
+      Console.String("Unix.Dirent size: "); Console.Int(SIZE(Dirent), 0); Console.Ln;
+      Console.String("struct dirent size: "); Console.Int(SizeofDirent(), 0); Console.Ln;
+       Console.String("Unix.Iovec size: "); Console.Int(SIZE(Iovec), 0); Console.Ln;
+      Console.String("struct iovec size: "); Console.Int(SizeofIovec(), 0); Console.Ln;
+  END Check;
+*) 
 BEGIN
-
+   
+   (*Check;*)
    StatCheck();
 
 END Unix.
+

@@ -187,7 +187,7 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
       Console.String(Configuration.versionLong); Console.String("."); Console.Ln; 
       Console.Ln;
       Console.String("Originally from Ofront by Software Templ OEG."); Console.Ln;
-      Console.String("Reworked by Norayr Chilingarian and others as Vishap Oberon."); Console.Ln;
+      Console.String("Reworked by Norayr Chilingarian Vishap Oberon."); Console.Ln;
       Console.String("Further updated by Dave CW Brown."); Console.Ln;
       Console.Ln;
       Console.String('command = "olang" options {files}.'); Console.Ln;
