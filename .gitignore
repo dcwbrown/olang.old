@@ -27,3 +27,5 @@
 /olang/test/**/*.sym
 /olang/test/**/*.stackdump
 /.DS_store
+**/.DS_store
+**/*.dSYM
