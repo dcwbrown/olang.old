@@ -1,7 +1,15 @@
 #ifndef SYSTEM__h
 #define SYSTEM__h
 
-#ifdef _WIN32   // (_WIN32 is defined for both win32 and win64)
+#ifndef _WIN32
+
+  // Building for a Unix/Linux based system
+    #include <string.h>  // For memcpy ...
+  #include <stdint.h>  // For uintptr_t ...
+
+#else
+
+  // Building for Windows platform with either mingw under cygwin, or the MS C compiler
   #ifdef _WIN64
     typedef unsigned long long size_t;
     typedef unsigned long long uintptr_t;
@@ -9,12 +17,10 @@
     typedef unsigned int size_t;
     typedef unsigned int uintptr_t;
   #endif /* _WIN64 */
+
   typedef unsigned int     uint32_t;
   void * __cdecl memcpy(void * dest, const void * source, size_t size);
-#else
-  #include <stdlib.h>  // For malloc, exit ...
-  #include <string.h>  // For memcpy ...
-  #include <stdint.h>  // For uintptr_t ...
+
 #endif
 
 
@@ -217,8 +223,8 @@ extern SYSTEM_PTR SYSTEM_NEWARR(LONGINT*, LONGINT, int, int, int, ...);
 
 /* Type handling */
 
-#define __TDESC(t, m, n)                                                 \
-	static struct t##__desc {                                            \
+#define __TDESC(t, m, n)                                             \
+	static struct t##__desc {                                          \
 		LONGINT  tproc[m];         /* Proc for each ptr field     */     \
 		LONGINT  tag;                                                    \
 		LONGINT  next;                                                   \

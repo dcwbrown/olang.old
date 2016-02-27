@@ -16,26 +16,26 @@ translatetoc:
 	mkdir -p $(BUILDDIR)
 	cp BasicTypeParameters $(BUILDDIR)
 
-	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFs    ../Configuration.Mod
-	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFs    Platform$(PLATFORM).Mod
-	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSsiapx Heap.Mod
-	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFs    Console.Mod
-	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFs    Strings.Mod
-	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFs    Modules.Mod
-	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFsx   Files.Mod
-	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFs    Reals.Mod
-	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFs    Texts.Mod
-	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFs    vt100.Mod
-	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFs    errors.Mod
-	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFs    OPM.cmdln.Mod
-	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFs    extTools.Mod
-	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFsx   OPS.Mod
-	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFs    OPT.Mod
-	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFs    OPC.Mod
-	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFs    OPV.Mod
-	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFs    OPB.Mod
-	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSFs    OPP.Mod
-	cd $(BUILDDIR); MODULES=../compiler ../bin/$(OLANGNAME) -PSsm    olang.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PSFs    ../Configuration.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PSFs    ../compiler/Platform$(PLATFORM).Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PSsiapx ../compiler/Heap.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PSFs    ../compiler/Console.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PSFs    ../library/v4/Strings.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PSFs    ../library/v4/Modules.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PSFsx   ../compiler/Files.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PSFs    ../library/v4/Reals.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PSFs    ../library/v4/Texts.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PSFs    ../compiler/vt100.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PSFs    ../compiler/errors.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PSFs    ../compiler/OPM.cmdln.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PSFs    ../compiler/extTools.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PSFsx   ../compiler/OPS.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PSFs    ../compiler/OPT.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PSFs    ../compiler/OPC.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PSFs    ../compiler/OPV.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PSFs    ../compiler/OPB.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PSFs    ../compiler/OPP.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PSsm    ../compiler/olang.Mod
 
 
 compilec:
@@ -54,141 +54,141 @@ library: v4 ooc2 ooc ulm pow32 misc s3
 
 
 v4:
-	cd $(BUILDDIR); MODULES=../library/v4   ../bin/$(OLANGNAME) -PFs Args.Mod
-	cd $(BUILDDIR); MODULES=../library/v4   ../bin/$(OLANGNAME) -PFs Printer.Mod
-	cd $(BUILDDIR); MODULES=../library/v4   ../bin/$(OLANGNAME) -PFs Sets.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/v4/Args.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/v4/Printer.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/v4/Sets.Mod
 
 ooc2:
-	cd $(BUILDDIR); MODULES=../library/ooc2 ../bin/$(OLANGNAME) -PFs ooc2Strings.Mod
-	cd $(BUILDDIR); MODULES=../library/ooc2 ../bin/$(OLANGNAME) -PFs ooc2Ascii.Mod
-	cd $(BUILDDIR); MODULES=../library/ooc2 ../bin/$(OLANGNAME) -PFs ooc2CharClass.Mod
-	cd $(BUILDDIR); MODULES=../library/ooc2 ../bin/$(OLANGNAME) -PFs ooc2ConvTypes.Mod
-	cd $(BUILDDIR); MODULES=../library/ooc2 ../bin/$(OLANGNAME) -PFs ooc2IntConv.Mod
-	cd $(BUILDDIR); MODULES=../library/ooc2 ../bin/$(OLANGNAME) -PFs ooc2IntStr.Mod
-	cd $(BUILDDIR); MODULES=../library/ooc2 ../bin/$(OLANGNAME) -PFs ooc2Real0.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc2/ooc2Strings.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc2/ooc2Ascii.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc2/ooc2CharClass.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc2/ooc2ConvTypes.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc2/ooc2IntConv.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc2/ooc2IntStr.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc2/ooc2Real0.Mod
 
 ooc:
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocLowReal.Mod
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocLowLReal.Mod
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocRealMath.Mod
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocOakMath.Mod
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocLRealMath.Mod
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocLongInts.Mod
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocComplexMath.Mod 
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocLComplexMath.Mod
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocAscii.Mod 
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocCharClass.Mod 
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocStrings.Mod 
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocConvTypes.Mod 
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocLRealConv.Mod 
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocLRealStr.Mod
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocRealConv.Mod 
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocRealStr.Mod
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocIntConv.Mod 
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocIntStr.Mod 
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocMsg.Mod 
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocSysClock.Mod 
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocTime.Mod 
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocChannel.Mod
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocStrings2.Mod 
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocRts.Mod 
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocFilenames.Mod
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocTextRider.Mod 
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocBinaryRider.Mod 
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocJulianDay.Mod
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocFilenames.Mod
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocwrapperlibc.Mod
-	cd $(BUILDDIR); MODULES=../library/ooc  ../bin/$(OLANGNAME) -PFs oocC$(CPUARCH).Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocLowReal.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocLowLReal.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocRealMath.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocOakMath.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocLRealMath.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocLongInts.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocComplexMath.Mod 
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocLComplexMath.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocAscii.Mod 
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocCharClass.Mod 
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocStrings.Mod 
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocConvTypes.Mod 
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocLRealConv.Mod 
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocLRealStr.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocRealConv.Mod 
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocRealStr.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocIntConv.Mod 
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocIntStr.Mod 
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocMsg.Mod 
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocSysClock.Mod 
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocTime.Mod 
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocChannel.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocStrings2.Mod 
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocRts.Mod 
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocFilenames.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocTextRider.Mod 
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocBinaryRider.Mod 
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocJulianDay.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocFilenames.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocwrapperlibc.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ooc/oocC$(CPUARCH).Mod
 
 oocX:
-	cd $(BUILDDIR); MODULES=../library/oocX ../bin/$(OLANGNAME) -PFs oocX11.Mod
-	cd $(BUILDDIR); MODULES=../library/oocX ../bin/$(OLANGNAME) -PFs oocXutil.Mod
-	cd $(BUILDDIR); MODULES=../library/oocX ../bin/$(OLANGNAME) -PFs oocXYplane.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/oocX/oocX11.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/oocX/oocXutil.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/oocX/oocXYplane.Mod
 
 ulm:
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmObjects.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmPriorities.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmDisciplines.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmServices.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmSys.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmSYSTEM.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmEvents.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmProcess.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmResources.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmForwarders.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmRelatedEvents.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmTypes.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmStreams.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmStrings.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmSysTypes.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmTexts.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmSysConversions.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmErrors.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmSysErrors.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmSysStat.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmASCII.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmSets.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmIO.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmAssertions.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmIndirectDisciplines.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmStreamDisciplines.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmIEEE.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmMC68881.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmReals.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmPrint.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmWrite.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmConstStrings.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmPlotters.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmSysIO.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmLoader.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmNetIO.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmPersistentObjects.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmPersistentDisciplines.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmOperations.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmScales.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmTimes.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmClocks.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmTimers.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmConditions.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmStreamConditions.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmTimeConditions.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmCiphers.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmCipherOps.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmBlockCiphers.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmAsymmetricCiphers.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmConclusions.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmRandomGenerators.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmTCrypt.Mod
-	cd $(BUILDDIR); MODULES=../library/ulm  ../bin/$(OLANGNAME) -PFs ulmIntOperations.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmObjects.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmPriorities.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmDisciplines.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmServices.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmSys.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmSYSTEM.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmEvents.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmProcess.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmResources.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmForwarders.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmRelatedEvents.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmTypes.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmStreams.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmStrings.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmSysTypes.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmTexts.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmSysConversions.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmErrors.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmSysErrors.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmSysStat.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmASCII.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmSets.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmIO.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmAssertions.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmIndirectDisciplines.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmStreamDisciplines.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmIEEE.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmMC68881.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmReals.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmPrint.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmWrite.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmConstStrings.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmPlotters.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmSysIO.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmLoader.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmNetIO.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmPersistentObjects.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmPersistentDisciplines.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmOperations.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmScales.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmTimes.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmClocks.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmTimers.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmConditions.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmStreamConditions.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmTimeConditions.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmCiphers.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmCipherOps.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmBlockCiphers.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmAsymmetricCiphers.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmConclusions.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmRandomGenerators.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmTCrypt.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/ulm/ulmIntOperations.Mod
 
 pow32:
-	cd $(BUILDDIR); MODULES=../library/pow  ../bin/$(OLANGNAME) -PFs powStrings.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/pow/powStrings.Mod
 
 misc:
-	cd $(BUILDDIR); MODULES=../library/misc ../bin/$(OLANGNAME) -PFs crt.Mod
-	cd $(BUILDDIR); MODULES=../library/misc ../bin/$(OLANGNAME) -PFs Listen.Mod
-	cd $(BUILDDIR); MODULES=../library/misc ../bin/$(OLANGNAME) -PFs MersenneTwister.Mod
-	cd $(BUILDDIR); MODULES=../library/misc ../bin/$(OLANGNAME) -PFs MultiArrays.Mod
-	cd $(BUILDDIR); MODULES=../library/misc ../bin/$(OLANGNAME) -PFs MultiArrayRiders.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/misc/crt.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/misc/Listen.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/misc/MersenneTwister.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/misc/MultiArrays.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/misc/MultiArrayRiders.Mod
 
 s3:
-	cd $(BUILDDIR); MODULES=../library/s3   ../bin/$(OLANGNAME) -PFs ethBTrees.Mod
-	cd $(BUILDDIR); MODULES=../library/s3   ../bin/$(OLANGNAME) -PFs ethMD5.Mod
-	cd $(BUILDDIR); MODULES=../library/s3   ../bin/$(OLANGNAME) -PFs ethSets.Mod
-	cd $(BUILDDIR); MODULES=../library/s3   ../bin/$(OLANGNAME) -PFs ethZlib.Mod
-	cd $(BUILDDIR); MODULES=../library/s3   ../bin/$(OLANGNAME) -PFs ethZlibBuffers.Mod
-	cd $(BUILDDIR); MODULES=../library/s3   ../bin/$(OLANGNAME) -PFs ethZlibInflate.Mod
-	cd $(BUILDDIR); MODULES=../library/s3   ../bin/$(OLANGNAME) -PFs ethZlibDeflate.Mod
-	cd $(BUILDDIR); MODULES=../library/s3   ../bin/$(OLANGNAME) -PFs ethZlibReaders.Mod
-	cd $(BUILDDIR); MODULES=../library/s3   ../bin/$(OLANGNAME) -PFs ethZlibWriters.Mod
-	cd $(BUILDDIR); MODULES=../library/s3   ../bin/$(OLANGNAME) -PFs ethZip.Mod
-	cd $(BUILDDIR); MODULES=../library/s3   ../bin/$(OLANGNAME) -PFs ethRandomNumbers.Mod
-	cd $(BUILDDIR); MODULES=../library/s3   ../bin/$(OLANGNAME) -PFs ethGZReaders.Mod
-	cd $(BUILDDIR); MODULES=../library/s3   ../bin/$(OLANGNAME) -PFs ethGZWriters.Mod
-	cd $(BUILDDIR); MODULES=../library/s3   ../bin/$(OLANGNAME) -PFs ethUnicode.Mod
-	cd $(BUILDDIR); MODULES=../library/s3   ../bin/$(OLANGNAME) -PFs ethDates.Mod
-	cd $(BUILDDIR); MODULES=../library/s3   ../bin/$(OLANGNAME) -PFs ethReals.Mod
-	cd $(BUILDDIR); MODULES=../library/s3   ../bin/$(OLANGNAME) -PFs ethStrings.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/s3/ethBTrees.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/s3/ethMD5.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/s3/ethSets.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/s3/ethZlib.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/s3/ethZlibBuffers.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/s3/ethZlibInflate.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/s3/ethZlibDeflate.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/s3/ethZlibReaders.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/s3/ethZlibWriters.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/s3/ethZip.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/s3/ethRandomNumbers.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/s3/ethGZReaders.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/s3/ethGZWriters.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/s3/ethUnicode.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/s3/ethDates.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/s3/ethReals.Mod
+	cd $(BUILDDIR); ../bin/$(OLANGNAME) -PFs ../library/s3/ethStrings.Mod
 
 
 
@@ -232,7 +232,7 @@ install:
 
 
 
-# Shared library (for real unix systems only, don't use on cygwin)
+# Shared library (for real unix/linux systems only, don't use on cygwin)
 sharedlibrary:
 	cd $(BUILDDIR) && $(CC) -shared -o "$(PREFIX)/lib/libolang.so" *.o
 	echo "$(PREFIX)/lib" >/etc/ld.so.conf.d

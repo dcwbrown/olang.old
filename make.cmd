@@ -54,27 +54,26 @@ goto :eof
 :translatetoc
 cd %BUILDDIR%
 copy ..\BasicTypeParameters >nul
-set MODULES=../compiler
 ..\bin\%OLANGNAME% -PSFs    ../Configuration.Mod
-..\bin\%OLANGNAME% -PSFs    Platform%PLATFORM%.Mod
-..\bin\%OLANGNAME% -PSsiapx Heap.Mod
-..\bin\%OLANGNAME% -PSFs    Console.Mod
-..\bin\%OLANGNAME% -PSFs    Strings.Mod
-..\bin\%OLANGNAME% -PSFs    Modules.Mod
-..\bin\%OLANGNAME% -PSFsx   Files.Mod
-..\bin\%OLANGNAME% -PSFs    Reals.Mod
-..\bin\%OLANGNAME% -PSFs    Texts.Mod
-..\bin\%OLANGNAME% -PSFs    vt100.Mod
-..\bin\%OLANGNAME% -PSFs    errors.Mod
-..\bin\%OLANGNAME% -PSFs    OPM.cmdln.Mod
-..\bin\%OLANGNAME% -PSFs    extTools.Mod
-..\bin\%OLANGNAME% -PSFsx   OPS.Mod
-..\bin\%OLANGNAME% -PSFs    OPT.Mod
-..\bin\%OLANGNAME% -PSFs    OPC.Mod
-..\bin\%OLANGNAME% -PSFs    OPV.Mod
-..\bin\%OLANGNAME% -PSFs    OPB.Mod
-..\bin\%OLANGNAME% -PSFs    OPP.Mod
-..\bin\%OLANGNAME% -PSsm    olang.Mod
+..\bin\%OLANGNAME% -PSFs    ../compiler/Platform%PLATFORM%.Mod
+..\bin\%OLANGNAME% -PSsiapx ../compiler/Heap.Mod
+..\bin\%OLANGNAME% -PSFs    ../compiler/Console.Mod
+..\bin\%OLANGNAME% -PSFs    ../library/v4/Strings.Mod
+..\bin\%OLANGNAME% -PSFs    ../library/v4/Modules.Mod
+..\bin\%OLANGNAME% -PSFsx   ../compiler/Files.Mod
+..\bin\%OLANGNAME% -PSFs    ../library/v4/Reals.Mod
+..\bin\%OLANGNAME% -PSFs    ../library/v4/Texts.Mod
+..\bin\%OLANGNAME% -PSFs    ../compiler/vt100.Mod
+..\bin\%OLANGNAME% -PSFs    ../compiler/errors.Mod
+..\bin\%OLANGNAME% -PSFs    ../compiler/OPM.cmdln.Mod
+..\bin\%OLANGNAME% -PSFs    ../compiler/extTools.Mod
+..\bin\%OLANGNAME% -PSFsx   ../compiler/OPS.Mod
+..\bin\%OLANGNAME% -PSFs    ../compiler/OPT.Mod
+..\bin\%OLANGNAME% -PSFs    ../compiler/OPC.Mod
+..\bin\%OLANGNAME% -PSFs    ../compiler/OPV.Mod
+..\bin\%OLANGNAME% -PSFs    ../compiler/OPB.Mod
+..\bin\%OLANGNAME% -PSFs    ../compiler/OPP.Mod
+..\bin\%OLANGNAME% -PSsm    ../compiler/olang.Mod
 cd ..
 goto :eof
 
