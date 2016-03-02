@@ -16,18 +16,25 @@
 
 :: Create configuration and parameter files.
 
-cl -nologo -Icompiler -DOLANG_VERSION=0.5 buildtool/EstablishParameters.c >nul
+cl -nologo -Icompiler -DO_VER=0.5 buildtools/configure.c >nul
 setlocal
-EstablishParameters.exe
-del EstablishParameters.obj EstablishParameters.exe 2>nul
+configure.exe
+del configure.obj configure.exe 2>nul
+
 :: Extract make variables into local environment
 
-for /F "delims='=' tokens=1,2" %%a in (make.include) do set %%a=%%b
+for /F "delims='=' tokens=1,2" %%a in (make.config) do set %%a=%%b
+
+set FLAVOUR=%COMPILER%.%OS%.%DATAMODEL%
+set BUILDDIR=build.%FLAVOUR%
+set NEWOLANG=olang%BINEXT%
+set SAVEDOLANG=bin\olang.%FLAVOUR%%BINEXT%
 
 
 
 
-:: Process parameters
+
+:: Process target parameter
 
 if "%1" equ "" (
   call :all
@@ -39,7 +46,7 @@ goto :eof
 
 
 
-
+:: all: Builds the compiler, but not the library
 :all
 call :translatetoc
 call :compilec
@@ -48,41 +55,108 @@ goto :eof
 
 
 
+:: full: Bootstraps the compiler by building it twice, then builds the
+::       library. If this works the now-proven new compiler is copied to 
+::       the bin directory.
+:full
+call :clean
+call :all
+rd /s /q %BUILDDIR% 2>nul
+call :all
+call :library
+call :setnewcompiler
+goto :eof
+
+
+
+:clean
+del /q olang%BINEXT% olang.map 2>nul
+rd /s /q %BUILDDIR% 2>nul
+goto :eof
+
+
+
+:setnewcompiler
+copy %NEWOLANG% %SAVEDOLANG%
+goto :eof
+
+
+
+:install
+whoami /groups | find "12288" >nul
+if errorlevel 1 (
+echo make install - administrator rights required. Please run under an administrator command prompt.
+goto :eof
+)
+mkdir "%INSTALLDIR%\bin"                     >nul 2>&1 
+mkdir "%INSTALLDIR%\include"                 >nul 2>&1     
+mkdir "%INSTALLDIR%\sym"                     >nul 2>&1 
+mkdir "%INSTALLDIR%\lib"                     >nul 2>&1 
+copy %BUILDDIR%\*.h          "%INSTALLDIR%\include" >nul       
+copy %BUILDDIR%\*.sym        "%INSTALLDIR%\sym"     >nul   
+copy %SAVEDOLANG%            "%INSTALLDIR%\bin"     >nul   
+copy %BUILDDIR%\libolang.lib "%INSTALLDIR%\lib"     >nul   
+:: Optional: Link c:\windows\olang.exe to the new binary
+::del /q c:\windows\olang.exe >nul 2>&1
+::mklink c:\windows\olang.exe "%INSTALLDIR%\bin\olang%BINEXT%"
+goto :eof
+
+
 
 
 :: Translate compiler source files to C
 :translatetoc
+echo.
+echo.Translating compiler source to C using configuration:
+echo.
+echo.  PLATFORM:  %PLATFORM%
+echo.  OS:        %OS%
+echo.  DATAMODEL: %DATAMODEL%
+echo.  SIZEALIGN: %SIZEALIGN%
+echo.  COMPILER:  %COMPILER%
+echo.  VERSION:   %VERSION%
+echo.
+
+if not exist olang.exe copy %SAVEDOLANG% %NEWOLANG%
+md %BUILDDIR% 2>nul
 cd %BUILDDIR%
-copy ..\BasicTypeParameters >nul
-..\bin\%OLANGNAME% -PSFs    ../Configuration.Mod
-..\bin\%OLANGNAME% -PSFs    ../compiler/Platform%PLATFORM%.Mod
-..\bin\%OLANGNAME% -PSsiapx ../compiler/Heap.Mod
-..\bin\%OLANGNAME% -PSFs    ../compiler/Console.Mod
-..\bin\%OLANGNAME% -PSFs    ../library/v4/Strings.Mod
-..\bin\%OLANGNAME% -PSFs    ../library/v4/Modules.Mod
-..\bin\%OLANGNAME% -PSFsx   ../compiler/Files.Mod
-..\bin\%OLANGNAME% -PSFs    ../library/v4/Reals.Mod
-..\bin\%OLANGNAME% -PSFs    ../library/v4/Texts.Mod
-..\bin\%OLANGNAME% -PSFs    ../compiler/vt100.Mod
-..\bin\%OLANGNAME% -PSFs    ../compiler/errors.Mod
-..\bin\%OLANGNAME% -PSFs    ../compiler/OPM.cmdln.Mod
-..\bin\%OLANGNAME% -PSFs    ../compiler/extTools.Mod
-..\bin\%OLANGNAME% -PSFsx   ../compiler/OPS.Mod
-..\bin\%OLANGNAME% -PSFs    ../compiler/OPT.Mod
-..\bin\%OLANGNAME% -PSFs    ../compiler/OPC.Mod
-..\bin\%OLANGNAME% -PSFs    ../compiler/OPV.Mod
-..\bin\%OLANGNAME% -PSFs    ../compiler/OPB.Mod
-..\bin\%OLANGNAME% -PSFs    ../compiler/OPP.Mod
-..\bin\%OLANGNAME% -PSsm    ../compiler/olang.Mod
+copy ..\compiler\*.h >nul 2>nul
+..\%NEWOLANG% -SFs    -T%SIZEALIGN% ../Configuration.Mod
+..\%NEWOLANG% -SFs    -T%SIZEALIGN% ../compiler/Platform%PLATFORM%.Mod
+..\%NEWOLANG% -Ssiapx -T%SIZEALIGN% ../compiler/Heap.Mod
+..\%NEWOLANG% -SFs    -T%SIZEALIGN% ../compiler/Console.Mod
+..\%NEWOLANG% -SFs    -T%SIZEALIGN% ../library/v4/Strings.Mod
+..\%NEWOLANG% -SFs    -T%SIZEALIGN% ../library/v4/Modules.Mod
+..\%NEWOLANG% -SFsx   -T%SIZEALIGN% ../compiler/Files.Mod
+..\%NEWOLANG% -SFs    -T%SIZEALIGN% ../library/v4/Reals.Mod
+..\%NEWOLANG% -SFs    -T%SIZEALIGN% ../library/v4/Texts.Mod
+..\%NEWOLANG% -SFs    -T%SIZEALIGN% ../compiler/vt100.Mod
+..\%NEWOLANG% -SFs    -T%SIZEALIGN% ../compiler/errors.Mod
+..\%NEWOLANG% -SFs    -T%SIZEALIGN% ../compiler/OPM.cmdln.Mod
+..\%NEWOLANG% -SFs    -T%SIZEALIGN% ../compiler/extTools.Mod
+..\%NEWOLANG% -SFsx   -T%SIZEALIGN% ../compiler/OPS.Mod
+..\%NEWOLANG% -SFs    -T%SIZEALIGN% ../compiler/OPT.Mod
+..\%NEWOLANG% -SFs    -T%SIZEALIGN% ../compiler/OPC.Mod
+..\%NEWOLANG% -SFs    -T%SIZEALIGN% ../compiler/OPV.Mod
+..\%NEWOLANG% -SFs    -T%SIZEALIGN% ../compiler/OPB.Mod
+..\%NEWOLANG% -SFs    -T%SIZEALIGN% ../compiler/OPP.Mod
+..\%NEWOLANG% -Ssm    -T%SIZEALIGN% ../compiler/olang.Mod
 cd ..
 goto :eof
 
 
 :: Compile translated compiler source files
 :compilec
+echo.
+echo.Compiling translated Oberon compiler using configuration:
+echo.
+echo.  FLAVOUR: %FLAVOUR%
+echo.
+
+
 cd %BUILDDIR%
-cl -nologo -c -I..\compiler Platform.c Heap.c Console.c Modules.c Strings.c Configuration.c ..\compiler\SYSTEM.c Files.c Reals.c Texts.c vt100.c extTools.c	OPM.c OPS.c OPT.c OPC.c OPV.c OPB.c OPP.c errors.c
-cl -nologo -I..\compiler olang.c /Fe..\olang%BINEXT% Platform.obj Heap.obj Console.obj Modules.obj Strings.obj Configuration.obj Files.obj Reals.obj Texts.obj vt100.obj extTools.obj SYSTEM.obj OPM.obj OPS.obj OPT.obj OPC.obj OPV.obj OPB.obj OPP.obj errors.obj -link -map
+cl -nologo -c Platform.c Heap.c Console.c Modules.c Strings.c Configuration.c ..\compiler\SYSTEM.c Files.c Reals.c Texts.c vt100.c extTools.c	OPM.c OPS.c OPT.c OPC.c OPV.c OPB.c OPP.c errors.c
+cl -nologo olang.c /Fe..\olang%BINEXT% Platform.obj Heap.obj Console.obj Modules.obj Strings.obj Configuration.obj Files.obj Reals.obj Texts.obj vt100.obj extTools.obj SYSTEM.obj OPM.obj OPS.obj OPT.obj OPC.obj OPV.obj OPB.obj OPP.obj errors.obj -link -map
 cd ..
 goto :eof
 
@@ -97,77 +171,75 @@ call :ulm
 call :pow32
 call :misc
 call :s3
+call :libolang
 goto :eof
 
 
 
 
 :v4
-setlocal
+echo.
+echo.Making V4 library
+echo.
 cd %BUILDDIR%
-set MODULES=../library/v4   
-set INCLUDE=../compiler;%INCLUDE%
-..\bin\%OLANGNAME% -PFsv Args.Mod
-..\bin\%OLANGNAME% -PFsv Printer.Mod
-..\bin\%OLANGNAME% -PFsv Sets.Mod
+..\%NEWOLANG% -Fs ../library/v4/Args.Mod
+..\%NEWOLANG% -Fs ../library/v4/Printer.Mod
+..\%NEWOLANG% -Fs ../library/v4/Sets.Mod
 cd ..
-endlocal
 goto :eof
 
 :ooc2
-setlocal
+echo.
+echo.Making ooc2 library
+echo.
 cd %BUILDDIR%
-set MODULES=../library/ooc2 
-set INCLUDE=../compiler;%INCLUDE%
-..\bin\%OLANGNAME% -PFs ooc2Strings.Mod
-..\bin\%OLANGNAME% -PFs ooc2Ascii.Mod
-..\bin\%OLANGNAME% -PFs ooc2CharClass.Mod
-..\bin\%OLANGNAME% -PFs ooc2ConvTypes.Mod
-..\bin\%OLANGNAME% -PFs ooc2IntConv.Mod
-..\bin\%OLANGNAME% -PFs ooc2IntStr.Mod
-..\bin\%OLANGNAME% -PFs ooc2Real0.Mod
+..\%NEWOLANG% -Fs ../library/ooc2/ooc2Strings.Mod
+..\%NEWOLANG% -Fs ../library/ooc2/ooc2Ascii.Mod
+..\%NEWOLANG% -Fs ../library/ooc2/ooc2CharClass.Mod
+..\%NEWOLANG% -Fs ../library/ooc2/ooc2ConvTypes.Mod
+..\%NEWOLANG% -Fs ../library/ooc2/ooc2IntConv.Mod
+..\%NEWOLANG% -Fs ../library/ooc2/ooc2IntStr.Mod
+..\%NEWOLANG% -Fs ../library/ooc2/ooc2Real0.Mod
 cd ..
-endlocal
 goto :eof
 
 :ooc
-setlocal
+echo.
+echo.Making ooc library
+echo.
 cd %BUILDDIR%
-set MODULES=../library/ooc  
-set INCLUDE=../compiler;%INCLUDE%
-..\bin\%OLANGNAME% -PFs oocLowReal.Mod
-..\bin\%OLANGNAME% -PFs oocLowLReal.Mod
-..\bin\%OLANGNAME% -PFs oocRealMath.Mod
-..\bin\%OLANGNAME% -PFs oocOakMath.Mod
-..\bin\%OLANGNAME% -PFs oocLRealMath.Mod
-..\bin\%OLANGNAME% -PFs oocLongInts.Mod
-..\bin\%OLANGNAME% -PFs oocComplexMath.Mod
-..\bin\%OLANGNAME% -PFs oocLComplexMath.Mod
-..\bin\%OLANGNAME% -PFs oocAscii.Mod
-..\bin\%OLANGNAME% -PFs oocCharClass.Mod
-..\bin\%OLANGNAME% -PFs oocStrings.Mod
-..\bin\%OLANGNAME% -PFs oocConvTypes.Mod
-..\bin\%OLANGNAME% -PFs oocLRealConv.Mod
-..\bin\%OLANGNAME% -PFs oocLRealStr.Mod
-..\bin\%OLANGNAME% -PFs oocRealConv.Mod
-..\bin\%OLANGNAME% -PFs oocRealStr.Mod
-..\bin\%OLANGNAME% -PFs oocIntConv.Mod
-..\bin\%OLANGNAME% -PFs oocIntStr.Mod
-..\bin\%OLANGNAME% -PFs oocMsg.Mod
-..\bin\%OLANGNAME% -PFs oocSysClock.Mod
-..\bin\%OLANGNAME% -PFs oocTime.Mod
-..\bin\%OLANGNAME% -PFs oocChannel.Mod
-..\bin\%OLANGNAME% -PFs oocStrings2.Mod
-..\bin\%OLANGNAME% -PFs oocRts.Mod
-..\bin\%OLANGNAME% -PFs oocFilenames.Mod
-..\bin\%OLANGNAME% -PFs oocTextRider.Mod
-..\bin\%OLANGNAME% -PFs oocBinaryRider.Mod
-..\bin\%OLANGNAME% -PFs oocJulianDay.Mod
-..\bin\%OLANGNAME% -PFs oocFilenames.Mod
-..\bin\%OLANGNAME% -PFs oocwrapperlibc.Mod
-..\bin\%OLANGNAME% -PFs oocC%CPUARCH%.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocLowReal.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocLowLReal.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocRealMath.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocOakMath.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocLRealMath.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocLongInts.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocComplexMath.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocLComplexMath.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocAscii.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocCharClass.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocStrings.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocConvTypes.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocLRealConv.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocLRealStr.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocRealConv.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocRealStr.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocIntConv.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocIntStr.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocMsg.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocSysClock.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocTime.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocChannel.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocStrings2.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocRts.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocFilenames.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocTextRider.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocBinaryRider.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocJulianDay.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocFilenames.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocwrapperlibc.Mod
+..\%NEWOLANG% -Fs ../library/ooc/oocC%DATAMODEL%.Mod
 cd ..
-endlocal
 goto :eof
 
 :oocX
@@ -175,167 +247,131 @@ echo No X11 support on plain Windows - use cygwin and build with cygwin make.
 goto :eof
 
 :ulm
-setlocal
+echo.
+echo.Making ulm library
+echo.
 cd %BUILDDIR%
-set MODULES=../library/ulm  
-set INCLUDE=../compiler;%INCLUDE%
-..\bin\%OLANGNAME% -PFs ulmObjects.Mod
-..\bin\%OLANGNAME% -PFs ulmPriorities.Mod
-..\bin\%OLANGNAME% -PFs ulmDisciplines.Mod
-..\bin\%OLANGNAME% -PFs ulmServices.Mod
-..\bin\%OLANGNAME% -PFs ulmSys.Mod
-..\bin\%OLANGNAME% -PFs ulmSYSTEM.Mod
-..\bin\%OLANGNAME% -PFs ulmEvents.Mod
-..\bin\%OLANGNAME% -PFs ulmProcess.Mod
-..\bin\%OLANGNAME% -PFs ulmResources.Mod
-..\bin\%OLANGNAME% -PFs ulmForwarders.Mod
-..\bin\%OLANGNAME% -PFs ulmRelatedEvents.Mod
-..\bin\%OLANGNAME% -PFs ulmTypes.Mod
-..\bin\%OLANGNAME% -PFs ulmStreams.Mod
-..\bin\%OLANGNAME% -PFs ulmStrings.Mod
-..\bin\%OLANGNAME% -PFs ulmSysTypes.Mod
-..\bin\%OLANGNAME% -PFs ulmTexts.Mod
-..\bin\%OLANGNAME% -PFs ulmSysConversions.Mod
-..\bin\%OLANGNAME% -PFs ulmErrors.Mod
-..\bin\%OLANGNAME% -PFs ulmSysErrors.Mod
-..\bin\%OLANGNAME% -PFs ulmSysStat.Mod
-..\bin\%OLANGNAME% -PFs ulmASCII.Mod
-..\bin\%OLANGNAME% -PFs ulmSets.Mod
-..\bin\%OLANGNAME% -PFs ulmIO.Mod
-..\bin\%OLANGNAME% -PFs ulmAssertions.Mod
-..\bin\%OLANGNAME% -PFs ulmIndirectDisciplines.Mod
-..\bin\%OLANGNAME% -PFs ulmStreamDisciplines.Mod
-..\bin\%OLANGNAME% -PFs ulmIEEE.Mod
-..\bin\%OLANGNAME% -PFs ulmMC68881.Mod
-..\bin\%OLANGNAME% -PFs ulmReals.Mod
-..\bin\%OLANGNAME% -PFs ulmPrint.Mod
-..\bin\%OLANGNAME% -PFs ulmWrite.Mod
-..\bin\%OLANGNAME% -PFs ulmConstStrings.Mod
-..\bin\%OLANGNAME% -PFs ulmPlotters.Mod
-..\bin\%OLANGNAME% -PFs ulmSysIO.Mod
-..\bin\%OLANGNAME% -PFs ulmLoader.Mod
-..\bin\%OLANGNAME% -PFs ulmNetIO.Mod
-..\bin\%OLANGNAME% -PFs ulmPersistentObjects.Mod
-..\bin\%OLANGNAME% -PFs ulmPersistentDisciplines.Mod
-..\bin\%OLANGNAME% -PFs ulmOperations.Mod
-..\bin\%OLANGNAME% -PFs ulmScales.Mod
-..\bin\%OLANGNAME% -PFs ulmTimes.Mod
-..\bin\%OLANGNAME% -PFs ulmClocks.Mod
-..\bin\%OLANGNAME% -PFs ulmTimers.Mod
-..\bin\%OLANGNAME% -PFs ulmConditions.Mod
-..\bin\%OLANGNAME% -PFs ulmStreamConditions.Mod
-..\bin\%OLANGNAME% -PFs ulmTimeConditions.Mod
-..\bin\%OLANGNAME% -PFs ulmCiphers.Mod
-..\bin\%OLANGNAME% -PFs ulmCipherOps.Mod
-..\bin\%OLANGNAME% -PFs ulmBlockCiphers.Mod
-..\bin\%OLANGNAME% -PFs ulmAsymmetricCiphers.Mod
-..\bin\%OLANGNAME% -PFs ulmConclusions.Mod
-..\bin\%OLANGNAME% -PFs ulmRandomGenerators.Mod
-..\bin\%OLANGNAME% -PFs ulmTCrypt.Mod
-..\bin\%OLANGNAME% -PFs ulmIntOperations.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmObjects.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmPriorities.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmDisciplines.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmServices.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmSys.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmSYSTEM.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmEvents.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmProcess.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmResources.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmForwarders.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmRelatedEvents.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmTypes.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmStreams.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmStrings.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmSysTypes.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmTexts.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmSysConversions.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmErrors.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmSysErrors.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmSysStat.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmASCII.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmSets.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmIO.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmAssertions.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmIndirectDisciplines.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmStreamDisciplines.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmIEEE.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmMC68881.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmReals.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmPrint.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmWrite.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmConstStrings.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmPlotters.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmSysIO.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmLoader.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmNetIO.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmPersistentObjects.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmPersistentDisciplines.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmOperations.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmScales.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmTimes.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmClocks.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmTimers.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmConditions.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmStreamConditions.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmTimeConditions.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmCiphers.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmCipherOps.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmBlockCiphers.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmAsymmetricCiphers.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmConclusions.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmRandomGenerators.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmTCrypt.Mod
+..\%NEWOLANG% -Fs ../library/ulm/ulmIntOperations.Mod
 cd ..
-endlocal
 goto :eof
 
 :pow32
-setlocal
+echo.
+echo.Making pow32 library
+echo.
 cd %BUILDDIR%
-set MODULES=../library/pow  
-set INCLUDE=../compiler;%INCLUDE%
-..\bin\%OLANGNAME% -PFs powStrings.Mod
+..\%NEWOLANG% -Fs ../library/pow/powStrings.Mod
 cd ..
-endlocal
 goto :eof
 
 :misc
-setlocal
+echo.
+echo.Making misc library
+echo.
 cd %BUILDDIR%
-set MODULES=../library/misc 
-set INCLUDE=../compiler;%INCLUDE%
-..\bin\%OLANGNAME% -PFs crt.Mod
-..\bin\%OLANGNAME% -PFs Listen.Mod
-..\bin\%OLANGNAME% -PFs MersenneTwister.Mod
-..\bin\%OLANGNAME% -PFs MultiArrays.Mod
-..\bin\%OLANGNAME% -PFs MultiArrayRiders.Mod
+..\%NEWOLANG% -Fs ../library/misc/crt.Mod
+..\%NEWOLANG% -Fs ../library/misc/Listen.Mod
+..\%NEWOLANG% -Fs ../library/misc/MersenneTwister.Mod
+..\%NEWOLANG% -Fs ../library/misc/MultiArrays.Mod
+..\%NEWOLANG% -Fs ../library/misc/MultiArrayRiders.Mod
 cd ..
-endlocal
 goto :eof
 
 :s3
-setlocal
+echo.
+echo.Making s3 library
+echo.
 cd %BUILDDIR%
-set MODULES=../library/s3   
-set INCLUDE=../compiler;%INCLUDE%
-..\bin\%OLANGNAME% -PFs ethBTrees.Mod
-..\bin\%OLANGNAME% -PFs ethMD5.Mod
-..\bin\%OLANGNAME% -PFs ethSets.Mod
-..\bin\%OLANGNAME% -PFs ethZlib.Mod
-..\bin\%OLANGNAME% -PFs ethZlibBuffers.Mod
-..\bin\%OLANGNAME% -PFs ethZlibInflate.Mod
-..\bin\%OLANGNAME% -PFs ethZlibDeflate.Mod
-..\bin\%OLANGNAME% -PFs ethZlibReaders.Mod
-..\bin\%OLANGNAME% -PFs ethZlibWriters.Mod
-..\bin\%OLANGNAME% -PFs ethZip.Mod
-..\bin\%OLANGNAME% -PFs ethRandomNumbers.Mod
-..\bin\%OLANGNAME% -PFs ethGZReaders.Mod
-..\bin\%OLANGNAME% -PFs ethGZWriters.Mod
-..\bin\%OLANGNAME% -PFs ethUnicode.Mod
-..\bin\%OLANGNAME% -PFs ethDates.Mod
-..\bin\%OLANGNAME% -PFs ethReals.Mod
-..\bin\%OLANGNAME% -PFs ethStrings.Mod
+..\%NEWOLANG% -Fs ../library/s3/ethBTrees.Mod
+..\%NEWOLANG% -Fs ../library/s3/ethMD5.Mod
+..\%NEWOLANG% -Fs ../library/s3/ethSets.Mod
+..\%NEWOLANG% -Fs ../library/s3/ethZlib.Mod
+..\%NEWOLANG% -Fs ../library/s3/ethZlibBuffers.Mod
+..\%NEWOLANG% -Fs ../library/s3/ethZlibInflate.Mod
+..\%NEWOLANG% -Fs ../library/s3/ethZlibDeflate.Mod
+..\%NEWOLANG% -Fs ../library/s3/ethZlibReaders.Mod
+..\%NEWOLANG% -Fs ../library/s3/ethZlibWriters.Mod
+..\%NEWOLANG% -Fs ../library/s3/ethZip.Mod
+..\%NEWOLANG% -Fs ../library/s3/ethRandomNumbers.Mod
+..\%NEWOLANG% -Fs ../library/s3/ethGZReaders.Mod
+..\%NEWOLANG% -Fs ../library/s3/ethGZWriters.Mod
+..\%NEWOLANG% -Fs ../library/s3/ethUnicode.Mod
+..\%NEWOLANG% -Fs ../library/s3/ethDates.Mod
+..\%NEWOLANG% -Fs ../library/s3/ethReals.Mod
+..\%NEWOLANG% -Fs ../library/s3/ethStrings.Mod
 cd ..
-endlocal
 goto :eof
 
 
 
 
-:clean
-del /q olang%BINEXT% 2>nul
-rd /s /q %BUILDDIR% 2>nul
+:libolang
+echo.
+echo.Making libolang
+echo.
+:: Remove objects that should not be part of the library
+del /q %BUILDDIR%\olang.obj %BUILDDIR%\errors.obj %BUILDDIR%\extTools.obj
+del /q %BUILDDIR%\OPM.obj   %BUILDDIR%\OPS.obj    %BUILDDIR%\OPT.obj      %BUILDDIR%\OPP.obj 
+del /q %BUILDDIR%\OPC.obj   %BUILDDIR%\OPV.obj    %BUILDDIR%\OPB.obj
+:: Make static library
+lib -nologo %BUILDDIR%\*.obj -out:%BUILDDIR%\libolang.lib
 goto :eof
 
 
 
-:setnew
-copy olang%BINEXT% bin\%OLANGNAME%
-goto :eof
-
-
-:setbackup
-copy bin\%OLANGNAME% bin\%OLANGNAME%.bak
-goto :eof
-
-
-:restorebackup
-copy bin\%OLANGNAME%.bak bin\%OLANGNAME%
-goto :eof
- 
-
-
-:install
-
-whoami /groups | find "12288" >nul
-if errorlevel 1 (
-echo make install - administrator rights required. Please run under an administrator command prompt.
-goto :eof
-)
-
-lib -nologo %BUILDDIR%\*.obj -out:libolang.lib
-mkdir "%PREFIX%\bin"                     >nul 2>&1 
-mkdir "%PREFIX%\include"                 >nul 2>&1     
-mkdir "%PREFIX%\sym"                     >nul 2>&1 
-mkdir "%PREFIX%\lib"                     >nul 2>&1 
-copy compiler\*.h     "%PREFIX%\include" >nul       
-copy %BUILDDIR%\*.h   "%PREFIX%\include" >nul       
-copy %BUILDDIR%\*.sym "%PREFIX%\sym"     >nul   
-copy olang%BINEXT%    "%PREFIX%\bin"     >nul   
-copy libolang.lib     "%PREFIX%\lib"     >nul   
-rmdir "%PREFIXLN%"                       >nul 2>&1
-mklink /d "%PREFIXLN%" "%PREFIX%"
-del /q c:\windows\olang.exe              >nul 2>&1
-mklink c:\windows\olang.exe "%PREFIX%\bin\olang%BINEXT%"
-goto :eof
 
 
 

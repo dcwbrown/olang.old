@@ -7,6 +7,6 @@
 	autocrlf = input
 [user]
 	email = dave@brownsmeet.com
-	name = David
+	name = David Brown
 [push]
 	default = simple
