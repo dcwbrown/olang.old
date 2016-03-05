@@ -1,4 +1,4 @@
-/* voc  Oberon compiler olang 0.5 [2016/03/02] for cygwin ILP32 using gcc tspkaSF */
+/* voc  Oberon compiler olang 0.5 [2016/03/03] for cygwin ILP32 using gcc tspkaSF */
 
 #ifndef OPS__h
 #define OPS__h

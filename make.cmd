@@ -88,10 +88,10 @@ if errorlevel 1 (
 echo make install - administrator rights required. Please run under an administrator command prompt.
 goto :eof
 )
-mkdir "%INSTALLDIR%\bin"                     >nul 2>&1 
-mkdir "%INSTALLDIR%\include"                 >nul 2>&1     
-mkdir "%INSTALLDIR%\sym"                     >nul 2>&1 
-mkdir "%INSTALLDIR%\lib"                     >nul 2>&1 
+mkdir "%INSTALLDIR%\bin"                            >nul 2>&1 
+mkdir "%INSTALLDIR%\include"                        >nul 2>&1     
+mkdir "%INSTALLDIR%\sym"                            >nul 2>&1 
+mkdir "%INSTALLDIR%\lib"                            >nul 2>&1 
 copy %BUILDDIR%\*.h          "%INSTALLDIR%\include" >nul       
 copy %BUILDDIR%\*.sym        "%INSTALLDIR%\sym"     >nul   
 copy %SAVEDOLANG%            "%INSTALLDIR%\bin"     >nul   

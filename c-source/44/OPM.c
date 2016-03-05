@@ -1,4 +1,4 @@
-/* voc  Oberon compiler olang 0.5 [2016/03/02] for cygwin ILP32 using gcc xtspkaSF */
+/* voc  Oberon compiler olang 0.5 [2016/03/03] for cygwin ILP32 using gcc xtspkaSF */
 #include "SYSTEM.h"
 #include "Configuration.h"
 #include "Console.h"
@@ -200,7 +200,7 @@ BOOLEAN OPM_OpenPar (void)
 	CHAR s[256];
 	if (Platform_ArgCount == 1) {
 		Console_Ln();
-		Console_String((CHAR*)"Oberon compiler olang 0.5 [2016/03/02] for cygwin ILP32 using gcc", (LONGINT)66);
+		Console_String((CHAR*)"Oberon compiler olang 0.5 [2016/03/05] for cygwin ILP32 using gcc", (LONGINT)66);
 		Console_String((CHAR*)".", (LONGINT)2);
 		Console_Ln();
 		Console_Ln();
