@@ -35,12 +35,9 @@ void assert(int truth, char *complaint) {if (!truth) fail(complaint);}
 
 
 char builddate[256];
-//char olangname[256];
-//char builddir[256];
-//char flavour[256];
-//char prefix[256];
 char installdir[256];
 char versionstring[256];
+char osrelease[1024];
 
 char* version    = macrotostring(O_VER);
 
@@ -58,6 +55,27 @@ int   addressSize = 0;
 
 
 
+void determineLinuxVariant() {
+  os = "linux";
+  FILE *fd = fopen("/etc/os-release", "r");
+  if (fd == NULL) return;
+  while (fgets(osrelease, sizeof(osrelease), fd) != NULL) {
+    if (strncasecmp(osrelease, "id=", 3) == 0) {
+      int i=3;
+      while (osrelease[i] == '"') {i++;}
+      int j=i;
+      while (osrelease[j] > '"') {j++;}
+      if (j>i) {
+        osrelease[j] = 0;
+        os = osrelease + i;
+      }
+      break;
+    }
+  }
+  fclose(fd);
+}
+
+
 
 void determineOS() {
   #ifdef _WIN32
@@ -69,7 +87,7 @@ void determineOS() {
     if (uname(&sys)<0) fail("Couldn't get sys name - uname() failed.");
   
     if      (strncasecmp(sys.sysname, "cygwin",  6) == 0) {os = "cygwin";  binext = ".exe";}
-    else if (strncasecmp(sys.sysname, "linux",   5) == 0) {os = "linux";}
+    else if (strncasecmp(sys.sysname, "linux",   5) == 0) {determineLinuxVariant();}
     else if (strncasecmp(sys.sysname, "freebsd", 5) == 0) {os = "freebsd";}
     else if (strncasecmp(sys.sysname, "openbsd", 5) == 0) {os = "openbsd";}
     else if (strncasecmp(sys.sysname, "darwin",  5) == 0) {os = "darwin";  staticlink = "";}
@@ -145,7 +163,8 @@ void determineCDataModel() {
   addressSize = sizeof(void*);
   alignment = (char*)&li.x - (char*)&li; 
 
-  // Check type sizes. By design these are fixed across all supported platfroms.
+  // Check the sizes of the Oberon basic types as defined in SYSTEM.h.
+  // By design these are fixed across all supported platfroms.
 
   assert(sizeof(CHAR)     == 1, "Size of CHAR not 1.");
   assert(sizeof(BOOLEAN)  == 1, "Size of BOOLEAN not 1.");
@@ -198,33 +217,6 @@ void determineCDataModel() {
 
 
 
-// Determination of basic type parameters - size, alignment and endianness.
-
-// void writeBasicTypeParameters() {
-//   FILE *fd = fopen("BasicTypeParameters", "w");
-//   if (fd == NULL) fail("Couldn't create BasicTypeParameters.");
-// 
-//   /* get size and alignment of standard types */
-//   fprintf(fd, "CHAR %lu %lu\n",         (long)sizeof(CHAR),         (long)((char*)&c.x  - (char*)&c));
-//   fprintf(fd, "BOOLEAN %lu %lu\n",      (long)sizeof(BOOLEAN),      (long)((char*)&b.x  - (char*)&b));
-//   fprintf(fd, "SHORTINT %lu %lu\n",     (long)sizeof(SHORTINT),     (long)((char*)&si.x - (char*)&si));
-//   fprintf(fd, "INTEGER %lu %lu\n",      (long)sizeof(INTEGER),      (long)((char*)&i.x  - (char*)&i));
-//   fprintf(fd, "LONGINT %lu %lu\n",      (long)sizeof(LONGINT),      (long)((char*)&li.x - (char*)&li));
-//   fprintf(fd, "SET %lu %lu\n",          (long)sizeof(SET),          (long)((char*)&s.x  - (char*)&s));
-//   fprintf(fd, "REAL %lu %lu\n",         (long)sizeof(REAL),         (long)((char*)&r.x  - (char*)&r));
-//   fprintf(fd, "LONGREAL %lu %lu\n",     (long)sizeof(LONGREAL),     (long)((char*)&lr.x - (char*)&lr));
-//   fprintf(fd, "PTR %lu %lu\n",          (long)sizeof(p.x),          (long)((char*)&p.x  - (char*)&p));
-//   fprintf(fd, "PROC %lu %lu\n",         (long)sizeof(f.x),          (long)((char*)&f.x  - (char*)&f));
-//   fprintf(fd, "RECORD %d %lu\n",        (sizeof(rec2)==65) == (sizeof(rec0)==1), (long)(sizeof(rec2)-64));
-//   long x = 1;
-//   fprintf(fd, "ENDIAN %hhd %d\n",       *(char*)&x, 0);
-// 
-//   fclose(fd);
-// }
-
-
-
-
 void testSystemH() {
   /* test the __ASHR macro */
   assert(__ASHR(-1, 1) == -1, "ASH(-1, -1) # -1.");
@@ -251,7 +243,7 @@ void testSystemH() {
 
 void writeMakeParameters() {
   FILE *fd = fopen("Configuration.Make", "w");
-  if (fd == NULL) fail("Couldn't create build.make.");
+  if (fd == NULL) fail("Couldn't create Configuration.make.");
   fprintf(fd, "COMPILER=%s\n",   compiler);
   fprintf(fd, "OS=%s\n",         os);
   fprintf(fd, "VERSION=%s\n",    version);
@@ -262,23 +254,8 @@ void writeMakeParameters() {
   fprintf(fd, "BINEXT=%s\n",     binext);
   fprintf(fd, "COMPILE=%s\n",    cc);
   fprintf(fd, "STATICLINK=%s\n", staticlink);
-//fprintf(fd, "BUILDDATE=%s\n",  builddate);
-//fprintf(fd, "FLAVOUR=%s\n",    flavour);
-//fprintf(fd, "PREFIX=%s\n",     prefix);
-//fprintf(fd, "BUILDDIR=%s\n",   builddir);
-//fprintf(fd, "OLANGNAME=%s\n",  olangname);
   fclose(fd);
 }
-
-
-
-
-//void displayParameters() {
-//  printf("\n");
-//  printf("C compiler command:  %s\n", cc);
-//  printf("Build subdirectory:  %s\n", builddir);
-//  printf("Version string:      %s\n", versionstring);
-//}
 
 
 
@@ -295,26 +272,8 @@ void writeConfigurationMod() {
   fprintf(fd, "  compiler*    = '%s';\n", compiler);
   fprintf(fd, "  compile*     = '%s';\n", cc);
   fprintf(fd, "  dataModel*   = '%s';\n", dataModel);
-//fprintf(fd, "  os*          = '%s';\n", os);
   fprintf(fd, "  prefix*      = '%s-%s';\n", installdir, version);
-//fprintf(fd, "  buildDate*   = '%s';\n", builddate);
-//fprintf(fd, "  version*     = '%s';\n", version);
   fprintf(fd, "  staticLink*  = '%s';\n", staticlink); 
-
-  //fprintf(fd, "  CharSize*    = %1lu;  CharAlign*    = %lu;\n", (long)sizeof(CHAR),         (long)((char*)&c.x  - (char*)&c));
-  //fprintf(fd, "  BoolSize*    = %1lu;  BoolAlign*    = %lu;\n", (long)sizeof(BOOLEAN),      (long)((char*)&b.x  - (char*)&b));
-  //fprintf(fd, "  SIntSize*    = %1lu;  SIntAlign*    = %lu;\n", (long)sizeof(SHORTINT),     (long)((char*)&si.x - (char*)&si));
-  //fprintf(fd, "  IntSize*     = %1lu;  IntAlign*     = %lu;\n", (long)sizeof(INTEGER),      (long)((char*)&i.x  - (char*)&i));
-  //fprintf(fd, "  LIntSize*    = %1lu;  LIntAlign*    = %lu;\n", (long)sizeof(LONGINT),      (long)((char*)&li.x - (char*)&li));
-  //fprintf(fd, "  SetSize*     = %1lu;  SetAlign*     = %lu;\n", (long)sizeof(SET),          (long)((char*)&s.x  - (char*)&s));
-  //fprintf(fd, "  RealSize*    = %1lu;  RealAlign*    = %lu;\n", (long)sizeof(REAL),         (long)((char*)&r.x  - (char*)&r));
-  //fprintf(fd, "  LRealSize*   = %1lu;  LRealAlign*   = %lu;\n", (long)sizeof(LONGREAL),     (long)((char*)&lr.x - (char*)&lr));
-  //fprintf(fd, "  PointerSize* = %1lu;  PointerAlign* = %lu;\n", (long)sizeof(p.x),          (long)((char*)&p.x  - (char*)&p));
-  //fprintf(fd, "  ProcSize*    = %1lu;  ProcAlign*    = %lu;\n", (long)sizeof(f.x),          (long)((char*)&f.x  - (char*)&f));
-  //fprintf(fd, "  RecSize*     = %01d;  RecAlign*     = %lu;\n", (sizeof(rec2)==65) == (sizeof(rec0)==1), (long)(sizeof(rec2)-64));
-  //long x = 1;
-  //fprintf(fd, "  ByteOrder*   = %hhd;  BitOrder*     = %d;\n",  *(char*)&x, 0);
-
   fprintf(fd, "END Configuration.\n");
 
   fclose(fd);
@@ -333,16 +292,9 @@ int main()
 
   testSystemH();
 
-  //sprintf(flavour,       "%s.%s.%s",   compiler, os, dataModel);
-  //sprintf(builddir,      "build.%s",   flavour);
-  //sprintf(olangname,     "olang.%s%s", flavour, binext);
-  //sprintf(prefix,        "%s-%s",      installdir, version);
   sprintf(versionstring, "Oberon compiler olang %s [%s] for %s %s using %s",
                          version, builddate, os, dataModel, compiler);
-  //mkdir(builddir, 0744);
 
-  //writeBasicTypeParameters();
   writeConfigurationMod();
   writeMakeParameters();
-  //displayParameters();
 }
