@@ -1731,7 +1731,7 @@ static void EnumPtrs(void (*P)(void*))
 	__ENUMR(&OPT_impCtxt, OPT_ImpCtxt__typ, 4176, 1, P);
 }
 
-__TDESC(OPT_ConstDesc, 1, 1) = {__TDFLDS("ConstDesc", 40), {0, -16}};
+__TDESC(OPT_ConstDesc, 1, 1) = {__TDFLDS("ConstDesc", 36), {0, -16}};
 __TDESC(OPT_ObjDesc, 1, 6) = {__TDFLDS("ObjDesc", 316), {0, 4, 8, 12, 288, 292, -56}};
 __TDESC(OPT_StrDesc, 1, 3) = {__TDFLDS("StrDesc", 88), {76, 80, 84, -32}};
 __TDESC(OPT_NodeDesc, 1, 6) = {__TDFLDS("NodeDesc", 28), {0, 4, 8, 16, 20, 24, -56}};
