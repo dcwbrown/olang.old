@@ -60,9 +60,6 @@
 # Gnu make has the make initiel directory in CURDIR, BSD make has it in .CURDIR.
 OLANGDIR = $(CURDIR)$(.CURDIR)
 
-
-
-config!=$(CC) -D O_VER=0.5 -I src/compiler -o a.o src/buildtools/configure.c; ./a.o; rm a.o
 include ./Configuration.Make
 
 FLAVOUR    = $(OS).$(DATAMODEL).$(COMPILER)
@@ -80,6 +77,8 @@ usage:
 	@echo ""
 	@echo Usage:
 	@echo ""
+	@echo "  make configure     - Must be run before any other targets can be made."
+	@echo ""
 	@echo "  make clean         - Remove made files"
 	@echo "  make compiler      - Build the compiler but not the library"
 	@echo "  make library       - Build all library files and make libolang"
@@ -89,6 +88,13 @@ usage:
 	@echo "  make preparecommit - Uddate c-source and binary directories."
 	@echo "  make revertcsource - Use git checkout to restore the c-source directories"
 
+
+
+
+configure:
+	@$(CC) -D O_VER=0.5 -I src/compiler -o a.o src/buildtools/configure.c
+	@./a.o
+	@rm a.o
 
 
 
