@@ -61,7 +61,7 @@
 config != $(CC) -D O_VER=0.5 -I src/compiler -o a.o src/buildtools/configure.c; ./a.o; rm a.o
 include ./Configuration.Make
 
-FLAVOUR    = $(COMPILER).$(OS).$(DATAMODEL)
+FLAVOUR    = $(OS).$(DATAMODEL).$(COMPILER)
 BUILDDIR   = build/$(FLAVOUR)
 SAVEDOLANG = bin/olang.$(FLAVOUR)$(BINEXT)
 SOURCE     = $(CURDIR)/src
@@ -99,10 +99,23 @@ full:
 
 
 
+# compiler: Builds the compiler, but not the library
+compiler:
+	@make -s translate
+	@make -s assemble
+
+
+
+
+library: v4 ooc2 ooc ulm pow32 misc s3 libolang
+
+
+
 preparecommit:
-	cp $(OLANG) $(SAVEDOLANG)
-	rm -rf c-source/*
-	for SA in 44 48 88; do make translate SIZEALIGN=$$SA BUILDDIR=c-source/$$SA; done
+	@mkdir -p bin
+	@cp $(OLANG) $(SAVEDOLANG)
+	@rm -rf c-source/*
+	@for SA in 44 48 88; do make -s translate SIZEALIGN=$$SA BUILDDIR=c-source/$$SA; done
 
 
 
@@ -113,57 +126,14 @@ revertcsource:
 
 clean:
 	rm -rf $(BUILDDIR)
-			rm -f $(OLANG)
+	rm -f $(OLANG)
 
 
 
 
-translate:
-	@printf "\nmake translate - translating compiler source to C for size/alignment $(SIZEALIGN)\n"
-	@mkdir -p $(BUILDDIR)
+# Assemble: Generate the olang compiler binary by compiling the C sources in the build directory
 
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../Configuration.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src//compiler/Platform$(PLATFORM).Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFsapx -T$(SIZEALIGN) ../../src//compiler/Heap.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src//compiler/Console.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src//library/v4/Strings.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src//library/v4/Modules.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFsx   -T$(SIZEALIGN) ../../src//compiler/Files.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src//library/v4/Reals.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src//library/v4/Texts.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src//compiler/vt100.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src//compiler/errors.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src//compiler/OPM.cmdln.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src//compiler/extTools.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFsx   -T$(SIZEALIGN) ../../src//compiler/OPS.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src//compiler/OPT.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src//compiler/OPC.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src//compiler/OPV.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src//compiler/OPB.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src//compiler/OPP.Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Ssm    -T$(SIZEALIGN) ../../src//compiler/olang.Mod
-
-	@printf "$(BUILDDIR) filled with compiler C source.\n"
-
-
-
-# Assemble: Generate the olang compiler binary by compiling the C sources in the buidl directory
-#
-#  - Does nothing if all C sources in the build directory are older than the existing olang binary
-#  - However if there are no C sources in the build directory, copies them from the c-source
-#    directory and compiles them. This is how the checked-in version is built on a fresh
-#    enlistment or after 'make clean'.
-
-assemble: $(OLANG)
-
-$(BUILDDIR)/*.[ch]: src/compiler/*.[ch] $(CSOURCEDIR)/*
-	@echo Populating clean build directory from base c sources.
-	@mkdir -p $(BUILDDIR)
-	cp $(CSOURCEDIR)/* $(BUILDDIR)
-	cp src/compiler/*.[ch] $(BUILDDIR)
-
-$(OLANG): $(BUILDDIR)/*.[ch] src/compiler/*.[ch]
-
+assemble:
 	@printf "\nmake assemble - compiling Oberon compiler c source for configuration:\n"
 	@printf "  PLATFORM:  %s\n" "$(PLATFORM)"
 	@printf "  OS:        %s\n" "$(OS)"
@@ -189,12 +159,54 @@ $(OLANG): $(BUILDDIR)/*.[ch] src/compiler/*.[ch]
 
 
 
+compilerfromsavedsource:
+	@echo Populating clean build directory from saved base c sources.
+	@if [ "$(PLATFORM)" != "unix" ]; then printf "\n** Not a Unix style platform - cannot bootstrap **\n\n"; exit 1; fi
+	@mkdir -p $(BUILDDIR)
+	@cp $(CSOURCEDIR)/* $(BUILDDIR)
+	@make -s assemble
 
-# compiler: Builds the compiler, but not the library
-compiler:
-	@make -s assemble      # First build olang.exe from original C source (if necessary)
-	@make -s translate     # Use olang.exe to generate new C source
-	@make -s assemble      # Build new olang.exe from new C source
+
+
+
+translate:
+# Make sure we have an oberon compiler binary: if we built one earlier we'll use it,
+# otherwise use a pre-built binary from the bin directory, or, for new system
+# bootstraps, use one of the saved unix type C sources in the c-source directory.
+	if [ \( ! -e $(OLANG) \) -a -e $(SAVEDOLANG) ]; then cp $(SAVEDOLANG) $(OLANG); fi
+	if [ ! -e $(OLANG) ]; then make -s compilerfromsavedsource; fi
+
+	@printf "\nmake translate - translating compiler source:\n"
+	@printf "  PLATFORM:  %s\n" $(PLATFORM)
+	@printf "  SIZEALIGN: %s\n" $(SIZEALIGN)
+	@mkdir -p $(BUILDDIR)
+
+	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../Configuration.Mod
+	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/Platform$(PLATFORM).Mod
+	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFsapx -T$(SIZEALIGN) ../../src/compiler/Heap.Mod
+	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/Console.Mod
+	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/library/v4/Strings.Mod
+	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/library/v4/Modules.Mod
+	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFsx   -T$(SIZEALIGN) ../../src/compiler/Files.Mod
+	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/library/v4/Reals.Mod
+	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/library/v4/Texts.Mod
+	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/vt100.Mod
+	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/errors.Mod
+	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/OPM.cmdln.Mod
+	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/extTools.Mod
+	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFsx   -T$(SIZEALIGN) ../../src/compiler/OPS.Mod
+	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/OPT.Mod
+	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/OPC.Mod
+	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/OPV.Mod
+	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/OPB.Mod
+	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src/compiler/OPP.Mod
+	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Ssm    -T$(SIZEALIGN) ../../src/compiler/olang.Mod
+
+	cp src/compiler/*.[ch] $(BUILDDIR)
+
+	@printf "$(BUILDDIR) filled with compiler C source.\n"
+
+
 
 
 
@@ -214,9 +226,6 @@ install:
 #	Optional: Link /usr/bin/olang to the new binary
 #	ln -fs "$(INSTALLDIR)/bin/$(CURDIR)/$(OLANG)" /usr/bin/$(CURDIR)/$(OLANG)
 
-
-
-library: v4 ooc2 ooc ulm pow32 misc s3 libolang
 
 
 v4:

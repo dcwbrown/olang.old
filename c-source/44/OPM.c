@@ -209,11 +209,14 @@ BOOLEAN OPM_OpenPar (void)
 		Console_String((CHAR*)"Cross platform build simplifications and fixes by Dave CW Brown.", (LONGINT)65);
 		Console_Ln();
 		Console_Ln();
-		Console_String((CHAR*)"command = \"olang\" options {files}.", (LONGINT)35);
+		Console_String((CHAR*)"command = \"olang\" options {files {options}}.", (LONGINT)45);
+		Console_Ln();
+		Console_Ln();
+		Console_String((CHAR*)"Initial options specify defaults for all files. Options following a filename are", (LONGINT)81);
+		Console_String((CHAR*)"specific to that file.", (LONGINT)23);
+		Console_Ln();
 		Console_Ln();
 		Console_String((CHAR*)"options = [\"-\" {option} ].", (LONGINT)27);
-		Console_Ln();
-		Console_String((CHAR*)"option:", (LONGINT)8);
 		Console_Ln();
 		Console_Ln();
 		Console_String((CHAR*)"  m - generate code for main module", (LONGINT)36);
