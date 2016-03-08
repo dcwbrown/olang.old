@@ -684,7 +684,7 @@ static void OPM_GetProperties (void)
 	OPM_LIntSize = 8;
 	OPM_LIntAlign = alignment;
 	OPM_SetSize = 8;
-	OPM_SetAlign = 8;
+	OPM_SetAlign = alignment;
 	OPM_RealSize = 4;
 	OPM_RealAlign = 4;
 	OPM_LRealSize = 8;

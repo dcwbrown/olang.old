@@ -542,7 +542,7 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
     SIntSize    := 1;             SIntAlign    := 1;
     IntSize     := 4;             IntAlign     := 4;
     LIntSize    := 8;             LIntAlign    := alignment;
-    SetSize     := 8;             SetAlign     := 8;
+    SetSize     := 8;             SetAlign     := alignment;
     RealSize    := 4;             RealAlign    := 4;
     LRealSize   := 8;             LRealAlign   := alignment;
     PointerSize := addressSize;   PointerAlign := addressSize;
