@@ -1,4 +1,4 @@
-/* voc  Oberon compiler olang 0.5 [2016/03/03] for cygwin ILP32 using gcc xtspkaSF */
+/* voc  Oberon compiler olang 0.5 [2016/03/08] for cygwin ILP32 using gcc xtspkaSF */
 #include "SYSTEM.h"
 #include "Configuration.h"
 #include "Console.h"
@@ -200,22 +200,20 @@ BOOLEAN OPM_OpenPar (void)
 	CHAR s[256];
 	if (Platform_ArgCount == 1) {
 		Console_Ln();
-		Console_String((CHAR*)"Oberon compiler olang 0.5 [2016/03/05] for cygwin ILP32 using gcc", (LONGINT)66);
+		Console_String((CHAR*)"Oberon compiler olang 0.5 [2016/03/08] for cygwin ILP32 using gcc", (LONGINT)66);
 		Console_String((CHAR*)".", (LONGINT)2);
 		Console_Ln();
 		Console_Ln();
-		Console_String((CHAR*)"Originally from Ofront by Software Templ OEG.", (LONGINT)46);
+		Console_String((CHAR*)"From Ofront by Software Templ OEG and Vishap Oberon by Norayr Chilingarian.", (LONGINT)76);
 		Console_Ln();
-		Console_String((CHAR*)"Reworked by Norayr Chilingarian Vishap Oberon.", (LONGINT)47);
-		Console_Ln();
-		Console_String((CHAR*)"Further updated by Dave CW Brown.", (LONGINT)34);
+		Console_String((CHAR*)"Cross platform build simplifications and fixes by Dave CW Brown.", (LONGINT)65);
 		Console_Ln();
 		Console_Ln();
 		Console_String((CHAR*)"command = \"olang\" options {files}.", (LONGINT)35);
 		Console_Ln();
 		Console_String((CHAR*)"options = [\"-\" {option} ].", (LONGINT)27);
 		Console_Ln();
-		Console_String((CHAR*)"option  = \"m\" | \"M\" | \"s\" | \"e\" | \"i\" | \"l\" | \"k\" | \"r\" | \"x\" | \"a\" | \"p\" | \"t\" | \"P\" | \"S\" | \"c\" | \"f\" | \"F\" | \"V\" .", (LONGINT)118);
+		Console_String((CHAR*)"option:", (LONGINT)8);
 		Console_Ln();
 		Console_Ln();
 		Console_String((CHAR*)"  m - generate code for main module", (LONGINT)36);
@@ -246,7 +244,7 @@ BOOLEAN OPM_OpenPar (void)
 		Console_Ln();
 		Console_String((CHAR*)"  f - don\'t use color output", (LONGINT)29);
 		Console_Ln();
-		Console_String((CHAR*)"  F - force writing new symbol file", (LONGINT)36);
+		Console_String((CHAR*)"  F - force writing new symbol file in current directory", (LONGINT)57);
 		Console_Ln();
 		Console_String((CHAR*)"  V - verbose output", (LONGINT)21);
 		Console_Ln();

@@ -76,14 +76,14 @@ usage:
 	@echo ""
 	@echo Usage:
 	@echo ""
-	@echo "  make clean             - Remove made files"
-	@echo "  make compiler          - Build the compiler but not the library"
-	@echo "  make library           - Build all library files and make libolang"
-	@echo "  make full              - Runs all the above"
-	@echo "  make install           - Install built compiler and library in /opt"
-	@echo "                           (May need root access)"
-	@echo "  make revertcsource     - Use git checkout to restore the c-source directories"
-	@echo "  make preparecheckin    - Uddate c-source and binary directories."
+	@echo "  make clean         - Remove made files"
+	@echo "  make compiler      - Build the compiler but not the library"
+	@echo "  make library       - Build all library files and make libolang"
+	@echo "  make full          - Runs all the above"
+	@echo "  make install       - Install built compiler and library in /opt"
+	@echo "                       (May need root access)"
+	@echo "  make preparecommit - Uddate c-source and binary directories."
+	@echo "  make revertcsource - Use git checkout to restore the c-source directories"
 
 
 
@@ -94,16 +94,15 @@ full:
 	@make -s clean
 	@make -s compiler
 	@make -s library
-	@make -s setnewcompiler
 	@echo "Compiler and library built in $(BUILDDIR)"
 
 
 
 
-preparecheckin:
+preparecommit:
 	cp $(OLANG) $(SAVEDOLANG)
-	@rm -rf c-source/*
-	@for SA in 44 48 88; do make translate SIZEALIGN=$$SA BUILDDIR=c-source/$$SA; done
+	rm -rf c-source/*
+	for SA in 44 48 88; do make translate SIZEALIGN=$$SA BUILDDIR=c-source/$$SA; done
 
 
 
@@ -113,20 +112,19 @@ revertcsource:
 
 
 clean:
-	rm -f $(OLANG) make.config Configuration.Mod newsystem.zip
 	rm -rf $(BUILDDIR)
+			rm -f $(OLANG)
 
 
 
 
 translate:
-	# @cp -n $(SAVEDOLANG) olang$(BINEXT)  # -n: copy only if not already present
-
 	@printf "\nmake translate - translating compiler source to C for size/alignment $(SIZEALIGN)\n"
+	@mkdir -p $(BUILDDIR)
 
 	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../Configuration.Mod
 	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src//compiler/Platform$(PLATFORM).Mod
-	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Ssiapx -T$(SIZEALIGN) ../../src//compiler/Heap.Mod
+	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFsapx -T$(SIZEALIGN) ../../src//compiler/Heap.Mod
 	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src//compiler/Console.Mod
 	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src//library/v4/Strings.Mod
 	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -SFs    -T$(SIZEALIGN) ../../src//library/v4/Modules.Mod
@@ -159,7 +157,7 @@ translate:
 assemble: $(OLANG)
 
 $(BUILDDIR)/*.[ch]: src/compiler/*.[ch] $(CSOURCEDIR)/*
-	@echo Populating clean build directory from last checked in c sources.
+	@echo Populating clean build directory from base c sources.
 	@mkdir -p $(BUILDDIR)
 	cp $(CSOURCEDIR)/* $(BUILDDIR)
 	cp src/compiler/*.[ch] $(BUILDDIR)
@@ -222,7 +220,7 @@ library: v4 ooc2 ooc ulm pow32 misc s3 libolang
 
 
 v4:
-	@printf "Making v4 library\n"
+	@printf "\nMaking v4 library\n"
 	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/v4/Args.Mod
 	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/v4/Printer.Mod
 	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/v4/Sets.Mod
@@ -367,7 +365,7 @@ s3:
 	cd $(BUILDDIR); $(CURDIR)/$(OLANG) -Fs ../../src/library/s3/ethStrings.Mod
 
 libolang:
-	@printf "Making libolang\n"
+	@printf "\nMaking libolang\n"
 #	Remove objects that should not be part of the library
 	rm -f $(BUILDDIR)/olang.o $(BUILDDIR)/errors.o $(BUILDDIR)/extTools.o
 	rm -f $(BUILDDIR)/OPM.o   $(BUILDDIR)/OPS.o    $(BUILDDIR)/OPT.o      $(BUILDDIR)/OPP.o 

@@ -190,13 +190,12 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
       Console.Ln;
       Console.String(Configuration.versionLong); Console.String("."); Console.Ln; 
       Console.Ln;
-      Console.String("Originally from Ofront by Software Templ OEG."); Console.Ln;
-      Console.String("Reworked by Norayr Chilingarian Vishap Oberon."); Console.Ln;
-      Console.String("Further updated by Dave CW Brown."); Console.Ln;
+      Console.String("From Ofront by Software Templ OEG and Vishap Oberon by Norayr Chilingarian."); Console.Ln;
+      Console.String("Cross platform build simplifications and fixes by Dave CW Brown."); Console.Ln;
       Console.Ln;
       Console.String('command = "olang" options {files}.'); Console.Ln;
       Console.String('options = ["-" {option} ].'); Console.Ln;
-      Console.String('option  = "m" | "M" | "s" | "e" | "i" | "l" | "k" | "r" | "x" | "a" | "p" | "t" | "P" | "S" | "c" | "f" | "F" | "V" .'); Console.Ln;
+      Console.String('option:'); Console.Ln;
       Console.Ln;
       Console.String("  m - generate code for main module"); Console.Ln;
       Console.String("  M - generate code for main module and link object statically"); Console.Ln;
@@ -212,7 +211,7 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
       Console.String("  S - don't call external assembler/compiler, only generate C code"); Console.Ln;
       Console.String("  c - don't call linker"); Console.Ln;
       Console.String("  f - don't use color output"); Console.Ln;
-      Console.String("  F - force writing new symbol file"); Console.Ln;
+      Console.String("  F - force writing new symbol file in current directory"); Console.Ln;
       Console.String("  V - verbose output"); Console.Ln;
       Console.Ln;
       RETURN FALSE

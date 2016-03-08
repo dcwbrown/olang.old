@@ -1,4 +1,4 @@
-/* voc  Oberon compiler olang 0.5 [2016/03/03] for cygwin ILP32 using gcc xtspkamS */
+/* voc  Oberon compiler olang 0.5 [2016/03/08] for cygwin ILP32 using gcc xtspkamS */
 #include "SYSTEM.h"
 #include "Configuration.h"
 #include "Heap.h"

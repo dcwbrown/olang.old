@@ -1,4 +1,4 @@
-/* voc  Oberon compiler olang 0.5 [2016/03/03] for cygwin ILP32 using gcc tskiS */
+/* voc  Oberon compiler olang 0.5 [2016/03/08] for cygwin ILP32 using gcc tskSF */
 #include "SYSTEM.h"
 
 struct Heap__1 {

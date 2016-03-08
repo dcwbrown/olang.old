@@ -1,4 +1,4 @@
-/* voc  Oberon compiler olang 0.5 [2016/03/03] for cygwin ILP32 using gcc xtspkaSF */
+/* voc  Oberon compiler olang 0.5 [2016/03/08] for cygwin ILP32 using gcc xtspkaSF */
 #include "SYSTEM.h"
 
 typedef
