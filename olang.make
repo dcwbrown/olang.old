@@ -77,8 +77,6 @@ usage:
 	@echo ""
 	@echo Usage:
 	@echo ""
-	@echo "  make configure     - Must be run before any other targets can be made."
-	@echo ""
 	@echo "  make clean         - Remove made files"
 	@echo "  make compiler      - Build the compiler but not the library"
 	@echo "  make library       - Build all library files and make libolang"
@@ -87,14 +85,6 @@ usage:
 	@echo "                       (May need root access)"
 	@echo "  make preparecommit - Uddate c-source and binary directories."
 	@echo "  make revertcsource - Use git checkout to restore the c-source directories"
-
-
-
-
-configure:
-	@$(CC) -D O_VER=0.5 -I src/compiler -o a.o src/buildtools/configure.c
-	@./a.o
-	@rm a.o
 
 
 
@@ -170,13 +160,13 @@ assemble:
 	SYSTEM.o  Configuration.o Platform.o Heap.o    Console.o Strings.o       Modules.o  Files.o \
 	Reals.o   Texts.o         vt100.o    errors.o  OPM.o     extTools.o      OPS.o      OPT.o \
 	OPC.o     OPV.o           OPB.o      OPP.o
-	@printf "olang$(BINEXT) created.\n"
+	@printf "$(OLANG) created.\n"
 
 
 
 
 compilerfromsavedsource:
-	@echo Populating clean build directory from saved base c sources.
+	@echo Populating clean build directory from saved base C sources.
 	@if [ "$(PLATFORM)" != "unix" ]; then printf "\n** Not a Unix style platform - cannot bootstrap **\n\n"; exit 1; fi
 	@mkdir -p $(BUILDDIR)
 	@cp $(CSOURCEDIR)/* $(BUILDDIR)
@@ -237,7 +227,7 @@ install:
 	mkdir -p "$(INSTALLDIR)/bin" "$(INSTALLDIR)/include" "$(INSTALLDIR)/sym" "$(INSTALLDIR)/lib"
 	cp -p $(BUILDDIR)/*.h        "$(INSTALLDIR)/include/"
 	cp -p $(BUILDDIR)/*.sym      "$(INSTALLDIR)/sym/"
-	cp -p $(SAVEDOLANG)          "$(INSTALLDIR)/bin/olang$(BINEXT)"
+	cp -p $(OLANG)               "$(INSTALLDIR)/bin/olang$(BINEXT)"
 	cp -p $(BUILDDIR)/libolang.a "$(INSTALLDIR)/lib/"
 #	Optional: Link /usr/bin/olang to the new binary
 #	ln -fs "$(INSTALLDIR)/bin/$(OLANGDIR)/$(OLANG)" /usr/bin/$(OLANGDIR)/$(OLANG)

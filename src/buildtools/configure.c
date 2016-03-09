@@ -7,11 +7,14 @@
 
 #include "SYSTEM.h"  
 
-#ifndef _WIN32
+#ifdef _WIN32
+  #define strncasecmp _strnicmp
+#else
   #include <sys/types.h>
   #include <sys/stat.h>
   #include <fcntl.h>
   #include <sys/utsname.h>
+  #include <unistd.h>
 #endif
 
 #include <stdlib.h>
@@ -38,6 +41,7 @@ char builddate[256];
 char installdir[256];
 char versionstring[256];
 char osrelease[1024];
+char cwd[1024];
 
 char* version    = macrotostring(O_VER);
 
@@ -244,6 +248,7 @@ void testSystemH() {
 void writeMakeParameters() {
   FILE *fd = fopen("Configuration.Make", "w");
   if (fd == NULL) fail("Couldn't create Configuration.make.");
+  fprintf(fd, "OLANGDIR=%s\n",   cwd);
   fprintf(fd, "COMPILER=%s\n",   compiler);
   fprintf(fd, "OS=%s\n",         os);
   fprintf(fd, "VERSION=%s\n",    version);
@@ -284,6 +289,8 @@ void writeConfigurationMod() {
 
 int main()
 {
+  getcwd(cwd, sizeof(cwd));
+
   determineOS();
   determineCCompiler();
   determineCDataModel();
