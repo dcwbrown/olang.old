@@ -18,10 +18,8 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
     ptrinit*        = 5;  (* pointer initialization *)
     ansi*           = 6;  (* ANSI or K&R style prototypes *)
     assert*         = 7;  (* assert evaluation *)
-    include0*       = 8;  (* include M.h0 in header file and M.c0 in body file if such files exist *)
     extsf*          = 9;  (* extension of old symbol file allowed *)
     mainprog*       = 10; (* translate module body into C main function *)
-    useparfile*     = 12; (* use .par file *)
     dontasm*        = 13; (* don't call external assembler/C compiler *)
     dontlink*       = 14; (* don't link *)
     mainlinkstat*   = 15; (* generate code for main module and then link object file statically *)
@@ -124,8 +122,6 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
 
     S: INTEGER;
 
-    useParFile : BOOLEAN;
-
     dontAsm-, dontLink-, mainProg-, mainLinkStat-, notColorOutput-, forceNewSym-, Verbose-: BOOLEAN;
 
     OBERON:  ARRAY 1024 OF CHAR;
@@ -158,8 +154,6 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
       | "a": opt := opt / {assert}
       | "k": opt := opt / {ansi}
       | "p": opt := opt / {ptrinit}
-      | "i": opt := opt / {include0}
-      | "P": opt := opt / {useparfile}
       | "S": opt := opt / {dontasm}
       | "c": opt := opt / {dontlink}
       | "M": opt := opt / {mainlinkstat}
@@ -201,7 +195,6 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
       Console.String("  M - generate code for main module and link object statically"); Console.Ln;
       Console.String("  s - generate new symbol file"); Console.Ln;
       Console.String("  e - allow extending the module interface"); Console.Ln;
-      Console.String("  i - include header and body prefix files (c0)"); Console.Ln;
       Console.String("  r - check value ranges"); Console.Ln;
       Console.String("  x - turn off array indices check"); Console.Ln;
       Console.String("  a - don't check ASSERTs at runtime, use this option in tested production code"); Console.Ln;
@@ -242,7 +235,6 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
       INC(S); s:=""; Platform.GetArg(S, s)
     END;
 
-    useParFile     := useparfile     IN opt;
     dontAsm        := dontasm        IN opt;
     dontLink       := dontlink       IN opt;
     mainProg       := mainprog       IN opt;
@@ -773,10 +765,6 @@ MODULE OPM;  (* RC 6.3.89 / 28.6.89, J.Templ 10.7.89 / 22.7.96  *)
     MakeFileName(moduleName, FName, HFext);
     HIFile := Files.New(FName);
     IF HIFile # NIL THEN Files.Set(R[HeaderInclude], HIFile, 0) ELSE err(153) END ;
-    IF include0 IN opt THEN
-      MakeFileName(moduleName, FName, ".h0"); Append(R[HeaderInclude], Files.Old(FName));
-      MakeFileName(moduleName, FName, ".c0"); Append(R[BodyFile], Files.Old(FName))
-    END
   END OpenFiles;
 
   PROCEDURE CloseFiles*;
@@ -806,14 +794,15 @@ BEGIN
 
   Texts.OpenWriter(W);
 
-  OBERON  := "."; Platform.GetEnv("OBERON", OBERON);
   MODULES := "";  Platform.GetEnv("MODULES", MODULES);
 
-  Strings.Append(";.;",                OBERON);
-  Strings.Append(MODULES,              OBERON);
-  Strings.Append(";",                  OBERON);
-  Strings.Append(Configuration.prefix, OBERON);
-  Strings.Append("/sym;",              OBERON);
+  OBERON  := "."; Platform.GetEnv("OBERON", OBERON);
+  Strings.Append(";.;",                     OBERON);
+  Strings.Append(MODULES,                   OBERON);
+  Strings.Append(";",                       OBERON);
+  Strings.Append(Configuration.installdir,  OBERON);
+  Strings.Append("/sym;",                   OBERON);
 
   Files.SetSearchPath(OBERON);
+  (* Console.String("Oberon file open search path: "); Console.String(OBERON); Console.Ln; *)
 END OPM.

@@ -57,7 +57,7 @@ PROCEDURE LinkMain*(VAR moduleName: ARRAY OF CHAR; statically: BOOLEAN; addition
     Strings.Append(objflag,                    cmd);
     Strings.Append(moduleName,                 cmd);
     Strings.Append(linkflags,                  cmd);
-    Strings.Append(Configuration.prefix,       cmd);
+    Strings.Append(Configuration.installdir,   cmd);
     Strings.Append('/lib"',                    cmd);
     Strings.Append(libspec,                    cmd);
 
@@ -66,12 +66,12 @@ PROCEDURE LinkMain*(VAR moduleName: ARRAY OF CHAR; statically: BOOLEAN; addition
 
 
 BEGIN
-  Strings.Append(' -I "',                 compilationOptions);
-  Strings.Append(Configuration.prefix,    compilationOptions);
-  Strings.Append('/include" ',            compilationOptions);
+  Strings.Append(' -I "',                  compilationOptions);
+  Strings.Append(Configuration.installdir, compilationOptions);
+  Strings.Append('/include" ',             compilationOptions);
   Platform.GetEnv("CFLAGS", CFLAGS);
-  Strings.Append (CFLAGS,                 compilationOptions);
-  Strings.Append (" ",                    compilationOptions);
+  Strings.Append (CFLAGS,                  compilationOptions);
+  Strings.Append (" ",                     compilationOptions);
   IF Configuration.compiler = "msc" THEN 
     objflag := " -Fe"; linkflags := ' -link -libpath:"'; libspec := " libolang.lib"
   ELSE 

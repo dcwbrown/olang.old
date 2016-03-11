@@ -92,7 +92,7 @@ MODULE olang;  (* J. Templ 3.2.95 *)
         Heap.GC(FALSE);
         Module(done);
         IF ~done THEN
-          OPM.LogWStr("OPM module compilation failed."); OPM.LogLn;
+          OPM.LogLn; OPM.LogWStr("Module compilation failed."); OPM.LogLn;
           Platform.Exit(1)
         END;
 

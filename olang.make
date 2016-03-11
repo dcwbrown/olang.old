@@ -93,6 +93,7 @@ usage:
 full:
 	@make -s clean
 	@make -s compiler
+	@make -s browsercmd
 	@make -s library
 	@echo "Compiler and library built in $(BUILDDIR)"
 
@@ -114,6 +115,7 @@ library: v4 ooc2 ooc ulm pow32 misc s3 libolang
 savecompilerbinary:
 	@mkdir -p bin
 	@cp $(OLANG) $(SAVEDOLANG)
+
 
 
 preparecsources:
@@ -140,7 +142,7 @@ clean:
 # Assemble: Generate the olang compiler binary by compiling the C sources in the build directory
 
 assemble:
-	@printf "\nmake assemble - compiling Oberon compiler c source for configuration:\n"
+	@printf "\nmake assemble - compiling Oberon compiler c source:\n"
 	@printf "  PLATFORM:  %s\n" "$(PLATFORM)"
 	@printf "  OS:        %s\n" "$(OS)"
 	@printf "  DATAMODEL: %s\n" "$(DATAMODEL)"
@@ -215,6 +217,14 @@ translate:
 
 
 
+browsercmd:
+	@printf "\nMaking symbol browser\n"
+	@cd $(BUILDDIR); $(OLANGDIR)/$(OLANG) -Sm ../../src/buildtools/BrowserCmd.Mod
+	@cd $(BUILDDIR) && $(COMPILE) $(STATICLINK) BrowserCmd.c -o BrowserCmd \
+	  Platform.o Texts.o OPT.o Heap.o Console.o SYSTEM.o OPM.o OPS.o OPV.o \
+	  Files.o Reals.o Modules.o vt100.o errors.o Configuration.o Strings.o \
+	  OPC.o
+
 
 
 
@@ -223,14 +233,17 @@ translate:
 #          and libraries in /opt/olang.
 #          May require root access.
 install:
-	rm -rf $(INSTALLDIR)
-	mkdir -p "$(INSTALLDIR)/bin" "$(INSTALLDIR)/include" "$(INSTALLDIR)/sym" "$(INSTALLDIR)/lib"
-	cp -p $(BUILDDIR)/*.h        "$(INSTALLDIR)/include/"
-	cp -p $(BUILDDIR)/*.sym      "$(INSTALLDIR)/sym/"
-	cp -p $(OLANG)               "$(INSTALLDIR)/bin/olang$(BINEXT)"
-	cp -p $(BUILDDIR)/libolang.a "$(INSTALLDIR)/lib/"
+	@printf "\nInstalling into $(INSTALLDIR)\n"
+	@rm -rf $(INSTALLDIR)
+	@mkdir -p "$(INSTALLDIR)/bin"          "$(INSTALLDIR)/include" "$(INSTALLDIR)/sym" "$(INSTALLDIR)/lib"
+	@cp -p $(BUILDDIR)/*.h                 "$(INSTALLDIR)/include/"
+	@cp -p $(BUILDDIR)/*.sym               "$(INSTALLDIR)/sym/"
+	@cp -p $(OLANG)                        "$(INSTALLDIR)/bin/olang$(BINEXT)"
+	@cp -p $(BUILDDIR)/BrowserCmd$(BINEXT) "$(INSTALLDIR)/bin"
+	@cp -p $(BUILDDIR)/libolang.a          "$(INSTALLDIR)/lib/"
 #	Optional: Link /usr/bin/olang to the new binary
 #	ln -fs "$(INSTALLDIR)/bin/$(OLANGDIR)/$(OLANG)" /usr/bin/$(OLANGDIR)/$(OLANG)
+	@printf "Now add $(INSTALLDIR)/bin to your path.\n"
 
 
 
@@ -382,9 +395,10 @@ s3:
 libolang:
 	@printf "\nMaking libolang\n"
 #	Remove objects that should not be part of the library
-	rm -f $(BUILDDIR)/olang.o $(BUILDDIR)/errors.o $(BUILDDIR)/extTools.o
-	rm -f $(BUILDDIR)/OPM.o   $(BUILDDIR)/OPS.o    $(BUILDDIR)/OPT.o      $(BUILDDIR)/OPP.o 
-	rm -f $(BUILDDIR)/OPC.o   $(BUILDDIR)/OPV.o    $(BUILDDIR)/OPB.o
+	rm -f $(BUILDDIR)/olang.o 
+#	rm -f $(BUILDDIR)/errors.o $(BUILDDIR)/extTools.o
+#	rm -f $(BUILDDIR)/OPM.o   $(BUILDDIR)/OPS.o    $(BUILDDIR)/OPT.o      $(BUILDDIR)/OPP.o 
+#	rm -f $(BUILDDIR)/OPC.o   $(BUILDDIR)/OPV.o    $(BUILDDIR)/OPB.o
 #	Make static library
 	ar rcs "$(BUILDDIR)/libolang.a" $(BUILDDIR)/*.o
 

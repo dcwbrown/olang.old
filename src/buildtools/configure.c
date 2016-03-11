@@ -43,7 +43,7 @@ char versionstring[256];
 char osrelease[1024];
 char cwd[1024];
 
-char* version    = macrotostring(O_VER);
+char* version = macrotostring(O_VER);
 
 char* dataModel   = NULL;
 char* sizeAlign   = NULL;
@@ -52,7 +52,7 @@ char* cc          = NULL;
 char* os          = NULL;
 char* platform    = NULL;
 char* binext      = NULL;
-char* staticlink  = NULL;  // Static compilation option - though disabled on darwin.
+char* staticlink  = NULL;  // Static compilation option - none on darwin / windows.
 int   alignment   = 0;
 int   addressSize = 0;
 
@@ -96,7 +96,9 @@ void determineOS() {
     else if (strncasecmp(sys.sysname, "openbsd", 5) == 0) {os = "openbsd";}
     else if (strncasecmp(sys.sysname, "darwin",  5) == 0) {os = "darwin";  staticlink = "";}
     else {
-      printf("sysname: '%s'\n", sys.sysname);
+      fprintf(stderr, "\n\n** Unrecognised utsname.sysname '%s' returned by uname().\n", sys.sysname);
+      fprintf(stderr, "** Please add a test for this OS in src/buildtools/configure.c\n");
+      fprintf(stderr, "** in function determineOS() near line %d.\n\n", __LINE__-3);
       fail("Unrecognised OS architecture name (sysname) returned by uname.");
     }
   #endif
@@ -277,7 +279,7 @@ void writeConfigurationMod() {
   fprintf(fd, "  compiler*    = '%s';\n", compiler);
   fprintf(fd, "  compile*     = '%s';\n", cc);
   fprintf(fd, "  dataModel*   = '%s';\n", dataModel);
-  fprintf(fd, "  prefix*      = '%s-%s';\n", installdir, version);
+  fprintf(fd, "  installdir*  = '%s';\n", installdir);
   fprintf(fd, "  staticLink*  = '%s';\n", staticlink); 
   fprintf(fd, "END Configuration.\n");
 
