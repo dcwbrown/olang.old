@@ -1,4 +1,4 @@
-/* voc  Oberon compiler olang 0.5 [2016/03/08] for cygwin ILP32 using gcc xtspkaSF */
+/* voc  Oberon compiler olang 0.5 [2016/03/11] for cygwin ILP32 using gcc xtspkaSF */
 #include "SYSTEM.h"
 #include "Configuration.h"
 #include "Console.h"
@@ -32,7 +32,6 @@ static Files_Rider OPM_oldSF, OPM_newSF;
 static Files_Rider OPM_R[3];
 static Files_File OPM_oldSFile, OPM_newSFile, OPM_HFile, OPM_BFile, OPM_HIFile;
 static INTEGER OPM_S;
-static BOOLEAN OPM_useParFile;
 export BOOLEAN OPM_dontAsm, OPM_dontLink, OPM_mainProg, OPM_mainLinkStat, OPM_notColorOutput, OPM_forceNewSym, OPM_Verbose;
 static CHAR OPM_OBERON[1024];
 static CHAR OPM_MODULES[1024];
@@ -148,12 +147,6 @@ static void OPM_ScanOptions (CHAR *s, LONGINT s__len, SET *opt)
 			case 'p': 
 				*opt = *opt ^ 0x20;
 				break;
-			case 'i': 
-				*opt = *opt ^ 0x0100;
-				break;
-			case 'P': 
-				*opt = *opt ^ 0x1000;
-				break;
 			case 'S': 
 				*opt = *opt ^ 0x2000;
 				break;
@@ -200,7 +193,7 @@ BOOLEAN OPM_OpenPar (void)
 	CHAR s[256];
 	if (Platform_ArgCount == 1) {
 		Console_Ln();
-		Console_String((CHAR*)"Oberon compiler olang 0.5 [2016/03/08] for cygwin ILP32 using gcc", (LONGINT)66);
+		Console_String((CHAR*)"Oberon compiler olang 0.5 [2016/03/11] for cygwin ILP32 using gcc", (LONGINT)66);
 		Console_String((CHAR*)".", (LONGINT)2);
 		Console_Ln();
 		Console_Ln();
@@ -209,14 +202,13 @@ BOOLEAN OPM_OpenPar (void)
 		Console_String((CHAR*)"Cross platform build simplifications and fixes by Dave CW Brown.", (LONGINT)65);
 		Console_Ln();
 		Console_Ln();
-		Console_String((CHAR*)"command = \"olang\" options {files {options}}.", (LONGINT)45);
+		Console_String((CHAR*)"Usage:", (LONGINT)7);
 		Console_Ln();
 		Console_Ln();
-		Console_String((CHAR*)"Initial options specify defaults for all files. Options following a filename are", (LONGINT)81);
-		Console_String((CHAR*)"specific to that file.", (LONGINT)23);
+		Console_String((CHAR*)"  olang options {files {options}}.", (LONGINT)35);
 		Console_Ln();
 		Console_Ln();
-		Console_String((CHAR*)"options = [\"-\" {option} ].", (LONGINT)27);
+		Console_String((CHAR*)"Where options = [\"-\" {option} ].", (LONGINT)33);
 		Console_Ln();
 		Console_Ln();
 		Console_String((CHAR*)"  m - generate code for main module", (LONGINT)36);
@@ -226,8 +218,6 @@ BOOLEAN OPM_OpenPar (void)
 		Console_String((CHAR*)"  s - generate new symbol file", (LONGINT)31);
 		Console_Ln();
 		Console_String((CHAR*)"  e - allow extending the module interface", (LONGINT)43);
-		Console_Ln();
-		Console_String((CHAR*)"  i - include header and body prefix files (c0)", (LONGINT)48);
 		Console_Ln();
 		Console_String((CHAR*)"  r - check value ranges", (LONGINT)25);
 		Console_Ln();
@@ -251,6 +241,9 @@ BOOLEAN OPM_OpenPar (void)
 		Console_Ln();
 		Console_String((CHAR*)"  V - verbose output", (LONGINT)21);
 		Console_Ln();
+		Console_Ln();
+		Console_String((CHAR*)"Initial options specify defaults for all files. Options following a filename are ", (LONGINT)82);
+		Console_String((CHAR*)"specific to that file.", (LONGINT)23);
 		Console_Ln();
 		_o_result = 0;
 		return _o_result;
@@ -283,7 +276,6 @@ void OPM_InitOptions (void)
 		s[0] = 0x00;
 		Platform_GetArg(OPM_S, (void*)s, ((LONGINT)(256)));
 	}
-	OPM_useParFile = __IN(12, OPM_opt);
 	OPM_dontAsm = __IN(13, OPM_opt);
 	OPM_dontLink = __IN(14, OPM_opt);
 	OPM_mainProg = __IN(10, OPM_opt);
@@ -993,12 +985,6 @@ void OPM_OpenFiles (CHAR *moduleName, LONGINT moduleName__len)
 	} else {
 		OPM_err(153);
 	}
-	if (__IN(8, OPM_opt)) {
-		OPM_MakeFileName((void*)moduleName, moduleName__len, (void*)FName, ((LONGINT)(32)), (CHAR*)".h0", (LONGINT)4);
-		OPM_Append(&OPM_R[2], Files_Rider__typ, Files_Old(FName, ((LONGINT)(32))));
-		OPM_MakeFileName((void*)moduleName, moduleName__len, (void*)FName, ((LONGINT)(32)), (CHAR*)".c0", (LONGINT)4);
-		OPM_Append(&OPM_R[1], Files_Rider__typ, Files_Old(FName, ((LONGINT)(32))));
-	}
 }
 
 void OPM_CloseFiles (void)
@@ -1073,14 +1059,14 @@ export void *OPM__init(void)
 	OPM_Target[0] = '4';
 	OPM_Target[1] = '4';
 	Texts_OpenWriter(&OPM_W, Texts_Writer__typ);
-	__MOVE(".", OPM_OBERON, 2);
-	Platform_GetEnv((CHAR*)"OBERON", (LONGINT)7, (void*)OPM_OBERON, ((LONGINT)(1024)));
 	OPM_MODULES[0] = 0x00;
 	Platform_GetEnv((CHAR*)"MODULES", (LONGINT)8, (void*)OPM_MODULES, ((LONGINT)(1024)));
+	__MOVE(".", OPM_OBERON, 2);
+	Platform_GetEnv((CHAR*)"OBERON", (LONGINT)7, (void*)OPM_OBERON, ((LONGINT)(1024)));
 	Strings_Append((CHAR*)";.;", (LONGINT)4, (void*)OPM_OBERON, ((LONGINT)(1024)));
 	Strings_Append(OPM_MODULES, ((LONGINT)(1024)), (void*)OPM_OBERON, ((LONGINT)(1024)));
 	Strings_Append((CHAR*)";", (LONGINT)2, (void*)OPM_OBERON, ((LONGINT)(1024)));
-	Strings_Append((CHAR*)"/opt/olang-0.5", (LONGINT)15, (void*)OPM_OBERON, ((LONGINT)(1024)));
+	Strings_Append((CHAR*)"/opt/olang", (LONGINT)11, (void*)OPM_OBERON, ((LONGINT)(1024)));
 	Strings_Append((CHAR*)"/sym;", (LONGINT)6, (void*)OPM_OBERON, ((LONGINT)(1024)));
 	Files_SetSearchPath(OPM_OBERON, ((LONGINT)(1024)));
 	__ENDMOD;

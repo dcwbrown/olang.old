@@ -1,4 +1,4 @@
-/* voc  Oberon compiler olang 0.5 [2016/03/08] for cygwin ILP32 using gcc xtspkaSF */
+/* voc  Oberon compiler olang 0.5 [2016/03/11] for cygwin ILP32 using gcc xtspkaSF */
 #include "SYSTEM.h"
 #include "Files.h"
 #include "Modules.h"
@@ -1033,11 +1033,11 @@ void Texts_WriteInt (Texts_Writer *W, LONGINT *W__typ, LONGINT x, LONGINT n)
 {
 	INTEGER i;
 	LONGINT x0;
-	CHAR a[11];
+	CHAR a[22];
 	i = 0;
 	if (x < 0) {
 		if (x == (-9223372036854775807-1)) {
-			Texts_WriteString(&*W, W__typ, (CHAR*)" -2147483648", (LONGINT)13);
+			Texts_WriteString(&*W, W__typ, (CHAR*)" -9223372036854775808", (LONGINT)22);
 			return;
 		} else {
 			n -= 1;
@@ -1047,7 +1047,7 @@ void Texts_WriteInt (Texts_Writer *W, LONGINT *W__typ, LONGINT x, LONGINT n)
 		x0 = x;
 	}
 	do {
-		a[__X(i, ((LONGINT)(11)))] = (CHAR)(__MOD(x0, 10) + 48);
+		a[__X(i, ((LONGINT)(22)))] = (CHAR)(__MOD(x0, 10) + 48);
 		x0 = __DIV(x0, 10);
 		i += 1;
 	} while (!(x0 == 0));
@@ -1060,7 +1060,7 @@ void Texts_WriteInt (Texts_Writer *W, LONGINT *W__typ, LONGINT x, LONGINT n)
 	}
 	do {
 		i -= 1;
-		Texts_Write(&*W, W__typ, a[__X(i, ((LONGINT)(11)))]);
+		Texts_Write(&*W, W__typ, a[__X(i, ((LONGINT)(22)))]);
 	} while (!(i == 0));
 }
 
@@ -1068,22 +1068,22 @@ void Texts_WriteHex (Texts_Writer *W, LONGINT *W__typ, LONGINT x)
 {
 	INTEGER i;
 	LONGINT y;
-	CHAR a[10];
+	CHAR a[20];
 	i = 0;
 	Texts_Write(&*W, W__typ, ' ');
 	do {
 		y = __MASK(x, -16);
 		if (y < 10) {
-			a[__X(i, ((LONGINT)(10)))] = (CHAR)(y + 48);
+			a[__X(i, ((LONGINT)(20)))] = (CHAR)(y + 48);
 		} else {
-			a[__X(i, ((LONGINT)(10)))] = (CHAR)(y + 55);
+			a[__X(i, ((LONGINT)(20)))] = (CHAR)(y + 55);
 		}
 		x = __ASHR(x, 4);
 		i += 1;
 	} while (!(i == 8));
 	do {
 		i -= 1;
-		Texts_Write(&*W, W__typ, a[__X(i, ((LONGINT)(10)))]);
+		Texts_Write(&*W, W__typ, a[__X(i, ((LONGINT)(20)))]);
 	} while (!(i == 0));
 }
 

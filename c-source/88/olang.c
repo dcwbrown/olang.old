@@ -1,4 +1,4 @@
-/* voc  Oberon compiler olang 0.5 [2016/03/08] for cygwin ILP32 using gcc xtspkamS */
+/* voc  Oberon compiler olang 0.5 [2016/03/11] for cygwin ILP32 using gcc xtspkamS */
 #include "SYSTEM.h"
 #include "Configuration.h"
 #include "Heap.h"
@@ -88,7 +88,8 @@ void olang_Translate (void)
 			Heap_GC(0);
 			olang_Module(&done);
 			if (!done) {
-				OPM_LogWStr((CHAR*)"OPM module compilation failed.", (LONGINT)31);
+				OPM_LogLn();
+				OPM_LogWStr((CHAR*)"Module compilation failed.", (LONGINT)27);
 				OPM_LogLn();
 				Platform_Exit(1);
 			}

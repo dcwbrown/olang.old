@@ -1,4 +1,4 @@
-/* voc  Oberon compiler olang 0.5 [2016/03/08] for cygwin ILP32 using gcc xtspkaSF */
+/* voc  Oberon compiler olang 0.5 [2016/03/11] for cygwin ILP32 using gcc xtspkaSF */
 #include "SYSTEM.h"
 #include "Configuration.h"
 #include "Console.h"
@@ -84,7 +84,7 @@ void extTools_LinkMain (CHAR *moduleName, LONGINT moduleName__len, BOOLEAN stati
 	Strings_Append(extTools_objflag, ((LONGINT)(1023)), (void*)cmd, ((LONGINT)(1023)));
 	Strings_Append(moduleName, moduleName__len, (void*)cmd, ((LONGINT)(1023)));
 	Strings_Append(extTools_linkflags, ((LONGINT)(1023)), (void*)cmd, ((LONGINT)(1023)));
-	Strings_Append((CHAR*)"/opt/olang-0.5", (LONGINT)15, (void*)cmd, ((LONGINT)(1023)));
+	Strings_Append((CHAR*)"/opt/olang", (LONGINT)11, (void*)cmd, ((LONGINT)(1023)));
 	Strings_Append((CHAR*)"/lib\"", (LONGINT)6, (void*)cmd, ((LONGINT)(1023)));
 	Strings_Append(extTools_libspec, ((LONGINT)(1023)), (void*)cmd, ((LONGINT)(1023)));
 	extTools_execute((CHAR*)"Assemble and link: ", (LONGINT)20, cmd, ((LONGINT)(1023)));
@@ -103,7 +103,7 @@ export void *extTools__init(void)
 	__REGMOD("extTools", 0);
 /* BEGIN */
 	Strings_Append((CHAR*)" -I \"", (LONGINT)6, (void*)extTools_compilationOptions, ((LONGINT)(1023)));
-	Strings_Append((CHAR*)"/opt/olang-0.5", (LONGINT)15, (void*)extTools_compilationOptions, ((LONGINT)(1023)));
+	Strings_Append((CHAR*)"/opt/olang", (LONGINT)11, (void*)extTools_compilationOptions, ((LONGINT)(1023)));
 	Strings_Append((CHAR*)"/include\" ", (LONGINT)11, (void*)extTools_compilationOptions, ((LONGINT)(1023)));
 	Platform_GetEnv((CHAR*)"CFLAGS", (LONGINT)7, (void*)extTools_CFLAGS, ((LONGINT)(1023)));
 	Strings_Append(extTools_CFLAGS, ((LONGINT)(1023)), (void*)extTools_compilationOptions, ((LONGINT)(1023)));
