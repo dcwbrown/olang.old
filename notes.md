@@ -113,3 +113,11 @@ The solution I have implemented is to generate a return value variable at the en
 In theory the Oberon compiler could inspect the return value for reference to a local copy and only generate the result variable when necessary, however this is a lot of complicated code at function entry and I'm not sure it is necessary, really the C compiler should be able to optimize code with a result variable much the same as code without it.
 
 Texts.WriteInt corrected to work with both 4 and 8 byte LONGINTs. Previously values with more than 11 digits caused an index out of range error.
+
+Removed -l line number alternate/duplicate code and replaced with addition of line number to leading end of source line.
+
+Fixed char type sign warnings with simple casts.
+
+Fixed pointer to/from integer of different size by casting through intermediate type uint32_t.
+
+exttools no longer double C compiles the main program.

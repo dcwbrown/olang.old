@@ -108,7 +108,7 @@ compiler:
 
 
 
-library: v4 ooc2 ooc ulm pow32 misc s3 libolang
+library: v4 v4compat ooc2 ooc ulm pow32 misc s3 libolang
 
 
 
@@ -252,6 +252,10 @@ v4:
 	cd $(BUILDDIR); $(OLANGDIR)/$(OLANG) -Fs ../../src/library/v4/Args.Mod
 	cd $(BUILDDIR); $(OLANGDIR)/$(OLANG) -Fs ../../src/library/v4/Printer.Mod
 	cd $(BUILDDIR); $(OLANGDIR)/$(OLANG) -Fs ../../src/library/v4/Sets.Mod
+
+v4compat:
+	@printf "Making v4_compat library\n"
+	cd $(BUILDDIR); $(OLANGDIR)/$(OLANG) -Fs ../../src/library/v4_compat/Oberon.Mod
 
 ooc2:
 	@printf "Making ooc2 library\n"
