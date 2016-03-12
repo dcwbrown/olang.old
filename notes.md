@@ -44,7 +44,7 @@ Removing the test for ANSI and thus always generating the trailing 'l' for LONGI
 However there is a further complication - this is not sufficient for the LLP64 C data model favoured by Windows. In LLP64, 'long' is only 32 bit. The 64 bit integer type is  'long long' and literal numerics of this type would require an 'll' suffix. 
 Rather than create more complex 'l' suffix code I chose to fix this by by generating a (LONGINT)(n) typecast, which forces n to the correct size in all cases.
 
- - Fix SYSTEM.H __VAL(t, x) originally defined as (\*(t*)&(x)) - the original definition maps the new type onto the memory of the old and so produces the wrong result if the new type is larger than the old type. Corrected to the simpler ((t)(x)).
+ - Fix SYSTEM.H __VAL(t, x) originally defined as (\*(t\*)&(x)) - the original definition maps the new type onto the memory of the old and so produces the wrong result if the new type is larger than the old type. Corrected to the simpler ((t)(x)).
 
  - Problem with access to free'd memory in RETURN expressions: Oberon generates code to create local copies of dynamic strings passed by value (so that code is free to change the value parameter without affecting the original string). 
 The copy is not allocated from the Oberon Heap, but direct from the OS (e.g. via malloc on Linux/Unix). At function return the copy is free'd by generating C code to call free before the return statement. 
