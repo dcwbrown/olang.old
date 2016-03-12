@@ -118,6 +118,6 @@ Removed -l line number alternate/duplicate code and replaced with addition of li
 
 Fixed char type sign warnings with simple casts.
 
-Fixed pointer to/from integer of different size by casting through intermediate type uint32_t.
+Fixed pointer to/from integer of different size by casting through intermediate type uintptr_t.
 
-exttools no longer double C compiles the main program.
+olang.Translate no longer C compiles the main program twice.
