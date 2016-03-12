@@ -11,7 +11,7 @@ The biggest changes relative to early 2016 Vishap Oberon are in the build system
    - SET, LONGINT, LONGREAL: 64 bit
  - The C program 'configure.c', a much expanded version of vocparam.c, generates all the platform specific make variables, and the configuration constants compiled into the compiler. Configure.c is compiled and executed at the start of every make command.
  - The vast majority of the makefile (olang.make) is platform independent (even across BSD make/GNU make) - just a stub makefile/GNUmakefile exists to run configure.c and start the platform independent makefile. (For native windows a separate make.cmd contains the equivalent functionality expressed as a Windows .cmd file.)
- - All duplicate files required to bild Linux/BSD/Darwin variants have been removed by making them platform independent:
+ - All duplicate files required to build Linux/BSD/Darwin variants have been removed by making them platform independent:
    - Rather than access Linux structures through Oberon RECORDs intended to match their memory layout, reference the
      fields or constants that we actually need to use from within code procedures.
    - Size dependent code is abstracted into simple definitions in SYSTEM.h and referenced from code procedures.
@@ -22,13 +22,13 @@ The biggest changes relative to early 2016 Vishap Oberon are in the build system
 
 The result is that there is now a single version of earch source file, with the exceptions only of PlatformUnix.Mod/PlatformWindows.Mod in the compiler, and oocCILP32.Mod/oocCLP64.Mod/oocCLLP64.Mod in the ooc library.
 
-All Oberon compilation warnings have been fixed mostly with the addition of ELSE parts to CASE statementns.
+All Oberon compilation warnings have been fixed mostly with the addition of ELSE parts to CASE statements.
 
 All C compilation warnings have been fixed:
- - Conversion between integer and pointer of different size solved by casting with with uintptr_t as and intermediate type.
+ - Conversion between integer and pointer of different size solved by casting with with uintptr_t as an intermediate type.
  - Conversion between signed and unsigned char types solved by explicit casting CHAR parameters to system APIs in code procedures.
 
-HALT/exit code has been simplified. Exit now just calls the system exit API rather than calling the kill API and passing our own process ID. For runtime errors it now displayes the approoprate error message (e.g. Index out of range).
+HALT/exit code has been simplified. Exit now just calls the system exit API rather than calling the kill API and passing our own process ID. For runtime errors it now displayes the appropriate error message (e.g. Index out of range).
 
 Compilation errors now include the line number at the start of the displayed source line. The pos (character offset) is still displayed on the error message line. The -l code has been removed. 
 
@@ -44,12 +44,12 @@ Removing the test for ANSI and thus always generating the trailing 'l' for LONGI
 However there is a further complication - this is not sufficient for the LLP64 C data model favoured by Windows. In LLP64, 'long' is only 32 bit. The 64 bit integer type is  'long long' and literal numerics of this type would require an 'll' suffix. 
 Rather than create more complex 'l' suffix code I chose to fix this by by generating a (LONGINT)(n) typecast, which forces n to the correct size in all cases.
 
- - Fix SYSTEM.H __VAL(t, x) originally defined as (*(t*)&(x)) - the original definition maps the new type onto the memory of the old and so produces the wrong result if the new type is larger than the old type. Corrected to the simpler ((t)(x)).
+ - Fix SYSTEM.H __VAL(t, x) originally defined as (\*(t*)&(x)) - the original definition maps the new type onto the memory of the old and so produces the wrong result if the new type is larger than the old type. Corrected to the simpler ((t)(x)).
 
  - Problem with access to free'd memory in RETURN expressions: Oberon generates code to create local copies of dynamic strings passed by value (so that code is free to change the value parameter without affecting the original string). 
 The copy is not allocated from the Oberon Heap, but direct from the OS (e.g. via malloc on Linux/Unix). At function return the copy is free'd by generating C code to call free before the return statement. 
 There is a problem here when the expression on the return statement references the local string copy as the reference is now to free'd memory. 
-All bets are off - the OS or C runtime could have done anythng to this memory as part of heap management (e.g. used it for free chain linkage), and with pre-emptive multitasking it may have been reallocated and used for another purpose before the return expression refers to it. 
+All bets are off - the OS or C runtime could have done anything to this memory as part of heap management (e.g. used it for free chain linkage), and with pre-emptive multitasking it may have been reallocated and used for another purpose before the return expression refers to it. 
 This is one of that category of frustrating bug that may hit rarely but is very difficult to diagnose when it does. 
 The solution I have implemented is to generate a return value variable at the entry of every function, and generate code to evaluate the return expression into the variable *before* generating the code to free the local string copy. 
 In theory the Oberon compiler could inspect the return value for reference to a local copy and only generate the result variable when necessary, however this is a lot of complicated code at function entry and I'm not sure it is necessary, really the C compiler should be able to optimize code with a result variable much the same as code without it.
