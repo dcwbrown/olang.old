@@ -1,123 +1,69 @@
-#####OLang - Cross-platform Oberon compiler for 32 and 64 bit Unix/Linux/Windows.
+####Changes relative to Vishap Oberon
 
-Olang is a version of Vishap Oberon by Norayr Chilingarian. It has been adapted to build more easily on a wider variety of modern platforms, including cygwin and native Windows.
+The biggest changes relative to early 2016 Vishap Oberon are in the build system and platform specific behaviour. Where possible platform differences have been automated or removed.
 
-#####Building and installation summary
+ - The same make commands are used for all platforms, Linux, BSD, Darwin and Windows:
+   - 'make full' builds the compiler and library
+   - 'make install' then installs the build into /opt/olang (or %ProgramFiles%\oloang or %ProgramFiles(x86)%\olang on Windows).
+ - Oberon type sizes are platform independent:
+   - CHAR, SHORTINT: 8 bit
+   - INTEGER, REAL: 32 bit
+   - SET, LONGINT, LONGREAL: 64 bit
+ - The C program 'configure.c', a much expanded version of vocparam.c, generates all the platform specific make variables, and the configuration constants compiled into the compiler. Configure.c is compiled and executed at the start of every make command.
+ - The vast majority of the makefile (olang.make) is platform independent (even across BSD make/GNU make) - just a stub makefile/GNUmakefile exists to run configure.c and start the platform independent makefile. (For native windows a separate make.cmd contains the equivalent functionality expressed as a Windows .cmd file.)
+ - All duplicate files required to bild Linux/BSD/Darwin variants have been removed by making them platform independent:
+   - Rather than access Linux structures through Oberon RECORDs intended to match their memory layout, reference the
+     fields or constants that we actually need to use from within code procedures.
+   - Size dependent code is abstracted into simple definitions in SYSTEM.h and referenced from code procedures.
+   - Add file search path feature to standard Files.Mod (with new Files.SetSearchPath procedure) and remove compiler
+     specific Files0.Mod. SetSearchPath is now called from OPM.cmdln init removing the need for a compiler sepecific versions of Texts.Mod and Kernel.Mod.
+   - Refactor Kernel.Mod, Unix.Mod and SYSTEM.Mod into Heap.Mod and PlatformUnix.Mod. Provide a separate PlatformWindows.Mod that uses the Win32 API directly.
+   - Lots of places freely mixed 'long' and 'LONGINT' assuming they are the same thing. All have been changed to 'LONGINT' partly for consistency, but mostly as for some platforms LONGINT is 'long long', not 'long'.
 
-1. git clone https://github.com/dcwbrown/olang
-2. cd olang
-3. make full
-4. make install
+The result is that there is now a single version of earch source file, with the exceptions only of PlatformUnix.Mod/PlatformWindows.Mod in the compiler, and oocCILP32.Mod/oocCLP64.Mod/oocCLLP64.Mod in the ooc library.
 
-Step 4 requires root/administrator pivilege on most Unix/Linux systems and on native windows.
+All Oberon compilation warnings have been fixed mostly with the addition of ELSE parts to CASE statementns.
 
-#####What it does
-'make' starts one of three makefiles: GNUmakefile for GNU make systems, makefile on BSD systems, and make.cmd on native Windows. 
-All three first compile and run src/buildtools/configure.c, which establishes platform details including:
+All C compilation warnings have been fixed:
+ - Conversion between integer and pointer of different size solved by casting with with uintptr_t as and intermediate type.
+ - Conversion between signed and unsigned char types solved by explicit casting CHAR parameters to system APIs in code procedures.
 
-1. Platform type (unix/windows) and distribution (freebsd/ubuntu/raspbian/...).
-2. C compiler command line for assembling olang output.
-3. C compiler memory model - ILP32, LP64 or LLP64.
-4. C compiler pointer variable alignment. (See SIZEALIGN in olang.make for details.)
-5. Directory to install to for this system.
+HALT/exit code has been simplified. Exit now just calls the system exit API rather than calling the kill API and passing our own process ID. For runtime errors it now displayes the approoprate error message (e.g. Index out of range).
 
-These are written to two files: 
- - Configuration.Mod will be compiled with olang *.Mod sources to embed platform details.
- - Configuration.make will be included by GNUmakefile/makefile/make.cmd to provide the remainder of the make process with platform specific variables.
+Compilation errors now include the line number at the start of the displayed source line. The pos (character offset) is still displayed on the error message line. The -l code has been removed. 
 
-GNUmakefile and makefile are just wrappers to run configure.c and then include olang.make. (Executing a shell command as part of macro definition has different syntax in BSD and GNU, but with all the platform specific details handled in configure.c, olang.make is fully compatible with both GNU and BSD.) For Windows, make.cmd is coded to provide the same functionality as olang.make.
+A few fix details:
 
-#####Bootstrapping.
-The olang repository includes pre-compiled binaries for many platforms, including ubuntu, freebsd, openbsd, darwin (mac), raspbian, cygwin, cygwin/mingw and native windows.
-Also included are C source files in three size and alignment flavours that are sufficient to bootstrap on new unix/linux based platfroms.
-When making a fresh enlsitment, the makefile will first obtain a baseline olang compiler by copying the precompiled binary if available, or running the ready made C sources through the C compiler if not. This baseline compiler is then used to compiile the Oberon compiler sources for for this specific platform.
-
-#####c-source directory
-
-The sources in c-sources are sufficient to build a compiler for unix/linux based systems, but which  will always be used with the -T SIZEALIGN parameter. This compiler is then rebuilt (bootstrapped) on the target architecture so that the target SIZEALIGN gets embedded as the default settings for the compiler. The makefile takes care of this automatically in the 'translate' target used by 'make full' and 'make compiler'.
-
-#####Selecting gcc vs clang (Unix/Linux)
-By default make uses the compiler defined in variable CC. THis can be overriden by running 'export CC=gcc' or 'export CC=clang' from the command line before running make.
-*Note*: be sure to run 'make clean' any time you change the value of CC. Otherwise directories will be mixed up.
-*Note*: Darwin (MAC OS/X) redirects gcc to clang, so specifying CC=gcc still builds clang binaries.
-
-#####Native windows
-make.cmd is hardcoded to use 'cl', the Microsoft Visual C compiler. For other compilers on windows use cygwin.
-The compiler built by make.cmd uses the WIn32 API directly - it does not depened on cygwin or other unix-like layers.
-At the time of writing Microsoft provides a free command line Visual C compiler called the 'Visual C++ Build Tools 2015'. See https://blogs.msdn.microsoft.com/vcblog/2015/11/02/announcing-visual-c-build-tools-2015-standalone-c-tools-for-build-environments
-
-#####Cygwin on Windows
-Just as on Unix or Linux systems, make can build a gcc or clang based compiler for the cygwin environment on Windows. The generated compiler will depend on cygwin.dll.
-
-#####MingW on Cygwin on Windows
-Cygwin also provides packages for building MingW binaries. Although built with gcc these binaries use the Win32 API directly.
-
-To build mingw compiler binaries, set up a cygwin environment, add the corresponding mingw package and set the CC environment variable as follows:
-
-######For 32 bit cygwin
- - use setup-x86.exe to add the package mingw64-i686-gcc-core.
- - run 'export CC=i686-w64-mingw32-gcc'
-
-######For 64 bit cygwin
- - use setup-x86_64.exe to add the package mingw64-x86_64-gcc-core.
- - run 'export CC=x86_64-w64-mingw32-gcc'
-
-(*Note*: Don't be put off by the name 'mingw64' in the 32 bit package.)
-
-Now run 'make full' and 'make install'. This will place the compiler and libraries in /opt/olang in the cygwin filesystem.
-
-#####32 bit vs 64 bit versions and Oberon type sizes.
-On Linux/Unix systems, the built compiler is specific to the machine size. Building on 32 bit Ubuntu will create a 32 bit compiler, etc.
-
-On Windows, both native, and under cygwin, it is possible to build both 32 bit and 64 bit compilers. 
-
-For cygwin it depends on the cygwin setup file used (setup-x86.exe generates a 32 bit installation, and setup-x86_64.exe a 64 bit installation.) Both can be installed side by side. Use the start menu entries 'Cygwin Terminal' or 'Cygwin64 Terminal'.
-
-For the Visual C\++ Build Tools,  use the installation provided start menu entries 'Visual C\++ x86 Native Build Tools Command Prompt' or 'Visual C\++ x64 Native Build Tools Command Prompt'. 
-
-Type sizes are fixed across the 32 and 64 bit compilers as follows:
- - CHAR, SHORTINT: 8 bits.
- - INTEGER, REAL: 32 bits.
- - LONGINT, LONGREAL, SET: 64 bits.
-
-#####Changes relative to Vishap Oberon
-
-HALT and compiler error reporting have been updated to print error number and meaning where possible, and to include line number with source lines.
-
-The Vishap Oberon enlistment handles different platforms with multiple version of core files, each with the appropriate, usually small, changes for that platform. OLang avoids nearly all of these multiple similar files with a combination of approaches:
-
- - Reference to Unix/Linux data structures is achieved without creating parallel RECORD layouts in Oberon code by moving all platform dependent code into code procedures.
- - Compiler specific versions of the v4 library files are removed in favour of necessary functionality provided as small extensions of standard v4 libraries. In practise this amounts to little more than a search path feature added to Files.Mod.
- - All size dependent code is abstracted into simple definitions in SYSTEM.h and referenced from code procedures.
-
-All C and Oberon compilation warnings have been fixed. In particular there were a lot of type conversion warnings solved by casting twith with uintptr_t as the intermediate type.
-
-A couple of type size issues have been fixed:
-
- - It is not necessary to specify literal numeric sizes on parameters to ANSI C functions as the compiler knows the size from the declaration of the called function. 
-The Oberon compiler includes a procedure to gnerate 'l' at the end of long literal parameters on K&R C systems, but intentionally omits the 'l' when the compiler is known to be ANSI (as all the supported compilers are). 
-Arguably there's no harm adding the 'l', and this test is an unnecessary complication, but it works. 
-**Except** where the parameter is being passed to a vararg. In this case the compiler cannot tell what size the code will fetch at run time and does not extend a literal integer to long. 
+ - Problem with size of literal parameters, specifically for NEW of dynamic arrays: In theory it is not necessary to specify literal numeric sizes on parameters to ANSI C functions as the compiler should know the size from the declaration of the called function. 
+The Oberon compiler includes a procedure (OPM.PromoteIntConstToLInt) to generate 'l' at the end of long literal parameters on K&R C, but intentionally omits the 'l' when the compiler is known to be ANSI. (All currently supported compilers are ANSI). 
+I can only imagine the reason to omit the 'l' is as a perceived optimization, but arguably there's no harm adding the 'l', and this test is an unnecessary complication.
+**But** actually it is not safe to omit the 'l' where the parameter is being passed to a vararg. In this case the compiler cannot tell what size the code will fetch at run time and does not extend a literal integer to long. 
 Why does this matter, surely Oberon does not use varargs? 
-Unfortunately it does - for the individual dimension size parameters to NEW. Thus on a 64 bit system, the dimesion size must be specified as 64 bit or the compiler will only pass 32 bits. (Generating intermittent out of memory failures when the subsequent tack word is non-zero.)  
-Removing the test for ANSI and thus generating the trailing 'l' is a sufficient fix for the data models supported by Vishap Oberon. 
-However there is a further complication - this is not sufficient for the LLP64 C data model favoured by Windows. In LLP64, 'long' is only 32 bit. The 64 bit integer type is  'long long' and literal numerics of this type require an 'll' suffix. 
-Rather than create more complex 'l' suffix code OLang chooses instead to replace it by (LONGINT)(n) typecasts, which forces n to the correct size in all cases.
+Unfortunately it does - for each of the individual dimension size parameters to NEW. On a 64 bit systems, each dimension size literal must be specified as 64 bit or the compiler will only pass 32 bits. (Which generates intermittent out of memory failures when the subsequent stack word is non-zero.)  
+Removing the test for ANSI and thus always generating the trailing 'l' for LONGINTs is a sufficient fix for the data models supported by current Vishap Oberon. 
+However there is a further complication - this is not sufficient for the LLP64 C data model favoured by Windows. In LLP64, 'long' is only 32 bit. The 64 bit integer type is  'long long' and literal numerics of this type would require an 'll' suffix. 
+Rather than create more complex 'l' suffix code I chose to fix this by by generating a (LONGINT)(n) typecast, which forces n to the correct size in all cases.
 
- - Oberon generates code to copy strings passed by value, so that changes do not affect the original string. 
+ - Fix SYSTEM.H __VAL(t, x) originally defined as (*(t*)&(x)) - the original definition maps the new type onto the memory of the old and so produces the wrong result if the new type is larger than the old type. Corrected to the simpler ((t)(x)).
+
+ - Problem with access to free'd memory in RETURN expressions: Oberon generates code to create local copies of dynamic strings passed by value (so that code is free to change the value parameter without affecting the original string). 
 The copy is not allocated from the Oberon Heap, but direct from the OS (e.g. via malloc on Linux/Unix). At function return the copy is free'd by generating C code to call free before the return statement. 
 There is a problem here when the expression on the return statement references the local string copy as the reference is now to free'd memory. 
 All bets are off - the OS or C runtime could have done anythng to this memory as part of heap management (e.g. used it for free chain linkage), and with pre-emptive multitasking it may have been reallocated and used for another purpose before the return expression refers to it. 
-This is one of that category of frustrating bug that can hit vary rarely and is very difficult to diagnose when it does. 
-The solution I have implemented is to generate a return value variable at the entry of every function, and generate code to evaluate the return expression into the variable *before* generating the local variable free code. 
+This is one of that category of frustrating bug that may hit rarely but is very difficult to diagnose when it does. 
+The solution I have implemented is to generate a return value variable at the entry of every function, and generate code to evaluate the return expression into the variable *before* generating the code to free the local string copy. 
 In theory the Oberon compiler could inspect the return value for reference to a local copy and only generate the result variable when necessary, however this is a lot of complicated code at function entry and I'm not sure it is necessary, really the C compiler should be able to optimize code with a result variable much the same as code without it.
 
 Texts.WriteInt corrected to work with both 4 and 8 byte LONGINTs. Previously values with more than 11 digits caused an index out of range error.
 
-Removed -l line number alternate/duplicate code and replaced with addition of line number to leading end of source line.
-
-Fixed char type sign warnings with simple casts.
-
-Fixed pointer to/from integer of different size by casting through intermediate type uintptr_t.
-
 olang.Translate no longer C compiles the main program twice.
+
+#####Stuff that really ought to be done
+
+ - When exiting abnormally, e.g. due to index out of range, report .Mod file name and line number at fault. Preferably include a stack trace. (Pascal 6000 had this in 1975.)
+ - Go through the libraries and update them for 32 bit INTEGER and 64 bit LONGINT. I keep finding places which assume 16 bit INTEGER and 32 bit LONGINT.
+
+#####Nice but not straightforward:
+ 
+ - Provide an compiler option to generate code where INTEGER and REAL are 16 bit and SET, LONGINT anf LONGREAL are 32 bit. While this is no significant benefit for modern Linux and Windows systems, it may make it easier to port old code that assumes these type sizes (as do some of the library files). Maybe implement INT8, INT16, INT32 and INT64. Maybe even UINT8, UINT16, UINT32 and UINT64. Also INTADDR / UINTADDR (same size as an address.) Indeed I miss Pascal and Modula's subrange variables (e.g. 'TYPE byte = 0..255;'). Implementing these would remove the need for most of the explicit integer type names.
+ 
