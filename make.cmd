@@ -16,7 +16,7 @@
 
 :: Create configuration and parameter files.
 
-cl -nologo -Isrc\compiler -DO_VER=0.5 src\buildtools\configure.c >nul
+cl -nologo -Isrc\compiler -DO_VER=0.5 src\tools\configure.c >nul
 setlocal
 configure.exe >nul
 del configure.obj configure.exe 2>nul
@@ -196,15 +196,15 @@ echo.  SIZEALIGN: %SIZEALIGN%
 md %BUILDDIR% 2>nul
 cd %BUILDDIR%
 %OLANGDIR%\%OLANG% -SFs    -T%SIZEALIGN% ../../Configuration.Mod
-%OLANGDIR%\%OLANG% -SFs    -T%SIZEALIGN% ../../src/compiler/Platform%PLATFORM%.Mod
-%OLANGDIR%\%OLANG% -SFsapx -T%SIZEALIGN% ../../src/compiler/Heap.Mod
-%OLANGDIR%\%OLANG% -SFs    -T%SIZEALIGN% ../../src/compiler/Console.Mod
+%OLANGDIR%\%OLANG% -SFs    -T%SIZEALIGN% ../../src/system/Platform%PLATFORM%.Mod
+%OLANGDIR%\%OLANG% -SFsapx -T%SIZEALIGN% ../../src/system/Heap.Mod
+%OLANGDIR%\%OLANG% -SFs    -T%SIZEALIGN% ../../src/system/Console.Mod
 %OLANGDIR%\%OLANG% -SFs    -T%SIZEALIGN% ../../src/library/v4/Strings.Mod
 %OLANGDIR%\%OLANG% -SFs    -T%SIZEALIGN% ../../src/library/v4/Modules.Mod
-%OLANGDIR%\%OLANG% -SFsx   -T%SIZEALIGN% ../../src/compiler/Files.Mod
+%OLANGDIR%\%OLANG% -SFsx   -T%SIZEALIGN% ../../src/system/Files.Mod
 %OLANGDIR%\%OLANG% -SFs    -T%SIZEALIGN% ../../src/library/v4/Reals.Mod
 %OLANGDIR%\%OLANG% -SFs    -T%SIZEALIGN% ../../src/library/v4/Texts.Mod
-%OLANGDIR%\%OLANG% -SFs    -T%SIZEALIGN% ../../src/compiler/vt100.Mod
+%OLANGDIR%\%OLANG% -SFs    -T%SIZEALIGN% ../../src/system/vt100.Mod
 %OLANGDIR%\%OLANG% -SFs    -T%SIZEALIGN% ../../src/compiler/errors.Mod
 %OLANGDIR%\%OLANG% -SFs    -T%SIZEALIGN% ../../src/compiler/OPM.cmdln.Mod
 %OLANGDIR%\%OLANG% -SFs    -T%SIZEALIGN% ../../src/compiler/extTools.Mod
