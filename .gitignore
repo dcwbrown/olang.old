@@ -1,11 +1,3 @@
-/*.sym
-/ocat
-/ocat.exe
-/showdef
-/showdef.exe
-/voc
-/voc.exe
-/voc.par
 /*.sublime-*
 /Configuration.Mod
 /Configuration.Make

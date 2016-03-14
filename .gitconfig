@@ -5,8 +5,5 @@
 	logallrefupdates = true
 	ignorecase = true
 	autocrlf = input
-[user]
-	email = dave@brownsmeet.com
-	name = David Brown
 [push]
 	default = simple

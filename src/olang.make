@@ -220,7 +220,7 @@ translate:
 browsercmd:
 	@printf "\nMaking symbol browser\n"
 	@cd $(BUILDDIR); $(OLANGDIR)/$(OLANG) -Sm ../../src/tools/BrowserCmd.Mod
-	@cd $(BUILDDIR) && $(COMPILE) $(STATICLINK) BrowserCmd.c -o BrowserCmd \
+	@cd $(BUILDDIR) && $(COMPILE) $(STATICLINK) BrowserCmd.c -o showdef \
 	  Platform.o Texts.o OPT.o Heap.o Console.o SYSTEM.o OPM.o OPS.o OPV.o \
 	  Files.o Reals.o Modules.o vt100.o errors.o Configuration.o Strings.o \
 	  OPC.o
@@ -235,12 +235,12 @@ browsercmd:
 install:
 	@printf "\nInstalling into $(INSTALLDIR)\n"
 	@rm -rf $(INSTALLDIR)
-	@mkdir -p "$(INSTALLDIR)/bin"          "$(INSTALLDIR)/include" "$(INSTALLDIR)/sym" "$(INSTALLDIR)/lib"
-	@cp -p $(BUILDDIR)/*.h                 "$(INSTALLDIR)/include/"
-	@cp -p $(BUILDDIR)/*.sym               "$(INSTALLDIR)/sym/"
-	@cp -p $(OLANG)                        "$(INSTALLDIR)/bin/olang$(BINEXT)"
-	@cp -p $(BUILDDIR)/BrowserCmd$(BINEXT) "$(INSTALLDIR)/bin"
-	@cp -p $(BUILDDIR)/libolang.a          "$(INSTALLDIR)/lib/"
+	@mkdir -p "$(INSTALLDIR)/bin"       "$(INSTALLDIR)/include" "$(INSTALLDIR)/sym" "$(INSTALLDIR)/lib"
+	@cp -p $(BUILDDIR)/*.h              "$(INSTALLDIR)/include/"
+	@cp -p $(BUILDDIR)/*.sym            "$(INSTALLDIR)/sym/"
+	@cp -p $(OLANG)                     "$(INSTALLDIR)/bin/olang$(BINEXT)"
+	@cp -p $(BUILDDIR)/showdef$(BINEXT) "$(INSTALLDIR)/bin"
+	@cp -p $(BUILDDIR)/libolang.a       "$(INSTALLDIR)/lib/"
 #	Optional: Link /usr/bin/olang to the new binary
 #	ln -fs "$(INSTALLDIR)/bin/$(OLANGDIR)/$(OLANG)" /usr/bin/$(OLANGDIR)/$(OLANG)
 	@printf "Now add $(INSTALLDIR)/bin to your path.\n"
