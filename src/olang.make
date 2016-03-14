@@ -82,7 +82,7 @@ usage:
 	@echo "  make full          - Runs all the above"
 	@echo "  make install       - Install built compiler and library in /opt"
 	@echo "                       (May need root access)"
-	@echo "  make preparecommit - Uddate bootstrap C source and binary directories."
+	@echo "  make preparecommit - Uddate bootstrap C source directories."
 	@echo "  make revertcsource - Use git checkout to restore the bootstrap C source directories"
 
 
@@ -169,7 +169,7 @@ assemble:
 
 
 compilerfromsavedsource:
-	@echo Populating clean build directory from saved base C sources.
+	@echo Populating clean build directory from bootstrap C sources.
 	@mkdir -p $(BUILDDIR)
 	@cp $(OLANGDIR)/bootstrap/$(PLATFORM)-$(SIZEALIGN)/* $(BUILDDIR)
 	@make -s assemble

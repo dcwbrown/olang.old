@@ -16,7 +16,7 @@
 
 :: Create configuration and parameter files.
 
-cl -nologo -Isrc\compiler -DO_VER=0.5 src\tools\configure.c >nul
+cl -nologo -Isrc\system -DO_VER=0.5 src\tools\configure.c >nul
 setlocal
 configure.exe >nul
 del configure.obj configure.exe 2>nul
@@ -27,10 +27,8 @@ for /F "delims='=' tokens=1,2" %%a in (Configuration.make) do set %%a=%%b
 
 set FLAVOUR=%OS%.%DATAMODEL%.%COMPILER%
 set BUILDDIR=build\%FLAVOUR%
-set SAVEDOLANG=bin\olang.%FLAVOUR%%BINEXT%
 set SOURCE=%OLANGDIR%\src
 set OLANG=olang%BINEXT%
-set CSOURCEDIR=%OLANGDIR%\c-source\%SIZEALIGN%
 
 
 
@@ -59,8 +57,7 @@ goto :eof
 @echo.  make full          - Runs all the above
 @echo.  make install       - Install built compiler and library in /opt
 @echo.                       (May need root access)
-@echo.  make preparecommit - Uddate c-source and binary directories.
-@echo.  make revertcsource - Use git checkout to restore the c-source directories
+@echo.  make preparecommit - Uddate bootstrap C source directories.
 goto :eof
 
 
@@ -69,6 +66,7 @@ goto :eof
 :full
 call :clean
 call :compiler
+call :browsercmd
 call :library
 echo.Compiler and library built in %BUILDDIR%
 goto :eof
@@ -98,32 +96,19 @@ goto :eof
 
 
 
-:savecompilerbinary
-mkdir bin >nul 2>nul
-copy %OLANG% %SAVEDOLANG%
-goto :eof
-
-
-
-
-:preparesources
+:preparecommit
 setlocal
-rd /s /q c-source
-mkdir c-source >nul 2>nul
+rd /s /q bootstrap
+mkdir bootstrap >nul 2>nul
 for %%f in (44 48 88) do (
-  set SIZEALIGN=%%f
-  set BUILDDIR=c-source\%%f
-  call :translate
+  for %%p in (unix windows) do (
+    set SIZEALIGN=%%f
+    set PLATFORM=%%p
+    set BUILDDIR=bootstrap\%%p-%%f
+    call :translate
+  )
 )
 endlocal
-goto :eof
-
-
-
-
-:preparecommit
-call :savecompilerbinary
-call :preparesources
 goto :eof
 
 
@@ -172,9 +157,9 @@ goto :eof
 
 
 :compilefromsavedsource
-echo.Populating clean build directory from saved base C sources.
+echo.Populating clean build directory from bootstrap C sources.
 mkdir %BUILDDIR% >nul 2>nul
-copy %CSOURCEDIR%\*.* %BUILDDIR% >nul
+copy bootstrap\%PLATFORM%-%SIZEALIGN%\*.* %BUILDDIR% >nul
 call :assemble
 goto :eof
 
@@ -183,9 +168,7 @@ goto :eof
 
 :translate
 :: Make sure we have an oberon compiler binary: if we built one earlier we'll use it,
-:: otherwise use a pre-built binary from the bin directory, or, for new system
-:: bootstraps, use one of the saved unix type C sources in the c-source directory.
-if not exist %OLANG% if exist %SAVEDOLANG% copy %SAVEDOLANG% %OLANG%
+:: otherwise use one of the saved sets of C sources in the bootstrap directory.
 if not exist %OLANG% call :compilefromsavedsource
 
 echo.
@@ -216,9 +199,24 @@ cd %BUILDDIR%
 %OLANGDIR%\%OLANG% -SFs    -T%SIZEALIGN% ../../src/compiler/OPP.Mod
 %OLANGDIR%\%OLANG% -Ssm    -T%SIZEALIGN% ../../src/compiler/olang.Mod
 cd %OLANGDIR%
-copy src\compiler\*.c %BUILDDIR% >nul
-copy src\compiler\*.h %BUILDDIR% >nul
+copy src\system\*.c %BUILDDIR% >nul
+copy src\system\*.h %BUILDDIR% >nul
 echo.%BUILDDIR% filled with compiler C source.
+goto :eof
+
+
+
+
+:browsercmd
+echo.
+echo.Making symbol browser
+cd %BUILDDIR%
+%OLANGDIR%/%OLANG% -Sm ../../src/tools/BrowserCmd.Mod
+cl -nologo BrowserCmd.c /Feshowdef.exe ^
+  Platform.obj Texts.obj OPT.obj Heap.obj Console.obj SYSTEM.obj OPM.obj OPS.obj OPV.obj ^
+  Files.obj Reals.obj Modules.obj vt100.obj errors.obj Configuration.obj Strings.obj ^
+  OPC.obj
+cd %OLANGDIR%
 goto :eof
 
 
@@ -237,6 +235,7 @@ mkdir "%INSTALLDIR%\lib"                            >nul 2>&1
 copy %BUILDDIR%\*.h          "%INSTALLDIR%\include" >nul       
 copy %BUILDDIR%\*.sym        "%INSTALLDIR%\sym"     >nul   
 copy %OLANG%                 "%INSTALLDIR%\bin"     >nul   
+copy %BUILDDIR%\showdef.exe  "%INSTALLDIR%\bin"     >nul   
 copy %BUILDDIR%\libolang.lib "%INSTALLDIR%\lib"     >nul   
 :: Optional: Link c:\windows\olang.exe to the new binary
 ::del /q c:\windows\olang.exe >nul 2>&1
