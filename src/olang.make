@@ -64,10 +64,9 @@ include ./Configuration.Make
 
 FLAVOUR    = $(OS).$(DATAMODEL).$(COMPILER)
 BUILDDIR   = build/$(FLAVOUR)
-SAVEDOLANG = bin/olang.$(FLAVOUR)$(BINEXT)
+# SAVEDOLANG = bin/olang.$(FLAVOUR)$(BINEXT)
 SOURCE     = $(OLANGDIR)/src
 OLANG      = olang$(BINEXT)
-CSOURCEDIR = $(OLANGDIR)/bootstrap/$(SIZEALIGN)
 
 
 
@@ -112,23 +111,25 @@ library: v4 v4compat ooc2 ooc ulm pow32 misc s3 libolang
 
 
 
-savecompilerbinary:
-	@mkdir -p bin
-	@cp $(OLANG) $(SAVEDOLANG)
+# savecompilerbinary:
+# 	@mkdir -p bin
+# 	@cp $(OLANG) $(SAVEDOLANG)
 
 
 
-preparecsources:
+# preparecsources:
+
+preparecommit:	
 	@rm -rf bootstrap/*
-	@for SA in 44 48 88; do make -s translate SIZEALIGN=$$SA BUILDDIR=bootstrap/$$SA; done
+	@for SA in 44 48 88; do for PL in unix windows; do make -s translate SIZEALIGN=$$SA BUILDDIR=bootstrap/$$PL-$$SA PLATFORM=$$PL; done; done
 
 
-preparecommit: savecompilerbinary preparecsources
+# preparecommit: savecompilerbinary preparecsources
 
 
 
 revertcsource:
-	@for SA in 44 48 88; do git checkout bootstrap/$$SA; done
+	@for SA in 44 48 88; do for PL in unix windows; do git checkout bootstrap/$$PL-$$SA PLATFORM=$$PL; done; done
 
 
 
@@ -169,9 +170,8 @@ assemble:
 
 compilerfromsavedsource:
 	@echo Populating clean build directory from saved base C sources.
-	@if [ "$(PLATFORM)" != "unix" ]; then printf "\n** Not a Unix style platform - cannot bootstrap **\n\n"; exit 1; fi
 	@mkdir -p $(BUILDDIR)
-	@cp $(CSOURCEDIR)/* $(BUILDDIR)
+	@cp $(OLANGDIR)/bootstrap/$(PLATFORM)-$(SIZEALIGN)/* $(BUILDDIR)
 	@make -s assemble
 
 
@@ -179,9 +179,8 @@ compilerfromsavedsource:
 
 translate:
 # Make sure we have an oberon compiler binary: if we built one earlier we'll use it,
-# otherwise use a pre-built binary from the bin directory, or, for new system
-# bootstraps, use one of the saved unix type C sources in the bootstrap directory.
-	if [ \( ! -e $(OLANG) \) -a -e $(SAVEDOLANG) ]; then cp $(SAVEDOLANG) $(OLANG); fi
+# otherwise use one of the pre-prepared sets of C sources in the bootstrap directory.
+#	if [ \( ! -e $(OLANG) \) -a -e $(SAVEDOLANG) ]; then cp $(SAVEDOLANG) $(OLANG); fi
 	if [ ! -e $(OLANG) ]; then make -s compilerfromsavedsource; fi
 
 	@printf "\nmake translate - translating compiler source:\n"
@@ -243,7 +242,13 @@ install:
 	@cp -p $(BUILDDIR)/libolang.a       "$(INSTALLDIR)/lib/"
 #	Optional: Link /usr/bin/olang to the new binary
 #	ln -fs "$(INSTALLDIR)/bin/$(OLANGDIR)/$(OLANG)" /usr/bin/$(OLANGDIR)/$(OLANG)
-	@printf "Now add $(INSTALLDIR)/bin to your path.\n"
+	@printf "\nNow add $(INSTALLDIR)/bin to your path, for example with the command:\n"
+	@printf "export PATH=$(INSTALLDIR)/bin:$$PATH\n"
+
+
+uninstall:
+	rm -rf $(INSTALLDIR)
+
 
 
 
