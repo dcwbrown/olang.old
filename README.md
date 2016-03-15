@@ -1,6 +1,6 @@
 #####OLang - Cross-platform Oberon compiler for 32 and 64 bit Unix/Linux/Windows.
 
-Olang is a version of Vishap Oberon by Norayr Chilingarian. It has been adapted to build more easily on a wider variety of modern platforms, including cygwin and native Windows. See notes.md for differences.
+Olang is a version of Norayr Chilingarian's Vishap Oberon. It has been adapted to build more easily on a wider variety of modern platforms, including cygwin and native Windows. See notes.md for differences.
 
 #####Building and installation summary
 
@@ -28,23 +28,34 @@ These are written to two files:
 GNUmakefile and makefile are just wrappers to run configure.c and then include olang.make. (Executing a shell command as part of macro definition has different syntax in BSD and GNU, but with all the platform specific details handled in configure.c, olang.make is fully compatible with both GNU and BSD.) For Windows, make.cmd is coded to provide the same functionality as olang.make.
 
 #####Bootstrapping.
-The olang repository includes pre-compiled binaries for many platforms, including ubuntu, freebsd, openbsd, darwin (mac), raspbian, cygwin, cygwin/mingw and native windows.
-Also included are C source files in three size and alignment flavours that are sufficient to bootstrap on new unix/linux based platfroms.
-When making a fresh enlsitment, the makefile will first obtain a baseline olang compiler by copying the precompiled binary if available, or running the ready made C sources through the C compiler if not. This baseline compiler is then used to compiile the Oberon compiler sources for for this specific platform.
-
-#####c-source directory
-
-The sources in c-sources are sufficient to build a compiler for unix/linux based systems, but which  will always be used with the -T SIZEALIGN parameter. This compiler is then rebuilt (bootstrapped) on the target architecture so that the target SIZEALIGN gets embedded as the default settings for the compiler. The makefile takes care of this automatically in the 'translate' target used by 'make full' and 'make compiler'.
+The olang repository includes pre-prepared C source files used to build a baseline compiler binary when making a fresh enlistment.
+The sources in the bootstrap directory are sufficient to build a compiler for all supported system types, but require the -T SIZEALIGN parameter. This compiler is then rebuilt (bootstrapped) on the target architecture so that the target SIZEALIGN gets embedded as the default settings for the compiler. The makefile takes care of this automatically in the 'translate' target used by 'make full' and 'make compiler'. The bootstrap process run automatically on a new enlistment of following a 'make clean'.
 
 #####Selecting gcc vs clang (Unix/Linux)
 By default make uses the compiler defined in variable CC. THis can be overriden by running 'export CC=gcc' or 'export CC=clang' from the command line before running make.
 *Note*: be sure to run 'make clean' any time you change the value of CC. Otherwise directories will be mixed up.
 *Note*: Darwin (MAC OS/X) redirects gcc to clang, so specifying CC=gcc still builds clang binaries.
 
+#####32 bit vs 64 bit versions and Oberon type sizes.
+On Linux/Unix systems, the built compiler is specific to the machine size. For example building on 32 bit Ubuntu will create a 32 bit compiler, etc.
+
+On Windows, both native, and under cygwin, it is possible to build both 32 bit and 64 bit compilers. 
+
+For cygwin it depends on the cygwin setup file used (setup-x86.exe generates a 32 bit installation, and setup-x86_64.exe a 64 bit installation.) Both can be installed side by side. Use the start menu entries 'Cygwin Terminal' or 'Cygwin64 Terminal'.
+
+For the Visual C\++ Build Tools, use the installation provided start menu entries 'Visual C\++ x86 Native Build Tools Command Prompt' or 'Visual C\++ x64 Native Build Tools Command Prompt'. 
+
+Type sizes are fixed across the 32 and 64 bit compilers as follows:
+ - CHAR, SHORTINT: 8 bits.
+ - INTEGER, REAL: 32 bits.
+ - LONGINT, LONGREAL, SET: 64 bi
+
 #####Native windows
 make.cmd is hardcoded to use 'cl', the Microsoft Visual C compiler. For other compilers on windows use cygwin.
 The compiler built by make.cmd uses the WIn32 API directly - it does not depened on cygwin or other unix-like layers.
-At the time of writing Microsoft provides a free command line Visual C compiler called the 'Visual C++ Build Tools 2015'. See https://blogs.msdn.microsoft.com/vcblog/2015/11/02/announcing-visual-c-build-tools-2015-standalone-c-tools-for-build-environments
+At the time of writing Microsoft provides a free command line Visual C compiler called the 'Visual C++ Build Tools 2015'. See:
+
+  https://blogs.msdn.microsoft.com/vcblog/2015/11/02/announcing-visual-c-build-tools-2015-standalone-c-tools-for-build-environments
 
 #####Cygwin on Windows
 Just as on Unix or Linux systems, make can build a gcc or clang based compiler for the cygwin environment on Windows. The generated compiler will depend on cygwin.dll.
@@ -66,18 +77,5 @@ To build mingw compiler binaries, set up a cygwin environment, add the correspon
 
 Now run 'make full' and 'make install'. This will place the compiler and libraries in /opt/olang in the cygwin filesystem.
 
-#####32 bit vs 64 bit versions and Oberon type sizes.
-On Linux/Unix systems, the built compiler is specific to the machine size. Building on 32 bit Ubuntu will create a 32 bit compiler, etc.
-
-On Windows, both native, and under cygwin, it is possible to build both 32 bit and 64 bit compilers. 
-
-For cygwin it depends on the cygwin setup file used (setup-x86.exe generates a 32 bit installation, and setup-x86_64.exe a 64 bit installation.) Both can be installed side by side. Use the start menu entries 'Cygwin Terminal' or 'Cygwin64 Terminal'.
-
-For the Visual C\++ Build Tools,  use the installation provided start menu entries 'Visual C\++ x86 Native Build Tools Command Prompt' or 'Visual C\++ x64 Native Build Tools Command Prompt'. 
-
-Type sizes are fixed across the 32 and 64 bit compilers as follows:
- - CHAR, SHORTINT: 8 bits.
- - INTEGER, REAL: 32 bits.
- - LONGINT, LONGREAL, SET: 64 bi
 
 

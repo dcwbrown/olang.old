@@ -19,8 +19,10 @@ The biggest changes relative to early 2016 Vishap Oberon are in the build system
      specific Files0.Mod. SetSearchPath is now called from OPM.cmdln init removing the need for a compiler sepecific versions of Texts.Mod and Kernel.Mod.
    - Refactor Kernel.Mod, Unix.Mod and SYSTEM.Mod into Heap.Mod and PlatformUnix.Mod. Provide a separate PlatformWindows.Mod that uses the Win32 API directly.
    - Lots of places freely mixed 'long' and 'LONGINT' assuming they are the same thing. All have been changed to 'LONGINT' partly for consistency, but mostly as for some platforms LONGINT is 'long long', not 'long'.
+ - The enlistment no longer includes compiled binaries. Instead it includes pre-prepared sets of C source covering the three datamodel types on the two operating system platforms. 
+ - The bootstrap build required on a new platform is automatic, using one of the pre-prepared sets of C source. Indeed the initial build of a new enlistment on all platfroms uses these bootstrap C sources.
 
-The result is that there is now a single version of earch source file, with the exceptions only of PlatformUnix.Mod/PlatformWindows.Mod in the compiler, and oocCILP32.Mod/oocCLP64.Mod/oocCLLP64.Mod in the ooc library.
+The result is that there is now a single version of earch Oberon source file, with the exceptions only of PlatformUnix.Mod/PlatformWindows.Mod in the compiler, and oocCILP32.Mod/oocCLP64.Mod/oocCLLP64.Mod in the ooc library.
 
 All Oberon compilation warnings have been fixed mostly with the addition of ELSE parts to CASE statements.
 
@@ -67,3 +69,19 @@ olang.Translate no longer C compiles the main program twice.
  
  - Provide an compiler option to generate code where INTEGER and REAL are 16 bit and SET, LONGINT anf LONGREAL are 32 bit. While this is no significant benefit for modern Linux and Windows systems, it may make it easier to port old code that assumes these type sizes (as do some of the library files). Maybe implement INT8, INT16, INT32 and INT64. Maybe even UINT8, UINT16, UINT32 and UINT64. Also INTADDR / UINTADDR (same size as an address.) Indeed I miss Pascal and Modula's subrange variables (e.g. 'TYPE byte = 0..255;'). Implementing these would remove the need for most of the explicit integer type names.
  
+######Norayr/voc issues overlapping olang
+
+Issue 7 - 'silence ccomp warnings'. This has been done.
+
+Issue 9 - 'oberon.par arguments'. I analysed parameters for all platforms covered, including Ubuntu, FreeBSD, OpenBSD, Raspbian, Darwin, Cygwin and MS C, on a mixture of 32 and 64 bit architectures. The vast majority of info in the .par file is redundant. For example on all platforms, char, unsigned char, int and float have the same size and same alignment. The only differences come around the meaning of 'long' vs 'long long', pointer size and alignment of 64 bit values. By fixing LONGINT, LONGREAL and SET at 64 bits, there are only 3 possible PAR variants: 
+  a) 32 bit pointers, with 64 bit vars aligned on 32 bit boundaries.
+  b) 32 bit pointers, with 64 bit vars aligned on 64 bit boundaries.
+  c) 64 bit pointers, with 64 bit vars aligned on 64 bit boundaries.
+(All types smaller than 64 bits align on their own size on all combinations of platform and compiler).
+
+
+Issue 13 - 'prepare Linux/x86asm target'. Linux is currently compiled using PlatfromUnix.Mod, but a PlatfromLinux.Mod using Linux kernel calls directly would resolve voc issue 13.
+
+Issue 14 - 'separate rtl from SYSTEM?'. OS specific code is now all in Platformxxx.Mod. Memory management (including the loaded module list) is mow in Heap.Mod. SYSTEM.h is platform independent, with minimal ifdefs to allow compiling on all platforms. When SYSTEM.H/SYSTEM.C need to allocate memory or halt, they call into Platform.Mod.
+
+
