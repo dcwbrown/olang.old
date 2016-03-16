@@ -1,5 +1,15 @@
-*     text=auto
+# Handle text files according to the default behaviour or as overriden in .gitconfig.
+# Specifically convert CR and CRLF to LF on checkin on all platforms, and convert
+# LF to the local EOL convention on checkout.
+*  text=auto eol=native
+
+# Symbol files are binaries
+*.sym  binary
+
+# Override conventions for shell scripts as on Windows, these still need LF, not CRLF.
 *.sh  eol=lf
+
+# Provide type information to improve block annotation in git diff output.
 *.Mod diff=pascal
 *.c   diff=cpp
 *.h   diff=cpp

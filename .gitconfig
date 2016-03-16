@@ -4,5 +4,6 @@
 	bare = false
 	logallrefupdates = true
 	ignorecase = true
+	safecrlf = false
 [push]
 	default = simple
