@@ -4,6 +4,5 @@
 	bare = false
 	logallrefupdates = true
 	ignorecase = true
-	autocrlf = input
 [push]
 	default = simple
