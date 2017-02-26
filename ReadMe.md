@@ -1,3 +1,5 @@
+## NOTE: This project retained here for reference only. Continued development (and there is a lot) is in https://github.com/vishaps/voc.
+
 ####OLang - Cross-platform Oberon compiler for 32 and 64 bit Unix/Linux/Windows.
 
 Olang is Norayr Chilingarian's Vishap Oberon adapted to build more easily on a wider variety of modern platforms, including cygwin and native Windows. See notes.md for differences.
